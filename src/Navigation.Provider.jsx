@@ -16,6 +16,7 @@ import Admin from './pages/Admin';
 import { AppRoute } from './types';
 import { Menu } from 'lucide-react';
 import SubscriptionForm from './Components/SubscriptionForm/SubscriptionForm.jsx';
+import NotificationBar from './Components/NotificationBar/NotificationBar.jsx';
 
 // ------------------------------
 // Dashboard Layout (Auth pages)
@@ -78,6 +79,7 @@ const PlaceholderPage = ({ title }) => (
 const NavigateProvider = () => {
   return (
     <BrowserRouter>
+
       <Routes>
         {/* Public Routes */}
         <Route path={AppRoute.LANDING} element={<Landing />} />

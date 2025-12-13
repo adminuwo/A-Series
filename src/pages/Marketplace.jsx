@@ -4,7 +4,9 @@ import axios from 'axios';
 import { apis } from '../types';
 import { getUserData, toggleState } from '../userStore/userData';
 import SubscriptionForm from '../Components/SubscriptionForm/SubscriptionForm';
-// import { useRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
+import { AnimatePresence } from 'motion/react';
+import NotificationBar from '../Components/NotificationBar/NotificationBar';
 
 const MOCK_AGENTS = [
   {
@@ -42,17 +44,17 @@ const MOCK_AGENTS = [
 ];
 
 const Marketplace = () => {
-  // const [agents, setAgents] = useState(JSON.parse(localStorage.getItem("agents")));
   const [agents, setAgents] = useState([]);
   const [filter, setFilter] = useState('all');
   const [userAgent, setUserAgent] = useState([])
   const [loading, setLoading] = useState(false)
-  // const [subToggle,setSubToggle]=useRecoilState(toggleState)
+  const [subToggle, setSubToggle] = useRecoilState(toggleState)
   const user = getUserData("user")
+  const [agentId, setAgentId] = useState("")
   useEffect(() => {
     setLoading(true)
-    // console.log(subToggle);
-    
+    console.log(subToggle);
+
 
     // localStorage.setItem("agents", JSON.stringify(agents))
     axios.post(apis.getUserAgents, { userId: user.id }).then((res) => {
@@ -71,14 +73,14 @@ const Marketplace = () => {
   }, [])
 
 
-  const toggleInstall = (id) => {
-    console.log(id);
-
-    axios.post(`${apis.buyAgent}/${id}`, { userId: user.id }).then((res) => {
-      console.log(res);
-    }).catch((err) => {
-      console.log(err);
-    })
+  const toggleBuy = (id) => {
+    setSubToggle({ ...subToggle, subscripPgTgl: true })
+    setAgentId(id)
+    // axios.post(`${apis.buyAgent}/${id}`, { userId: user.id }).then((res) => {
+    //   console.log(res);
+    // }).catch((err) => {
+    //   console.log(err);
+    // })
     // setAgents(prev =>
     //   prev.map(agent =>
     //     agent.id === id ? { ...agent, installed: !agent.installed } : agent
@@ -89,12 +91,16 @@ const Marketplace = () => {
   const filteredAgents =
     filter === 'all' ? agents : agents.filter(a => a.category === filter);
 
-  const categories = ['all', 'coding', 'creative', 'productivity', 'Content', "Business", "AI Office",];
+  const categories = ['all', 'coding', 'creative', 'productivity', 'Content', "Business OS", "AI Office",];
 
   return (
     <div className="p-4 md:p-8 h-full overflow-y-auto bg-secondary">
-      {/* <SubscriptionForm/> */}
+      <AnimatePresence>
+        {subToggle.subscripPgTgl &&
+          <SubscriptionForm id={agentId} />
+        }
 
+      </AnimatePresence>
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -132,7 +138,7 @@ const Marketplace = () => {
           </button>
         ))}
       </div>
-      { }
+
       {/* Agents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? <h1>Loading.....</h1> : filteredAgents.map(agent => (
@@ -163,13 +169,13 @@ const Marketplace = () => {
 
             {/* Install Button */}
             <button
-              onClick={() => toggleInstall(agent._id)}
-              className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${userAgent.some((ag)=>agent._id==ag._id)
+              onClick={() => toggleBuy(agent._id)}
+              className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${userAgent.some((ag) => agent._id == ag._id)
                 ? 'bg-blue-50 text-primary border border-blue-100'
                 : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
                 }`}
             >
-              {userAgent.some((ag)=>agent._id==ag._id)? (
+              {userAgent.some((ag) => agent._id == ag._id) ? (
                 <>
                   <Check className="w-4 h-4" /> Owned
                 </>

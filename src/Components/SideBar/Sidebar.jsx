@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router';
-import { 
+import {
   LayoutGrid,
   MessageSquare,
   ShoppingBag,
@@ -11,9 +11,13 @@ import {
   X
 } from 'lucide-react';
 import { AppRoute } from '../../types';
+import NotificationBar from '../NotificationBar/NotificationBar.jsx';
+import { useRecoilState } from 'recoil';
+import { toggleState } from '../../userStore/userData';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const [notifiyTgl, setNotifyTgl] = useRecoilState(toggleState)
 
   const handleLogout = () => {
     localStorage.clear();
@@ -22,10 +26,9 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   // Dynamic class for active nav items
   const navItemClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium border border-transparent ${
-      isActive
-        ? 'bg-primary/10 text-primary border-primary/10'
-        : 'text-subtext hover:bg-surface hover:text-maintext'
+    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium border border-transparent ${isActive
+      ? 'bg-primary/10 text-primary border-primary/10'
+      : 'text-subtext hover:bg-surface hover:text-maintext'
     }`;
 
   const user = JSON.parse(
@@ -41,6 +44,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           onClick={onClose}
         />
       )}
+      {notifiyTgl.notify && <div className='fixed w-full z-10 flex justify-center items-center mt-5 ml-6'>
+        <NotificationBar msg={"every thing is done"} />
+      </div>}
 
       {/* Sidebar */}
       <div

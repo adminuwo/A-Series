@@ -9,5 +9,5 @@ export const getUserData = (name) => {
 }
 export const toggleState = atom({
   key: "toggle",
-  default: { subscriptionTg: false }
+  default: { subscripPgTgl: false, notify: false }
 })

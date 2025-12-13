@@ -1,14 +1,17 @@
 import React from 'react';
 import { data, useNavigate } from 'react-router';
-import { ArrowRight, Bot, Cpu, Zap, Shield } from 'lucide-react';
-import {  logo } from '../constents';
+import { ArrowRight, Bot, Cpu, Zap, Shield , CircleUser } from 'lucide-react';
+import { logo } from '../constents';
+import { getUserData } from '../userStore/userData';
+import { AppRoute } from '../types';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const user = getUserData("user")
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-secondary">
-      
+
       {/* Background Shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] pointer-events-none" />
@@ -23,8 +26,7 @@ const Landing = () => {
           </div>
           <span className="text-xl font-bold text-primary"></span>
         </div>
-
-        <div className="flex gap-4">
+        {user ?<CircleUser className=' h-7 w-7'/>: <div className="flex gap-4">
           <button
             onClick={() => navigate("/login")}
             className="text-subtext hover:text-primary font-medium transition-colors"
@@ -38,7 +40,8 @@ const Landing = () => {
           >
             Get Started
           </button>
-        </div>
+        </div>}
+
       </header>
 
       {/* Hero Section */}
@@ -55,7 +58,7 @@ const Landing = () => {
         </h1>
 
         <p className="text-lg text-subtext max-w-2xl mb-10 leading-relaxed">
-          Experience the next generation of intelligent assistance.  
+          Experience the next generation of intelligent assistance.
           AI Mall learns, adapts, and creates with you in real-time through a stunning interface.
         </p>
 
@@ -63,18 +66,19 @@ const Landing = () => {
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
 
           <button
-            onClick={() => navigate("/signup")}
+            onClick={() => user ? navigate(AppRoute.DASHBOARD) : navigate(AppRoute.SIGNUP)}
             className="px-8 py-4 bg-primary rounded-2xl font-bold text-lg text-white shadow-xl shadow-primary/30 hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2"
           >
             Start Chatting Free <ArrowRight className="w-5 h-5" />
           </button>
-
-          <button
+          {!user && <button
             onClick={() => navigate("/login")}
             className="px-8 py-4 bg-white border border-border rounded-2xl font-bold text-lg text-maintext hover:bg-surface transition-all duration-300 shadow-sm"
           >
             Existing User
-          </button>
+          </button>}
+
+
 
         </div>
 

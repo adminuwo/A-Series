@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { 
-  MessageSquare, Cpu, Clock, Zap, TrendingUp, Users, ArrowUpRight 
+import {
+  MessageSquare, Cpu, Clock, Zap, TrendingUp, Users, ArrowUpRight, IndianRupee
 } from 'lucide-react';
-
 const DashboardOverview = () => {
   const [stats, setStats] = useState(null);
 
@@ -36,7 +35,7 @@ const DashboardOverview = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-        
+
         {/* Total Chats */}
         <div className="bg-white border border-border p-6 rounded-2xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -47,7 +46,7 @@ const DashboardOverview = () => {
             <span className="font-semibold text-sm uppercase tracking-wide">Total Chats</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">{stats.totalChats}</div>
-          <div className="text-xs text-green-500 flex items-center gap-1">
+          <div className="text-xs text-subtext flex items-center gap-1">
             <TrendingUp className="w-3 h-3" /> +12% from last week
           </div>
         </div>
@@ -55,14 +54,15 @@ const DashboardOverview = () => {
         {/* Tokens Used */}
         <div className="bg-white border border-border p-6 rounded-2xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Cpu className="w-16 h-16 text-purple-500" />
+            <IndianRupee className="w-16 h-16 text-primary" />
           </div>
-          <div className="flex items-center gap-3 mb-2 text-purple-500">
-            <Cpu className="w-5 h-5" />
-            <span className="font-semibold text-sm uppercase tracking-wide">Tokens Used</span>
+          <div className="flex items-center gap-3 mb-2 text-primary">
+            <IndianRupee className="w-5 h-5" />
+            <span className="font-semibold text-sm uppercase tracking-wide">Total Credits</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">
-            {(stats.tokensUsed / 1000).toFixed(1)}k
+            {/* {(stats.tokensUsed / 1000).toFixed(1)}k */}
+            0
           </div>
           <div className="text-xs text-subtext">Next reset in 14 days</div>
         </div>
@@ -70,16 +70,16 @@ const DashboardOverview = () => {
         {/* Active Agents */}
         <div className="bg-white border border-border p-6 rounded-2xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Zap className="w-16 h-16 text-amber-500" />
+            <Zap className="w-16 h-16 text-primary" />
           </div>
-          <div className="flex items-center gap-3 mb-2 text-amber-500">
-            <Zap className="w-5 h-5" />
+          <div className="flex items-center gap-3 mb-2 text-primary">
+            <Zap className="w-5 h-5 " />
             <span className="font-semibold text-sm uppercase tracking-wide">Active Agents</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">
             {stats.activeAgents}
           </div>
-          <div className="text-xs text-green-500 flex items-center gap-1">
+          <div className="text-xs text-subtext flex items-center gap-1">
             All systems operational
           </div>
         </div>
@@ -87,9 +87,9 @@ const DashboardOverview = () => {
         {/* Time Saved */}
         <div className="bg-white border border-border p-6 rounded-2xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Clock className="w-16 h-16 text-emerald-500" />
+            <Clock className="w-16 h-16 text-primary" />
           </div>
-          <div className="flex items-center gap-3 mb-2 text-emerald-500">
+          <div className="flex items-center gap-3 mb-2 text-primary">
             <Clock className="w-5 h-5" />
             <span className="font-semibold text-sm uppercase tracking-wide">Time Saved</span>
           </div>
@@ -100,7 +100,7 @@ const DashboardOverview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        
+
         {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white border border-border rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -110,8 +110,8 @@ const DashboardOverview = () => {
 
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center justify-between p-4 rounded-xl bg-surface hover:bg-gray-100 transition-colors cursor-pointer group border border-transparent hover:border-border"
               >
                 <div className="flex items-center gap-4">
