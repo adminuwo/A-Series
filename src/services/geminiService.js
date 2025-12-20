@@ -1,8 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
 import { apis } from "../types";
-
-
 
 export const generateChatResponse = async (history, currentMessage, systemInstruction) => {
     try {

@@ -22,7 +22,9 @@ console.log(id);
       setSubscripTgl({ ...subscripTgl, subscripPgTgl: false, notify: true });
       console.log(res);
     })
-    .catch(console.log);
+    .catch((err)=>{
+      console.log(err);
+    });
 }
 
 

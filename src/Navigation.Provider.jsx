@@ -17,7 +17,14 @@ import { AppRoute } from './types';
 import { Menu } from 'lucide-react';
 import SubscriptionForm from './Components/SubscriptionForm/SubscriptionForm.jsx';
 import NotificationBar from './Components/NotificationBar/NotificationBar.jsx';
+import AiBiz from './agents/AIBIZ/AIBIZ.jsx';
+import ComingSoon from './Components/CommingSoon/CommingSoon.jsx';
 
+
+const AuthenticatRoute=({childern})=>{
+  
+  
+}
 // ------------------------------
 // Dashboard Layout (Auth pages)
 // ------------------------------
@@ -86,7 +93,9 @@ const NavigateProvider = () => {
         <Route path={AppRoute.LOGIN} element={<Login />} />
         <Route path={AppRoute.SIGNUP} element={<Signup />} />
         <Route path={AppRoute.E_Verification} element={<VerificationForm />} />
-
+        <Route path="/agentsoon" element={<ComingSoon/>}></Route>
+      {/* agents */}
+        <Route path='/agents/aibiz' element={<AiBiz />}></Route>
         {/* Dashboard (Protected) */}
         <Route path={AppRoute.DASHBOARD} element={<DashboardLayout />}>
           <Route index element={<Navigate to="chat" replace />} />

@@ -99,7 +99,7 @@ const MyAgents = () => {
       ) : (
         <div className="">
           <div className='flex gap-5'>
-            {agents.map((agent) => 
+            {agents.map((agent) =>
               <div
                 key={agent._id}
                 className=" group bg-white border border-border hover:border-primary/50 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 flex flex-col w-1/3 shadow-sm"
@@ -126,17 +126,13 @@ const MyAgents = () => {
                 <p className="text-sm text-subtext mb-6 flex-1">{agent.description}</p>
 
                 {/* Install Button */}
-                <a href={agent.url}>
+                <Link to={!agent?.url || agent.url.trim() === "" ? "/agentsoon" : agent.url}>
                   <button
-
-
-                    className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${true
-                      ? 'bg-green-50 text-green-600 border border-green-100'
-                      : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
-                      }`}
+                    className="w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all bg-green-50 text-green-600 border border-green-100"
                   >
-                    Use It
-                  </button></a>
+                    Use____
+                  </button>
+                </Link>
 
               </div>)}
           </div>

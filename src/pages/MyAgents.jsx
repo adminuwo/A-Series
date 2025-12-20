@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Settings, Trash2, Bot, Code, Edit3, Save } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import axios from 'axios';
-import { apis } from '../types';
+import { apis, AppRoute } from '../types';
 import { getUserData } from '../userStore/userData';
+import { Link } from 'react-router';
 
 const MyAgents = () => {
     const [agents, setAgents] = useState([]);
@@ -125,17 +126,14 @@ const MyAgents = () => {
                                 <p className="text-sm text-subtext mb-6 flex-1">{agent.description}</p>
 
                                 {/* Install Button */}
-                                <a href={agent.url}>
+                                <Link to={!agent?.url || agent.url.trim() === "" ? AppRoute.agentSoon : agent.url}>
                                     <button
-
-
-                                        className={`w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${true
-                                            ? 'bg-green-50 text-green-600 border border-green-100'
-                                            : 'bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20'
-                                            }`}
+                                        className="w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all bg-green-50 text-green-600 border border-green-100"
                                     >
-                                        Use It
-                                    </button></a>
+                                        Use
+                                    </button>
+                                </Link>
+
 
                             </div>)}
                     </div>
