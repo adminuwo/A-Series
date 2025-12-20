@@ -15,8 +15,6 @@ import Admin from './pages/Admin';
 
 import { AppRoute } from './types';
 import { Menu } from 'lucide-react';
-import SubscriptionForm from './Components/SubscriptionForm/SubscriptionForm.jsx';
-import NotificationBar from './Components/NotificationBar/NotificationBar.jsx';
 import AiBiz from './agents/AIBIZ/AiBiz.jsx';
 import ComingSoon from './Components/CommingSoon/CommingSoon.jsx';
 
