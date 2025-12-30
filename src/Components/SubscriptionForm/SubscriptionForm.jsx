@@ -11,21 +11,25 @@ import axios from 'axios';
 const SubscriptionForm = ({ id }) => {
   const [subscripTgl, setSubscripTgl] = useRecoilState(toggleState)
   const user = getUserData("user")
-console.log(id);
+  console.log(id);
 
 
   function buyAgent(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  axios.post(`${apis.buyAgent}/${id}`, { userId: user.id })
-    .then((res) => {
-      setSubscripTgl({ ...subscripTgl, subscripPgTgl: false, notify: true });
-      console.log(res);
-    })
-    .catch((err)=>{
-      console.log(err);
-    });
-}
+    if (!user?.id) {
+      console.error("User ID missing or not logged in");
+      return;
+    }
+    axios.post(`${apis.buyAgent}/${id}`, { userId: user.id })
+      .then((res) => {
+        setSubscripTgl({ ...subscripTgl, subscripPgTgl: false, notify: true });
+        console.log(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
 
 
   return (

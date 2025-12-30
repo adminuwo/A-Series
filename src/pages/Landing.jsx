@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { data, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { ArrowRight, Bot, Cpu, Zap, Shield, CircleUser, Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { logo, faqs } from '../constants';

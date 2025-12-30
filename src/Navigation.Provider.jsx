@@ -122,7 +122,6 @@ const NavigateProvider = () => {
               <LiveDemoPage />
             </Suspense>
           } /> */}
-<<<<<<< HEAD
           <Route path="agents" element={<MyAgents />} />
           <Route path="automations" element={<Automations />} />
           <Route path="admin" element={<Admin />} />
@@ -153,14 +152,6 @@ const NavigateProvider = () => {
           <Route path="support/user" element={<VendorSupport />} />
           <Route path="support/admin" element={<PlaceholderPage title="Admin Support" />} />
           <Route path="settings" element={<PlaceholderPage title="Vendor Settings" />} />
-=======
-          <Route path="agents" element={<ProtectedRoute><MyAgents /></ProtectedRoute>} />
-          <Route path="automations" element={<ProtectedRoute><Automations /></ProtectedRoute>} />
-          <Route path="admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-          <Route path="settings" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-          <Route path="invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
-          <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
->>>>>>> a6a2ce2e0ac4eb1852e4aa90aa31bf317ba61bac
         </Route>
 
         {/* Catch All */}

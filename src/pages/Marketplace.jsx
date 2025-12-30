@@ -25,30 +25,21 @@ const Marketplace = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // setLoading(true)
+    setLoading(true)
     console.log(subToggle);
 
 
     // localStorage.setItem("agents", JSON.stringify(agents))
-<<<<<<< HEAD
     axios.post(apis.getUserAgents, { userId: user?.id }).then((res) => {
       setUserAgent(res.data?.agents || [])
       console.log(res.data?.agents);
       setLoading(false)
-=======
-    if (user && user.id) {
-      axios.post(apis.getUserAgents, { userId: user?.id }).then((res) => {
-        setUserAgent(res.data.agents)
-        console.log(res.data.agents);
-        setLoading(false)
->>>>>>> a6a2ce2e0ac4eb1852e4aa90aa31bf317ba61bac
 
-      }).catch(err => console.log(err))
-    }
+    }).catch(err => console.log(err))
     axios.get(apis.agents).then((agent) => {
       // Ensure we always set an array, even if data is unexpected
       setAgents(Array.isArray(agent.data) ? agent.data : [])
-      console.log(agent.data);
+      console.log("FETCHED AGENTS:", agent.data);
     }).catch((err) => {
       console.log(err);
       setAgents([]); // Fallback to empty array on error
@@ -69,7 +60,7 @@ const Marketplace = () => {
   const filteredAgents = agents.filter(agent => {
     // Only show apps that are 'Live'. 
     // If status is missing, we assume it's one of the default/demo apps.
-    const isLive = !agent.status || agent.status === 'Live';
+    const isLive = !agent.status || agent.status === 'Live' || agent.status === 'active';
     if (!isLive) return false;
 
     const matchesCategory = filter === 'all' || agent.category === filter;

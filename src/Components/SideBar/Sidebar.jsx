@@ -13,14 +13,11 @@ import {
   Video,
   FileText,
   Bell,
-<<<<<<< HEAD
   Shield,
-  DollarSign
-=======
+  DollarSign,
   HelpCircle,
   ChevronDown,
   ChevronUp
->>>>>>> a6a2ce2e0ac4eb1852e4aa90aa31bf317ba61bac
 } from 'lucide-react';
 import { apis, AppRoute } from '../../types';
 import { faqs } from '../../constants'; // Import shared FAQs
