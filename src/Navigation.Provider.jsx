@@ -12,7 +12,6 @@ import MyAgents from './pages/MyAgents';
 import DashboardOverview from './pages/DashboardOverview';
 import Automations from './pages/Automations';
 import Admin from './pages/Admin';
-import VendorRegister from './pages/VendorRegister';
 import Invoices from './pages/Invoices';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
@@ -31,20 +30,8 @@ import { lazy, Suspense } from 'react';
 import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute.jsx';
 
 
-// Vendor Imports
-import VendorLayout from './Components/Vendor/VendorLayout';
-import VendorOverview from './pages/Vendor/VendorOverview';
-import VendorApps from './pages/Vendor/VendorApps';
-import VendorRevenue from './pages/Vendor/VendorRevenue';
-import VendorSettings from './pages/Vendor/VendorSettings';
-// import VendorCommunication from './pages/Vendor/VendorCommunication'; // Removed in favor of split support
-import VendorUserSupport from './pages/Vendor/VendorUserSupport';
-import VendorAdminSupport from './pages/Vendor/VendorAdminSupport';
-import VendorAppDetail from './pages/Vendor/VendorAppDetail';
-import VendorTransactions from './pages/Vendor/VendorTransactions';
-
-const LiveDemoPage = lazy(() => import('./pages/LiveDemoPage'));
 const SecurityAndGuidelines = lazy(() => import('./pages/SecurityAndGuidelines'));
+const TrustSafetyCompliance = lazy(() => import('./pages/TrustSafetyCompliance'));
 const TransactionHistory = lazy(() => import('./Components/Admin/TransactionHistory'));
 
 
@@ -151,7 +138,6 @@ const NavigateProvider = () => {
         <Route path={AppRoute.LANDING} element={<Landing />} />
         <Route path={AppRoute.LOGIN} element={<Login />} />
         <Route path={AppRoute.SIGNUP} element={<Signup />} />
-        <Route path="/vendor/register" element={<VendorRegister />} />
         <Route path={AppRoute.E_Verification} element={<VerificationForm />} />
         <Route path={AppRoute.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={AppRoute.RESET_PASSWORD} element={<ResetPassword />} />
@@ -170,11 +156,6 @@ const NavigateProvider = () => {
           <Route path="overview" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="ai-personal-assistant" element={<ProtectedRoute><AiPersonalAssistantDashboard /></ProtectedRoute>} />
-          {/* <Route path="live-demos" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><p className="text-subtext">Loading...</p></div>}>
-              <LiveDemoPage />
-            </Suspense>
-          } /> */}
           <Route path="agents" element={<ProtectedRoute><MyAgents /></ProtectedRoute>} />
           <Route path="automations" element={<ProtectedRoute><Automations /></ProtectedRoute>} />
           <Route path="admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
@@ -188,20 +169,13 @@ const NavigateProvider = () => {
               <SecurityAndGuidelines />
             </Suspense>
           } />
+          <Route path="trust-safety-compliance" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-full">Loading...</div>}>
+              <TrustSafetyCompliance />
+            </Suspense>
+          } />
         </Route>
 
-
-        {/* Vendor Dashboard Routes (Public for MVP/Testing) */}
-        <Route path="/vendor" element={<VendorLayout />}>
-          <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<VendorOverview />} />
-          <Route path="apps" element={<VendorApps />} />
-          <Route path="apps/:appId" element={<VendorAppDetail />} />
-          <Route path="revenue" element={<VendorRevenue />} />
-          <Route path="settings" element={<VendorSettings />} />
-          <Route path="user-support" element={<VendorUserSupport />} />
-          <Route path="admin-support" element={<VendorAdminSupport />} />
-        </Route>
 
         {/* Catch All */}
         <Route path="*" element={<Navigate to={AppRoute.LANDING} replace />} />
