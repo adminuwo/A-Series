@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { Routes, Route, Outlet, Navigate, BrowserRouter, useNavigate, useLocation } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
+import { User, LogOut } from 'lucide-react';
+import { useRecoilValue } from 'recoil';
+import { userData, clearUser, resetUserDataState } from './userStore/userData';
+import { useLanguage } from './context/LanguageContext';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -7,6 +12,7 @@ import Signup from './pages/Signup';
 import VerificationForm from './pages/VerificationForm';
 import Chat from './pages/Chat';
 import Sidebar from './Components/SideBar/Sidebar.jsx';
+import Navbar from './Components/Navbar/Navbar.jsx';
 import Marketplace from './pages/Marketplace';
 import MyAgents from './pages/MyAgents';
 import DashboardOverview from './pages/DashboardOverview';
@@ -47,14 +53,28 @@ const AuthenticatRoute = ({ children }) => {
 
 const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const location = useLocation();
   const isFullScreen = location.pathname.includes('/ai-personal-assistant');
 
-  const user = JSON.parse(
-    localStorage.getItem('user') || '{"name":"User"}'
-  );
+  // Use Recoil state for real-time avatar updates
+  const { user: rawUser } = useRecoilValue(userData);
+  const user = rawUser || { name: 'Guest', email: null };
 
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const handleMobileLogout = () => {
+    clearUser();
+    setIsMobileDropdownOpen(false);
+    // Force a full app reload to reset all Recoil state
+    window.location.href = AppRoute.LANDING;
+  };
+
+  const handleMobileProfileClick = () => {
+    setIsMobileDropdownOpen(false);
+    navigate(AppRoute.PROFILE);
+  };
 
   return (
     <div className="fixed inset-0 flex bg-transparent text-maintext overflow-hidden font-sans">
@@ -69,9 +89,16 @@ const DashboardLayout = () => {
 
       <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full relative">
 
+        {/* Desktop Navbar */}
+        {!isFullScreen && (
+          <div className="hidden lg:flex items-center justify-end border-b border-border bg-secondary/50 backdrop-blur-sm shrink-0 z-50 shadow-sm">
+            <Navbar />
+          </div>
+        )}
+
         {/* Mobile Header */}
         {!isFullScreen && (
-          <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-secondary shrink-0 z-50 shadow-sm">
+          <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-secondary shrink-0 z-50 shadow-sm relative">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsSidebarOpen(true)}
@@ -82,12 +109,71 @@ const DashboardLayout = () => {
               <span className="font-bold text-lg text-primary">A-Series</span>
             </div>
 
-            <div
-              onClick={() => navigate(user.email ? '/dashboard/profile' : '/login')}
-              className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm uppercase cursor-pointer hover:bg-primary/30 transition-colors"
-            >
-              {user.name?.charAt(0) || 'U'}
-            </div>
+            {user.email && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+                  className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm uppercase cursor-pointer hover:bg-primary/30 transition-colors border-2 border-primary/30"
+                >
+                  {user.name?.charAt(0) || 'U'}
+                </button>
+
+                {/* Mobile Dropdown */}
+                <AnimatePresence>
+                  {isMobileDropdownOpen && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsMobileDropdownOpen(false)}
+                      />
+
+                      {/* Dropdown Menu */}
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className="absolute top-full right-0 mt-2 w-56 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-50"
+                      >
+                        {/* User Info Header */}
+                        <div className="px-4 py-3 bg-secondary/30 border-b border-border">
+                          <p className="text-sm font-bold text-maintext truncate">{user.name}</p>
+                          <p className="text-xs text-subtext truncate">{user.email}</p>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="py-2">
+                          <button
+                            onClick={handleMobileProfileClick}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface transition-colors group"
+                          >
+                            <User className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
+                            <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">
+                              {t('profile')}
+                            </span>
+                          </button>
+
+                          <div className="my-1 px-3">
+                            <div className="h-px bg-border"></div>
+                          </div>
+
+                          <button
+                            onClick={handleMobileLogout}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-red-500/5 transition-colors group"
+                          >
+                            <LogOut className="w-4 h-4 text-subtext group-hover:text-red-600 transition-colors" />
+                            <span className="text-sm font-medium text-maintext group-hover:text-red-600 transition-colors">
+                              {t('logout')}
+                            </span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         )}
 
@@ -99,7 +185,7 @@ const DashboardLayout = () => {
               className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-white/10 transition-all text-sm font-medium"
             >
               <Menu className="w-4 h-4" />
-              <span>Menu</span>
+              <span>{t('menu')}</span>
             </button>
           </div>
         )}

@@ -24,7 +24,7 @@ import { apis, AppRoute } from '../../types';
 import { faqs } from '../../constants'; // Import shared FAQs
 import NotificationBar from '../NotificationBar/NotificationBar.jsx';
 import { useRecoilState } from 'recoil';
-import { clearUser, getUserData, setUserData, toggleState, userData, notificationsState } from '../../userStore/userData';
+import { clearUser, getUserData, setUserData, toggleState, userData, notificationsState, resetUserDataState } from '../../userStore/userData';
 import axios from 'axios';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -59,11 +59,17 @@ const Sidebar = ({ isOpen, onClose }) => {
     localStorage.clear();
     navigate(AppRoute.LANDING);
   };
-  const token = getUserData()?.token
+
+  // Check if user is logged in using email (more reliable than token)
+  // Token might not be present in all scenarios, but email always is when logged in
+  const isLoggedIn = user && user.email && user.email !== "...";
+
+  // Use token from Recoil state (user object) instead of calling getUserData
+  const token = user?.token;
 
   useEffect(() => {
     // User data
-    if (token) {
+    if (user?.token) {
       axios.get(apis.user, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -76,8 +82,9 @@ const Sidebar = ({ isOpen, onClose }) => {
       }).catch((err) => {
         console.error(err);
         if (err.status == 401) {
-          clearUser()
-          navigate(AppRoute.LOGIN)
+          clearUser();
+          setUserRecoil(resetUserDataState());
+          navigate(AppRoute.LOGIN);
         }
       })
     }
@@ -179,8 +186,6 @@ const Sidebar = ({ isOpen, onClose }) => {
             <span>{t('marketplace')}</span>
           </NavLink>
 
-
-
           {/* <NavLink to="/vendor/overview" className={navItemClass} onClick={onClose}>
             <LayoutGrid className="w-5 h-5" />
             <span>{t('vendorDashboard')}</span>
@@ -207,31 +212,28 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* User Profile Footer */}
         <div className="p-3 border-t border-border bg-secondary/30 relative space-y-2">
-          {/* Moved Updates Link */}
-          <NavLink to={AppRoute.NOTIFICATIONS} className={navItemClass} onClick={onClose}>
-            <div className="relative">
-              <Bell className="w-5 h-5" />
-              {(() => {
-                const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0;
-                return unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 border-2 border-secondary flex items-center justify-center text-[10px] font-bold text-white shadow-sm hover:scale-110 transition-transform">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                );
-              })()}
-            </div>
-            <span>{t('updates') || 'Updates'}</span>
-          </NavLink>
-          {token ? (
-            /* Integrated Profile Card */
-            <div
-              onClick={() => {
-                navigate(AppRoute.PROFILE);
-                onClose();
-              }}
-              className="rounded-xl border border-transparent hover:bg-secondary transition-all cursor-pointer flex items-center gap-2 p-2 group"
-            >
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 overflow-hidden border border-primary/10 group-hover:bg-primary/30 transition-colors">
+          {/* Updates/Notifications - Only show when logged in */}
+          {isLoggedIn && (
+            <NavLink to={AppRoute.NOTIFICATIONS} className={navItemClass} onClick={onClose}>
+              <div className="relative">
+                <Bell className="w-5 h-5" />
+                {(() => {
+                  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0;
+                  return unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 border-2 border-secondary flex items-center justify-center text-[10px] font-bold text-white shadow-sm hover:scale-110 transition-transform">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  );
+                })()}
+              </div>
+              <span>{t('updates') || 'Updates'}</span>
+            </NavLink>
+          )}
+
+          {isLoggedIn ? (
+            /* Logged In - User Profile Card (Display Only - No Navigation) */
+            <div className="rounded-xl border border-transparent bg-secondary/30 flex items-center gap-2 p-2">
+              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 overflow-hidden border border-primary/10">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -252,27 +254,28 @@ const Sidebar = ({ isOpen, onClose }) => {
               </div>
 
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-bold text-maintext truncate group-hover:text-primary transition-colors">{user.name}</p>
+                <p className="text-sm font-bold text-maintext truncate">{user.name}</p>
                 <p className="text-[11px] text-subtext truncate">{user.email}</p>
               </div>
 
-              <div className="text-subtext group-hover:text-primary transition-colors">
+              <div className="text-subtext">
                 <User className="w-4 h-4" />
               </div>
             </div>
           ) : (
-            /* Guest / Login State */
-            <div
-              onClick={() => navigate(AppRoute.LOGIN)}
-              className="rounded-xl border border-transparent hover:bg-secondary transition-all cursor-pointer flex items-center gap-3 px-3 py-2 group"
+            /* Not Logged In - Login Button */
+            <button
+              onClick={() => {
+                navigate(AppRoute.LOGIN);
+                onClose();
+              }}
+              className="w-full rounded-xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer flex items-center justify-center gap-3 px-4 py-3 group"
             >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 border border-primary/10 group-hover:bg-primary/20 transition-colors">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="font-bold text-maintext text-xs group-hover:text-primary transition-colors">
+              <LogOut className="w-5 h-5 text-primary rotate-180" />
+              <div className="font-bold text-primary text-sm">
                 Log In
               </div>
-            </div>
+            </button>
           )}
 
           <div className="mt-1 flex flex-col gap-1">

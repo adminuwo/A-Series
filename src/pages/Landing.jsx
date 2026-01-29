@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router';
 import {
   ArrowRight, Bot, Zap, Shield, CircleUser,
@@ -14,6 +14,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 import { Link } from 'react-router';
 import HelpFAQModal from '../Components/Help/HelpFAQModal';
+
+const SecurityAndGuidelines = lazy(() => import('./SecurityAndGuidelines'));
 // Added Link import which was missing
 
 const Landing = () => {
@@ -360,6 +362,23 @@ const Landing = () => {
         onClose={() => setIsHelpModalOpen(false)}
         user={user}
       />
+
+      {/* Security Modal */}
+      {isSecurityModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-secondary border border-border rounded-3xl w-full max-w-5xl h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+            <button
+              onClick={() => setIsSecurityModalOpen(false)}
+              className="absolute top-4 right-4 z-50 p-2 bg-surface/50 hover:bg-surface rounded-full shadow-sm border border-border/50 text-subtext hover:text-maintext transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-subtext">Loading Security Guidelines...</div>}>
+              <SecurityAndGuidelines />
+            </Suspense>
+          </div>
+        </div>
+      )}
 
       {/* Policy Modal */}
       <PolicyModal

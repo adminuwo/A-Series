@@ -16,9 +16,16 @@ const getAvatarUrl = (user) => {
 
 const processUser = (user) => {
   if (user) {
-    // Always attempt to set a better avatar if one isn't explicitly set, is the default, or is a relative path
-    if (!user.avatar || user.avatar.includes('gravatar.com') || user.avatar === '/User.jpeg' || user.avatar.startsWith('/')) {
+    // Only set fallback avatar if NO avatar exists OR it's explicitly a default gravatar
+    // Do NOT override uploaded avatars (those from backend that are actual URLs)
+    if (!user.avatar || user.avatar.includes('gravatar.com/avatar/default')) {
       user.avatar = getAvatarUrl(user);
+    }
+    // For uploaded avatars, add cache-busting if not already present
+    else if (user.avatar && !user.avatar.includes('?t=') && !user.avatar.includes('unavatar.io')) {
+      // Add timestamp query param to prevent caching
+      const separator = user.avatar.includes('?') ? '&' : '?';
+      user.avatar = `${user.avatar}${separator}t=${Date.now()}`;
     }
   }
   return user;
@@ -32,8 +39,28 @@ export const getUserData = () => {
   const data = JSON.parse(localStorage.getItem('user'))
   return processUser(data);
 }
+
+// New helper to update avatar globally
+export const updateUserAvatar = (avatarUrl) => {
+  const user = getUserData();
+  if (user) {
+    // Add cache-busting timestamp
+    const separator = avatarUrl.includes('?') ? '&' : '?';
+    user.avatar = `${avatarUrl}${separator}t=${Date.now()}`;
+    setUserData(user);
+    return user;
+  }
+  return null;
+};
+
+// Reset function for Recoil state (to be called from components with useSetRecoilState)
+export const resetUserDataState = () => ({
+  user: null
+});
+
 export const clearUser = () => {
-  localStorage.clear()
+  localStorage.clear();
+  // Note: Recoil state will be reset by components calling setUserData with resetUserDataState()
 }
 const getUser = () => {
   try {

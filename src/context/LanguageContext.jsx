@@ -15,99 +15,39 @@ export const LanguageProvider = ({ children }) => {
     }, [language]);
 
     const regions = {
-        'India': ["English", "Hindi", "Bengali", "Marathi", "Telugu", "Tamil", "Kannada", "Malayalam", "Urdu"],
-        'United States': ["English", "Spanish", "French", "Mandarin Chinese"],
-        'Japan': ["Japanese", "English"],
-        'China': ["Mandarin Chinese", "English"],
-        'Germany': ["German", "English"],
-        'France': ["French", "English"],
-        'Brazil': ["Portuguese", "English"],
-        'United Kingdom': ["English"],
-        'United Arab Emirates': ["Arabic", "English"],
-        'Canada': ["English", "French"],
-        'Spain': ["Spanish", "English"],
-        'South Korea': ["Korean", "English"],
-        'Italy': ["Italian", "English"],
-        'Russia': ["Russian", "English"],
-        'Australia': ["English"],
-        'Singapore': ["English", "Mandarin Chinese", "Malayalam", "Tamil"],
-        'Netherlands': ["Dutch", "English"],
-        'Mexico': ["Spanish", "English"],
-        'Turkey': ["Turkish", "English"],
-        'Switzerland': ["German", "French", "Italian", "English"],
-        'Sweden': ["Swedish", "English"],
-        'Norway': ["Norwegian", "English"],
-        'Denmark': ["Danish", "English"],
-        'Finland': ["Finnish", "English"],
-        'Belgium': ["Dutch", "French", "German", "English"],
-        'Argentina': ["Spanish", "English"],
-        'Portugal': ["Portuguese", "English"],
-        'New Zealand': ["English"],
-        'South Africa': ["English", "Afrikaans", "Zulu", "Xhosa"]
+        'India': [
+            "English",
+            "Hindi",
+            "Bengali",
+            "Telugu",
+            "Marathi",
+            "Tamil",
+            "Urdu",
+            "Gujarati",
+            "Kannada",
+            "Malayalam",
+            "Odia",
+            "Punjabi",
+            "Assamese",
+            "Maithili",
+            "Sanskrit",
+            "Konkani",
+            "Nepali",
+            "Sindhi",
+            "Dogri",
+            "Kashmiri",
+            "Santali",
+            "Bodo",
+            "Manipuri"
+        ]
     };
 
     const regionFlags = {
-        'India': 'IN',
-        'United States': 'US',
-        'Japan': 'JP',
-        'China': 'CN',
-        'Germany': 'DE',
-        'France': 'FR',
-        'Brazil': 'BR',
-        'United Kingdom': 'GB',
-        'United Arab Emirates': 'AE',
-        'Canada': 'CA',
-        'Spain': 'ES',
-        'South Korea': 'KR',
-        'Italy': 'IT',
-        'Russia': 'RU',
-        'Australia': 'AU',
-        'Singapore': 'SG',
-        'Netherlands': 'NL',
-        'Mexico': 'MX',
-        'Turkey': 'TR',
-        'Switzerland': 'CH',
-        'Sweden': 'SE',
-        'Norway': 'NO',
-        'Denmark': 'DK',
-        'Finland': 'FI',
-        'Belgium': 'BE',
-        'Argentina': 'AR',
-        'Portugal': 'PT',
-        'New Zealand': 'NZ',
-        'South Africa': 'ZA'
+        'India': 'IN'
     };
 
     const regionTimezones = {
-        'India': 'India (GMT+5:30)',
-        'United States': 'Eastern Time (GMT-5:00)',
-        'Japan': 'Japan Standard Time (GMT+9:00)',
-        'China': 'China Standard Time (GMT+8:00)',
-        'Germany': 'Central European Time (GMT+1:00)',
-        'France': 'Central European Time (GMT+1:00)',
-        'Brazil': 'Brasília Time (GMT-3:00)',
-        'United Kingdom': 'Greenwich Mean Time (GMT+0:00)',
-        'United Arab Emirates': 'Gulf Standard Time (GMT+4:00)',
-        'Canada': 'Eastern Time (GMT-5:00)',
-        'Spain': 'Central European Time (GMT+1:00)',
-        'South Korea': 'Korea Standard Time (GMT+9:00)',
-        'Italy': 'Central European Time (GMT+1:00)',
-        'Russia': 'Moscow Time (GMT+3:00)',
-        'Australia': 'Australian Eastern Time (GMT+10:00)',
-        'Singapore': 'Singapore Time (GMT+8:00)',
-        'Netherlands': 'Central European Time (GMT+1:00)',
-        'Mexico': 'Central Standard Time (GMT-6:00)',
-        'Turkey': 'Turkey Time (GMT+3:00)',
-        'Switzerland': 'Central European Time (GMT+1:00)',
-        'Sweden': 'Central European Time (GMT+1:00)',
-        'Norway': 'Central European Time (GMT+1:00)',
-        'Denmark': 'Central European Time (GMT+1:00)',
-        'Finland': 'Eastern European Time (GMT+2:00)',
-        'Belgium': 'Central European Time (GMT+1:00)',
-        'Argentina': 'Argentina Time (GMT-3:00)',
-        'Portugal': 'Western European Time (GMT+0:00)',
-        'New Zealand': 'New Zealand Time (GMT+12:00)',
-        'South Africa': 'South Africa Time (GMT+2:00)'
+        'India': 'India (GMT+5:30)'
     };
 
     const allTimezones = [
@@ -169,7 +109,72 @@ export const LanguageProvider = ({ children }) => {
             twoFactor: "Two-Factor Authentication",
             enabled: "Enabled",
             manage: "Manage",
-            signOut: "Sign Out from Device"
+            signOut: "Sign Out from Device",
+            // Profile Page
+            accountOverview: "Account Overview",
+            accountType: "Account Type",
+            user: "User",
+            notifications: "Notifications",
+            emailNotifications: "Email Notifications",
+            pushNotifications: "Push Notifications",
+            receiveUpdates: "Receive updates",
+            countryRegionLanguage: "Country/Region & Language",
+            displayTheme: "Display Theme",
+            password: "Password",
+            changePassword: "Change Password",
+            billingPayments: "Billing & Payments",
+            transactions: "Transactions",
+            deleteAccount: "Delete Account",
+            currentPassword: "Current Password",
+            newPassword: "New Password",
+            confirmPassword: "Confirm Password",
+            enterCurrentPassword: "Enter current password",
+            enterNewPassword: "Enter new password",
+            confirmNewPassword: "Confirm new password",
+            cancel: "Cancel",
+            update: "Update",
+            save: "Save",
+            edit: "Edit",
+            showAll: "Show All",
+            hideAll: "Hide All",
+            // Navbar
+            hi: "Hi",
+            profile: "Profile",
+            logout: "Logout",
+            menu: "Menu",
+            // Common UI
+            loading: "Loading...",
+            comingSoon: "Coming soon...",
+            yes: "Yes",
+            no: "No",
+            confirm: "Confirm",
+            close: "Close",
+            submit: "Submit",
+            // Toast Messages
+            profileUpdated: "Profile updated successfully!",
+            passwordUpdated: "Password updated successfully!",
+            avatarUploaded: "Profile picture updated successfully!",
+            settingSaved: "Setting saved successfully!",
+            accountDeleted: "Account deleted successfully.",
+            sessionExpired: "Session expired. Please log in again.",
+            invalidFile: "Invalid file format",
+            fileTooLarge: "Image size should be less than 50MB",
+            loginRequired: "Please log in to upload a profile picture",
+            passwordMismatch: "New passwords do not match!",
+            passwordTooShort: "Password must be at least 6 characters.",
+            deletionConfirmation: "Are you SURE you want to delete your account? This action is permanent and will delete all your chats and data.",
+            failedToUpdate: "Failed to update",
+            failedToSave: "Failed to save setting",
+            failedToDelete: "Failed to delete account. Please try again.",
+            updatingPassword: "Updating password...",
+            updatingProfile: "Updating profile...",
+            uploadingAvatar: "Uploading avatar...",
+            deletingAccount: "Deleting account...",
+            disabled: "Disabled",
+            light: "Light",
+            dark: "Dark",
+            lightMode: "Light Mode",
+            darkMode: "Dark Mode"
         },
         "Hindi": {
             displayLanguage: "प्रदर्शित भाषा",
@@ -198,240 +203,81 @@ export const LanguageProvider = ({ children }) => {
             twoFactor: "दो-चरणीय प्रमाणीकरण",
             enabled: "सक्षम",
             manage: "प्रबंधित करें",
-            signOut: "साइन आउट करें"
+            signOut: "साइन आउट करें",
+            // Profile Page
+            accountOverview: "खाता विवरण",
+            accountType: "खाता प्रकार",
+            user: "उपयोगकर्ता",
+            notifications: "सूचनाएं",
+            emailNotifications: "ईमेल सूचनाएं",
+            pushNotifications: "पुश सूचनाएं",
+            receiveUpdates: "अपडेट प्राप्त करें",
+            countryRegionLanguage: "देश/क्षेत्र और भाषा",
+            displayTheme: "प्रदर्शन थीम",
+            password: "पासवर्ड",
+            changePassword: "पासवर्ड बदलें",
+            billingPayments: "बिलिंग और भुगतान",
+            transactions: "लेनदेन",
+            deleteAccount: "खाता हटाएं",
+            currentPassword: "वर्तमान पासवर्ड",
+            newPassword: "नया पासवर्ड",
+            confirmPassword: "पासवर्ड की पुष्टि करें",
+            enterCurrentPassword: "वर्तमान पासवर्ड दर्ज करें",
+            enterNewPassword: "नया पासवर्ड दर्ज करें",
+            confirmNewPassword: "नए पासवर्ड की पुष्टि करें",
+            cancel: "रद्द करें",
+            update: "अपडेट करें",
+            save: "सहेजें",
+            edit: "संपादित करें",
+            showAll: "सभी दिखाएं",
+            hideAll: "सभी छिपाएं",
+            // Navbar
+            hi: "नमस्ते",
+            profile: "प्रोफ़ाइल",
+            logout: "लॉगआउट",
+            menu: "मेनू",
+            // Common UI
+            loading: "लोड हो रहा है...",
+            comingSoon: "जल्द आ रहा है...",
+            yes: "हाँ",
+            no: "नहीं",
+            confirm: "पुष्टि करें",
+            close: "बंद करें",
+            submit: "सबमिट करें",
+            // Toast Messages
+            profileUpdated: "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई!",
+            passwordUpdated: "पासवर्ड सफलतापूर्वक अपडेट किया गया!",
+            avatarUploaded: "प्रोफ़ाइल चित्र सफलतापूर्वक अपडेट किया गया!",
+            settingSaved: "सेटिंग सफलतापूर्वक सहेजी गई!",
+            accountDeleted: "खाता सफलतापूर्वक हटा दिया गया।",
+            sessionExpired: "सत्र समाप्त हो गया। कृपया फिर से लॉग इन करें।",
+            invalidFile: "अमान्य फ़ाइल प्रारूप",
+            fileTooLarge: "छवि का आकार 50MB से कम होना चाहिए",
+            loginRequired: "प्रोफ़ाइल चित्र अपलोड करने के लिए कृपया लॉग इन करें",
+            passwordMismatch: "नए पासवर्ड मेल नहीं खाते!",
+            passwordTooShort: "पासवर्ड कम से कम 6 वर्ण का होना चाहिए।",
+            deletionConfirmation: "क्या आप निश्चित रूप से अपना खाता हटाना चाहते हैं? यह कार्रवाई स्थायी है और आपकी सभी चैट और डेटा हटा देगी।",
+            failedToUpdate: "अपडेट करने में विफल",
+            failedToSave: "सेटिंग सहेजने में विफल",
+            failedToDelete: "खाता हटाने में विफल। कृपया पुनः प्रयास करें।",
+            updatingPassword: "पासवर्ड अपडेट हो रहा है...",
+            updatingProfile: "प्रोफ़ाइल अपडेट हो रही है...",
+            uploadingAvatar: "अवतार अपलोड हो रहा है...",
+            deletingAccount: "खाता हटाया जा रहा है...",
+            disabled: "अक्षम",
+            light: "हल्का",
+            dark: "गहरा",
+            lightMode: "लाइट मोड",
+            darkMode: "डार्क मोड"
         },
-        "Spanish": {
-            displayLanguage: "Idioma de pantalla",
-            dashboard: "Tablero",
-            chat: "Chat",
-            myAgents: "Mis agentes",
-            marketplace: "Mercado",
-            vendorDashboard: "Tablero del vendedor",
-            billing: "Facturación",
-            adminDashboard: "Tablero del administrador",
-            updates: "Actualizaciones",
-            helpFaq: "Ayuda y FAQ",
-            logOut: "Cerrar sesión",
-            joined: "Se unió en diciembre de 2025",
-            securityBtn: "Seguridad y directrices",
-            totalSessions: "Sesiones totales",
-            proFeatures: "Funciones Pro",
-            accountSettings: "Configuración de la cuenta",
-            credits: "Créditos",
-            accountPreferences: "Preferencias de la cuenta",
-            timezone: "Zona horaria",
-            currency: "Moneda",
-            theme: "Tema",
-            securityStatus: "Estado de seguridad",
-            accountSecure: "Cuenta totalmente segura",
-            twoFactor: "Autenticación de dos factores",
-            enabled: "Habilitado",
-            manage: "Administrar",
-            signOut: "Cerrar sesión"
-        },
-        "French": {
-            displayLanguage: "Langue d'affichage",
-            dashboard: "Tableau de bord",
-            chat: "Chat",
-            myAgents: "Mes agents",
-            marketplace: "Marché",
-            vendorDashboard: "Tableau de bord vendeur",
-            billing: "Facturation",
-            adminDashboard: "Tableau de bord administrateur",
-            updates: "Mises à jour",
-            helpFaq: "Aide & FAQ",
-            logOut: "Déconnexion",
-            joined: "Inscrit en décembre 2025",
-            securityBtn: "Sécurité & Directives",
-            totalSessions: "Total des sessions",
-            proFeatures: "Fonctions Pro",
-            accountSettings: "Paramètres du compte",
-            credits: "Crédits",
-            accountPreferences: "Préférences du compte",
-            timezone: "Fuseau horaire",
-            currency: "Devise",
-            theme: "Thème",
-            securityStatus: "État de sécurité",
-            accountSecure: "Compte entièrement sécurisé",
-            twoFactor: "Authentification à deux facteurs",
-            enabled: "Activé",
-            manage: "Gérer",
-            signOut: "Déconnexion"
-        },
-        "Japanese": {
-            displayLanguage: "表示言語",
-            dashboard: "ダッシュボード",
-            chat: "チャット",
-            myAgents: "マイエージェント",
-            marketplace: "マーケットプレイス",
-            vendorDashboard: "ベンダーダッシュボード",
-            billing: "請求",
-            adminDashboard: "管理ダッシュボード",
-            updates: "アップデート",
-            helpFaq: "ヘルプとFAQ",
-            logOut: "ログアウト",
-            joined: "2025年12月に参加",
-            securityBtn: "セキュリティとガイドライン",
-            totalSessions: "合計セッション数",
-            proFeatures: "プロ機能",
-            accountSettings: "アカウント設定",
-            credits: "クレジット",
-            accountPreferences: "アカウント設定",
-            timezone: "タイムゾーン",
-            currency: "通貨",
-            theme: "テーマ",
-            securityStatus: "セキュリティステータス",
-            accountSecure: "アカウントは完全に安全です",
-            twoFactor: "2段階認証",
-            enabled: "有効",
-            manage: "管理",
-            signOut: "サインアウト"
-        },
-        "German": {
-            displayLanguage: "Anzeigesprache",
-            dashboard: "Dashboard",
-            chat: "Chat",
-            myAgents: "Meine Agenten",
-            marketplace: "Marktplatz",
-            vendorDashboard: "Verkäufer-Dashboard",
-            billing: "Abrechnung",
-            adminDashboard: "Admin-Dashboard",
-            updates: "Updates",
-            helpFaq: "Hilfe & FAQ",
-            logOut: "Abmelden",
-            joined: "Beigetreten im Dezember 2025",
-            securityBtn: "Sicherheit & Richtlinien",
-            totalSessions: "Gesamte Sitzungen",
-            proFeatures: "Pro-Funktionen",
-            accountSettings: "Kontoeinstellungen",
-            credits: "Credits",
-            accountPreferences: "Kontoeinstellungen",
-            timezone: "Zeitzone",
-            currency: "Währung",
-            theme: "Thema",
-            securityStatus: "Sicherheitsstatus",
-            accountSecure: "Konto vollständig sicher",
-            twoFactor: "Zwei-Faktor-Authentifizierung",
-            enabled: "Aktiviert",
-            manage: "Verwalten",
-            signOut: "Abmelden"
-        },
-        "Portuguese": {
-            displayLanguage: "Idioma de exibição",
-            dashboard: "Painel",
-            chat: "Chat",
-            myAgents: "Meus Agentes",
-            marketplace: "Marketplace",
-            vendorDashboard: "Painel do Vendedor",
-            billing: "Faturamento",
-            adminDashboard: "Painel do Administrador",
-            updates: "Atualizações",
-            helpFaq: "Ajuda e FAQ",
-            logOut: "Sair",
-            joined: "Entrou em dezembro de 2025",
-            securityBtn: "Segurança e Diretrizes",
-            totalSessions: "Total de sessões",
-            proFeatures: "Recursos Pro",
-            accountSettings: "Configurações da conta",
-            credits: "Créditos",
-            accountPreferences: "Preferências da conta",
-            timezone: "Fuso horário",
-            currency: "Moeda",
-            theme: "Tema",
-            securityStatus: "Estado de segurança",
-            accountSecure: "Conta totalmente segura",
-            twoFactor: "Autenticação de dois fatores",
-            enabled: "Ativado",
-            manage: "Gerenciar",
-            signOut: "Sair"
-        },
-        "Korean": {
-            displayLanguage: "표시 언어",
-            dashboard: "대시보드",
-            chat: "채팅",
-            myAgents: "내 에이전트",
-            marketplace: "마켓플레이스",
-            vendorDashboard: "판매자 대시보드",
-            billing: "결제",
-            adminDashboard: "관리자 대시보드",
-            updates: "업데이트",
-            helpFaq: "도움말 및 FAQ",
-            logOut: "로그아웃",
-            joined: "2025년 12월 가입",
-            securityBtn: "보안 및 지침",
-            totalSessions: "총 세션",
-            proFeatures: "프로 기능",
-            accountSettings: "계정 설정",
-            credits: "크레딧",
-            accountPreferences: "계정 기본 설정",
-            timezone: "시간대",
-            currency: "통화",
-            theme: "테마",
-            securityStatus: "보안 상태",
-            accountSecure: "계정이 완전히 안전합니다",
-            twoFactor: "2단계 인증",
-            enabled: "활성화됨",
-            manage: "관리",
-            signOut: "로그아웃"
-        },
-        "Russian": {
-            displayLanguage: "Язык интерфейса",
-            dashboard: "Панель управления",
-            chat: "Чат",
-            myAgents: "Мои агенты",
-            marketplace: "Маркетплейс",
-            vendorDashboard: "Панель поставщика",
-            billing: "Биллинг",
-            adminDashboard: "Панель администратора",
-            updates: "Обновления",
-            helpFaq: "Помощь и FAQ",
-            logOut: "Выйти",
-            joined: "Присоединился в декабре 2025",
-            securityBtn: "Безопасность и правила",
-            totalSessions: "Всего сессий",
-            proFeatures: "Про-функции",
-            accountSettings: "Настройки аккаунта",
-            credits: "Кредиты",
-            accountPreferences: "Настройки аккаунта",
-            timezone: "Часовой пояс",
-            currency: "Валюта",
-            theme: "Тема",
-            securityStatus: "Статус безопасности",
-            accountSecure: "Аккаунт полностью защищен",
-            twoFactor: "Двухфакторная аутентификация",
-            enabled: "Включено",
-            manage: "Управлять",
-            signOut: "Выйти"
-        },
-        "Arabic": {
-            displayLanguage: "لغة العرض",
-            dashboard: "لوحة التحكم",
-            chat: "دردشة",
-            myAgents: "عملائي",
-            marketplace: "المتجر",
-            vendorDashboard: "لوحة تحكم البائع",
-            billing: "الفواتير",
-            adminDashboard: "لوحة تحكم المشرف",
-            updates: "التحديثات",
-            helpFaq: "المساعدة والأسئلة الشائعة",
-            logOut: "تسجيل الخروج",
-            joined: "انضم في ديسمبر 2025",
-            securityBtn: "الأمان والإرشادات",
-            totalSessions: "إجمالي الجلسات",
-            proFeatures: "ميزات برو",
-            accountSettings: "إعدادات الحساب",
-            credits: "رصيد",
-            accountPreferences: "تفضيلات الحساب",
-            timezone: "المنطقة الزمنية",
-            currency: "العملة",
-            theme: "المظهر",
-            securityStatus: "حالة الأمان",
-            accountSecure: "الحساب آمن تمامًا",
-            twoFactor: "المصادقة الثنائية",
-            enabled: "ممكن",
-            manage: "إدارة",
-            signOut: "تسجيل الخروج"
-        },
+        
+        
+        
+        
+        
+        
+        
+        
         "Bengali": {
             displayLanguage: "প্রদর্শন ভাষা",
             dashboard: "ড্যাশবোর্ড",
@@ -519,35 +365,7 @@ export const LanguageProvider = ({ children }) => {
             manage: "నిర్వహించండి",
             signOut: "సైన్ అవుట్ చేయండి"
         },
-        "Turkish": {
-            displayLanguage: "Görüntüleme Dili",
-            dashboard: "Kontrol Paneli",
-            chat: "Sohbet",
-            myAgents: "Ajanlarım",
-            marketplace: "Pazar Yeri",
-            vendorDashboard: "Satıcı Paneli",
-            billing: "Faturalandırma",
-            adminDashboard: "Yönetici Paneli",
-            updates: "Güncellemeler",
-            helpFaq: "Yardım ve SSS",
-            logOut: "Çıkış Yap",
-            joined: "Aralık 2025'te katıldı",
-            securityBtn: "Güvenlik ve Yönergeler",
-            totalSessions: "Toplam Oturumlar",
-            proFeatures: "Pro Özellikler",
-            accountSettings: "Hesap Ayarları",
-            credits: "Krediler",
-            accountPreferences: "Hesap Tercihleri",
-            timezone: "Saat Dilimi",
-            currency: "Para Birimi",
-            theme: "Tema",
-            securityStatus: "Güvenlik Durumu",
-            accountSecure: "Hesap tamamen güvenli",
-            twoFactor: "İki Faktörlü Kimlik Doğrulama",
-            enabled: "Etkin",
-            manage: "Yönet",
-            signOut: "Çıkış Yap"
-        },
+        
         "Tamil": {
             displayLanguage: "காட்சி மொழி",
             dashboard: "முகப்பு",
@@ -635,64 +453,8 @@ export const LanguageProvider = ({ children }) => {
             manage: "നിയന്ത്രിക്കുക",
             signOut: "സൈൻ ഔട്ട്"
         },
-        "Italian": {
-            displayLanguage: "Lingua di visualizzazione",
-            dashboard: "Dashboard",
-            chat: "Chat",
-            myAgents: "I miei agenti",
-            marketplace: "Mercato",
-            vendorDashboard: "Dashboard fornitore",
-            billing: "Fatturazione",
-            adminDashboard: "Dashboard amministratore",
-            updates: "Aggiornamenti",
-            helpFaq: "Aiuto e FAQ",
-            logOut: "Disconnetti",
-            joined: "Iscritto a dicembre 2025",
-            securityBtn: "Sicurezza e linee guida",
-            totalSessions: "Sessioni totali",
-            proFeatures: "Funzionalità Pro",
-            accountSettings: "Impostazioni account",
-            credits: "Crediti",
-            accountPreferences: "Preferenze account",
-            timezone: "Fuso orario",
-            currency: "Valuta",
-            theme: "Tema",
-            securityStatus: "Stato di sicurezza",
-            accountSecure: "Account completamente sicuro",
-            twoFactor: "Autenticazione a due fattori",
-            enabled: "Abilitato",
-            manage: "Gestisci",
-            signOut: "Disconnetti"
-        },
-        "Dutch": {
-            displayLanguage: "Weergavetaal",
-            dashboard: "Dashboard",
-            chat: "Chat",
-            myAgents: "Mijn agenten",
-            marketplace: "Marktplaats",
-            vendorDashboard: "Leveranciersdashboard",
-            billing: "Facturering",
-            adminDashboard: "Beheerdersdashboard",
-            updates: "Updates",
-            helpFaq: "Hulp & FAQ",
-            logOut: "Uitloggen",
-            joined: "Lid sinds december 2025",
-            securityBtn: "Beveiliging & Richtlijnen",
-            totalSessions: "Totaal aantal sessies",
-            proFeatures: "Pro-functies",
-            accountSettings: "Accountinstellingen",
-            credits: "Credits",
-            accountPreferences: "Accountvoorkeuren",
-            timezone: "Tijdzone",
-            currency: "Valuta",
-            theme: "Thema",
-            securityStatus: "Beveiligingsstatus",
-            accountSecure: "Account volledig beveiligd",
-            twoFactor: "Tweefactorauthenticatie",
-            enabled: "Ingeschakeld",
-            manage: "Beheren",
-            signOut: "Uitloggen"
-        },
+        
+        
         "Urdu": {
             displayLanguage: "نمایاں زبان",
             dashboard: "ڈیش بورڈ",
@@ -722,6 +484,215 @@ export const LanguageProvider = ({ children }) => {
             manage: "انتظام کریں",
             signOut: "سائن آؤٹ"
         }
+,
+
+        "Gujarati": {
+
+            displayLanguage: "પ્રદર્શન ભાષા",
+
+            dashboard: "ડેશબોર્ડ",
+
+            chat: "ચેટ",
+
+            myAgents: "મારા એજન્ટ્સ",
+
+            marketplace: "માર્કેટપ્લેસ",
+
+            vendorDashboard: "વિક્રેતા ડેશબોર્ડ",
+
+            billing: "બિલિંગ",
+
+            adminDashboard: "એડમિન ડેશબોર્ડ",
+
+            updates: "અપડેટ્સ",
+
+            helpFaq: "મદદ અને FAQ",
+
+            logOut: "લૉગ આઉટ",
+
+            accountOverview: "એકાઉન્ટ વિહંગાવલોકન",
+
+            accountType: "એકાઉન્ટ પ્રકાર",
+
+            user: "વપરાશકર્તા",
+
+            notifications: "સૂચનાઓ",
+
+            countryRegionLanguage: "દેશ/પ્રદેશ અને ભાષા",
+
+            displayTheme: "પ્રદર્શન થીમ",
+
+            password: "પાસવર્ડ",
+
+            changePassword: "પાસવર્ડ બદલો",
+
+            currentPassword: "વર્તમાન પાસવર્ડ",
+
+            newPassword: "નવો પાસવર્ડ",
+
+            confirmPassword: "પાસવર્ડની પુષ્ટિ કરો",
+
+            enterCurrentPassword: "વર્તમાન પાસવર્ડ દાખલ કરો",
+
+            enterNewPassword: "નવો પાસવર્ડ દાખલ કરો",
+
+            confirmNewPassword: "નવા પાસવર્ડની પુષ્ટિ કરો",
+
+            cancel: "રદ કરો",
+
+            update: "અપડેટ કરો",
+
+            save: "સાચવો",
+
+            edit: "સંપાદિત કરો",
+
+            showAll: "બધા બતાવો",
+
+            hideAll: "બધા છુપાવો",
+
+            hi: "નમસ્તે",
+
+            profile: "પ્રોફાઇલ",
+
+            logout: "લોગઆઉટ",
+
+            menu: "મેનુ",
+
+            enabled: "સક્ષમ",
+
+            disabled: "અક્ષમ",
+
+            twoFactor: "બે-પરિબળ પ્રમાણીકરણ",
+
+            manage: "મેનેજ કરો",
+
+            signOut: "સાઇન આઉટ",
+
+            light: "પ્રકાશ",
+
+            dark: "અંધારું",
+
+            lightMode: "લાઇટ મોડ",
+
+            darkMode: "ડાર્ક મોડ"
+
+        },
+
+        "Punjabi": {
+
+            displayLanguage: "ਪ੍ਰਦਰਸ਼ਨ ਭਾਸ਼ਾ",
+
+            dashboard: "ਡੈਸ਼ਬੋਰਡ",
+
+            chat: "ਚੈਟ",
+
+            myAgents: "ਮੇਰੇ ਏਜੰਟ",
+
+            marketplace: "ਮਾਰਕੀਟਪਲੇਸ",
+
+            vendorDashboard: "ਵਿਕਰੇਤਾ ਡੈਸ਼ਬੋਰਡ",
+
+            billing: "ਬਿਲਿੰਗ",
+
+            adminDashboard: "ਐਡਮਿਨ ਡੈਸ਼ਬੋਰਡ",
+
+            updates: "ਅੱਪਡੇਟ",
+
+            helpFaq: "ਮਦਦ ਅਤੇ FAQ",
+
+            logOut: "ਲੌਗ ਆਉਟ",
+
+            accountOverview: "ਖਾਤਾ ਸੰਖੇਪ",
+
+            accountType: "ਖਾਤਾ ਕਿਸਮ",
+
+            user: "ਵਰਤੋਂਕਾਰ",
+
+            notifications: "ਸੂਚਨਾਵਾਂ",
+
+            countryRegionLanguage: "ਦੇਸ਼/ਖੇਤਰ ਅਤੇ ਭਾਸ਼ਾ",
+
+            displayTheme: "ਪ੍ਰਦਰਸ਼ਨ ਥੀਮ",
+
+            password: "ਪਾਸਵਰਡ",
+
+            changePassword: "ਪਾਸਵਰਡ ਬਦਲੋ",
+
+            currentPassword: "ਮੌਜੂਦਾ ਪਾਸਵਰਡ",
+
+            newPassword: "ਨਵਾਂ ਪਾਸਵਰਡ",
+
+            confirmPassword: "ਪਾਸਵਰਡ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ",
+
+            enterCurrentPassword: "ਮੌਜੂਦਾ ਪਾਸਵਰਡ ਦਾਖਲ ਕਰੋ",
+
+            enterNewPassword: "ਨਵਾਂ ਪਾਸਵਰਡ ਦਾਖਲ ਕਰੋ",
+
+            confirmNewPassword: "ਨਵੇਂ ਪਾਸਵਰਡ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ",
+
+            cancel: "ਰੱਦ ਕਰੋ",
+
+            update: "ਅੱਪਡੇਟ ਕਰੋ",
+
+            save: "ਸੁਰੱਖਿਅਤ ਕਰੋ",
+
+            edit: "ਸੰਪਾਦਿਤ ਕਰੋ",
+
+            showAll: "ਸਾਰੇ ਦਿਖਾਓ",
+
+            hideAll: "ਸਾਰੇ ਲੁਕਾਓ",
+
+            hi: "ਸਤ ਸ੍ਰੀ ਅਕਾਲ",
+
+            profile: "ਪ੍ਰੋਫਾਈਲ",
+
+            logout: "ਲੌਗਆਉਟ",
+
+            menu: "ਮੀਨੂ",
+
+            enabled: "ਸਮਰੱਥ",
+
+            disabled: "ਅਸਮਰੱਥ",
+
+            twoFactor: "ਦੋ-ਕਾਰਕ ਪ੍ਰਮਾਣੀਕਰਨ",
+
+            manage: "ਪ੍ਰਬੰਧਨ ਕਰੋ",
+
+            signOut: "ਸਾਈਨ ਆਉਟ",
+
+            light: "ਰੌਸ਼ਨੀ",
+
+            dark: "ਹਨੇਰਾ",
+
+            lightMode: "ਲਾਈਟ ਮੋਡ",
+
+            darkMode: "ਡਾਰਕ ਮੋਡ"
+
+        },
+
+        "Maithili": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Sanskrit": { displayLanguage: "प्रदर्शन भाषा", dashboard: "नियंत्रण पट्टिका", chat: "संवाद", password: "कूटशब्द", enabled: "सक्षम", disabled: "अक्षम" },
+
+        "Konkani": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Nepali": { displayLanguage: "प्रदर्शन भाषा", dashboard: "ड्यासबोर्ड", chat: "कुराकानी", password: "पासवर्ड", enabled: "सक्षम", disabled: "अक्षम" },
+
+        "Sindhi": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Dogri": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Kashmiri": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Santali": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Bodo": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+
+        "Manipuri": { displayLanguage: "Display Language", dashboard: "Dashboard", chat: "Chat", password: "Password", enabled: "Enabled", disabled: "Disabled" },
+        "Odia": { displayLanguage: "ପ୍ରଦର୍ଶନ ଭାଷା", dashboard: "ଡ୍ୟାସବୋର୍ଡ", chat: "ଚାଟ୍", password: "ପାସୱାର୍ଡ", enabled: "ସକ୍ଷମ", disabled: "ଅକ୍ଷମ" },
+        "Assamese": { displayLanguage: "প্ৰদৰ্শন ভাষা", dashboard: "ডেছব'ৰ্ড", chat: "চেট", password: "পাছৱৰ্ড", enabled: "সামৰ্থবান", disabled: "অসামৰ্থবান" }
+
+
     };
 
     const t = (key) => {

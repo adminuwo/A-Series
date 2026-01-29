@@ -685,79 +685,83 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Password Modal */}
-            {showPasswordModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md rounded-3xl p-6 border border-border shadow-2xl relative">
-                        <button onClick={() => setShowPasswordModal(false)} className="absolute top-4 right-4 p-2 hover:bg-secondary rounded-full"><X className="w-5 h-5 text-subtext" /></button>
-
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-maintext">{t('changePassword')}</h2>
-                            {/* Single Toggle for All Password Fields */}
-                            <button
-                                type="button"
-                                onClick={() => setShowAllPasswords(!showAllPasswords)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/50 hover:bg-secondary transition-all border border-border group"
-                            >
-                                {showAllPasswords ? (
-                                    <>
-                                        <EyeOff className="w-4 h-4 text-primary" />
-                                        <span className="text-xs font-semibold text-maintext">{t('hideAll')}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Eye className="w-4 h-4 text-primary" />
-                                        <span className="text-xs font-semibold text-maintext">{t('showAll')}</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        <form onSubmit={handlePasswordChange} className="space-y-4">
-                            <div>
-                                <label className="text-xs font-semibold text-subtext mb-2 block">{t('currentPassword')}</label>
-                                <input
-                                    type={showAllPasswords ? 'text' : 'password'}
-                                    placeholder={t('enterCurrentPassword')}
-                                    required
-                                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                                    value={passwordForm.current}
-                                    onChange={e => setPasswordForm(prev => ({ ...prev, current: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold text-subtext mb-2 block">{t('newPassword')}</label>
-                                <input
-                                    type={showAllPasswords ? 'text' : 'password'}
-                                    placeholder={t('enterNewPassword')}
-                                    required
-                                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                                    value={passwordForm.new}
-                                    onChange={e => setPasswordForm(prev => ({ ...prev, new: e.target.value }))}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-semibold text-subtext mb-2 block">{t('confirmPassword')}</label>
-                                <input
-                                    type={showAllPasswords ? 'text' : 'password'}
-                                    placeholder={t('confirmNewPassword')}
-                                    required
-                                    className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                                    value={passwordForm.confirm}
-                                    onChange={e => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))}
-                                />
-                            </div>
-                            <div className="pt-4 flex gap-3">
-                                <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 bg-secondary text-maintext font-bold rounded-xl hover:bg-secondary/80 transition-all">{t('cancel')}</button>
-                                <button type="submit" className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all">{t('update')}</button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
         </div>
-    );
+
+            {/* Password Modal */ }
+    {
+        showPasswordModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md rounded-3xl p-6 border border-border shadow-2xl relative">
+                    <button onClick={() => setShowPasswordModal(false)} className="absolute top-4 right-4 p-2 hover:bg-secondary rounded-full"><X className="w-5 h-5 text-subtext" /></button>
+
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-maintext">{t('changePassword')}</h2>
+                        {/* Single Toggle for All Password Fields */}
+                        <button
+                            type="button"
+                            onClick={() => setShowAllPasswords(!showAllPasswords)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/50 hover:bg-secondary transition-all border border-border group"
+                        >
+                            {showAllPasswords ? (
+                                <>
+                                    <EyeOff className="w-4 h-4 text-primary" />
+                                    <span className="text-xs font-semibold text-maintext">{t('hideAll')}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Eye className="w-4 h-4 text-primary" />
+                                    <span className="text-xs font-semibold text-maintext">{t('showAll')}</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    <form onSubmit={handlePasswordChange} className="space-y-4">
+                        <div>
+                            <label className="text-xs font-semibold text-subtext mb-2 block">{t('currentPassword')}</label>
+                            <input
+                                type={showAllPasswords ? 'text' : 'password'}
+                                placeholder={t('enterCurrentPassword')}
+                                required
+                                className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                value={passwordForm.current}
+                                onChange={e => setPasswordForm(prev => ({ ...prev, current: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-subtext mb-2 block">{t('newPassword')}</label>
+                            <input
+                                type={showAllPasswords ? 'text' : 'password'}
+                                placeholder={t('enterNewPassword')}
+                                required
+                                className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                value={passwordForm.new}
+                                onChange={e => setPasswordForm(prev => ({ ...prev, new: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-subtext mb-2 block">{t('confirmPassword')}</label>
+                            <input
+                                type={showAllPasswords ? 'text' : 'password'}
+                                placeholder={t('confirmNewPassword')}
+                                required
+                                className="w-full bg-secondary/50 border border-border rounded-xl px-4 py-3 text-maintext focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                value={passwordForm.confirm}
+                                onChange={e => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))}
+                            />
+                        </div>
+                        <div className="pt-4 flex gap-3">
+                            <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 bg-secondary text-maintext font-bold rounded-xl hover:bg-secondary/80 transition-all">{t('cancel')}</button>
+                            <button type="submit" className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all">{t('update')}</button>
+                        </div>
+                    </form>
+                </motion.div>
+            </div>
+        )
+    }
+            </div >
+            );
 };
 
 export default Profile;
+

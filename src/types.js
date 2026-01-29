@@ -58,6 +58,7 @@ export const AppRoute = {
   USER_TRANSACTIONS: "/dashboard/transactions",
   TRUST_SAFETY_COMPLIANCE: "/dashboard/trust-safety-compliance",
   agentSoon: "/agentsoon",
+  CONTACT_US: "/contact-us",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password/:token",
 };
@@ -73,6 +74,7 @@ export const apis = {
   forgotPassword: `${API}/auth/forgot-password`,
   resetPassword: `${API}/auth/reset-password`,
   user: `${API}/user`,
+  uploadAvatar: `${API}/user/avatar`,
   getPayments: `${API}/user/payments`,
   notifications: `${API}/notifications`,
   agents: `${API}/agents`,
