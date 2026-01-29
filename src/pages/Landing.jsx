@@ -21,7 +21,7 @@ const SecurityAndGuidelines = lazy(() => import('./SecurityAndGuidelines'));
 const Landing = () => {
   const navigate = useNavigate();
   const user = getUserData();
-  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(null); // 'privacy' | 'terms' | 'cookie'
   const { theme, setTheme } = useTheme();
@@ -281,9 +281,8 @@ const Landing = () => {
               <ul className="space-y-4">
                 {[
                   { label: "Help Center", onClick: () => setIsHelpModalOpen(true) },
-                  { label: "Security & Guidelines", onClick: () => setIsSecurityModalOpen(true) },
+                  { label: "Security & Guidelines", onClick: () => navigate(AppRoute.SECURITY) },
                   { label: "Contact Us", path: "/contact-us" },
-                  { label: "Status Page", path: "#" }
                 ].map((link, i) => (
                   <li key={i}>
                     {link.onClick ? (

@@ -103,8 +103,8 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     if (token) {
       fetchNotifications();
-      // Refresh every 5 mins
-      const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
+      // Refresh every 5 seconds for "real-time" feel
+      const interval = setInterval(fetchNotifications, 5000);
       return () => clearInterval(interval);
     }
   }, [token])
