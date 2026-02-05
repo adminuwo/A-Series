@@ -49,7 +49,7 @@ const TrustSafetyCompliance = () => {
                     <p className="text-subtext">{t('landing.trustSafety.section2.mainText')}</p>
                     <ul className="list-disc list-inside text-sm text-subtext space-y-2 ml-2">
                         <li><strong>{t('landing.trustSafety.section2.standard1').split(':')[0]}:</strong>{t('landing.trustSafety.section2.standard1').split(':')[1]}</li>
-                        <li><strong>{t('landing.trustSafety.section2.standard2').split(':')[0]}:</strong>{t('landing.trustSafety.section2.standard2').split(':')[1]} <a href="mailto:privacy@a-series.in" className="text-primary hover:underline">privacy@a-series.in</a></li>
+                        <li><strong>{t('landing.trustSafety.section2.standard2').split(':')[0]}:</strong>{t('landing.trustSafety.section2.standard2').split(':')[1]} <a href="mailto:admin@uwo24.com" className="text-primary hover:underline">admin@uwo24.com</a></li>
                         <li><strong>{t('landing.trustSafety.section2.standard3').split(':')[0]}:</strong>{t('landing.trustSafety.section2.standard3').split(':')[1]}</li>
                     </ul>
                 </div>

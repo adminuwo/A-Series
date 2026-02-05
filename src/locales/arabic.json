@@ -605,7 +605,7 @@
                 "title": "Reporting",
                 "text1": "If you find a vulnerability, please report it.",
                 "text2": "We offer a bug bounty program.",
-                "text3": "report@a-series.in"
+                "text3": "admin@uwo24.com"
             },
             "section6": {
                 "title": "User Responsibility",
@@ -861,7 +861,7 @@
             },
             {
                 "question": "كيف يمكنني الإبلاغ عن خطأ أو مشكلة؟",
-                "answer": "إذا واجهت أي مشاكل، يرجى استخدام نموذج 'اتصل بنا' أو إرسال بريد إلكتروني إلى فريق الدعم لدينا مباشرة على support@a-series.in."
+                "answer": "إذا واجهت أي مشاكل، يرجى استخدام نموذج 'اتصل بنا' أو إرسال بريد إلكتروني إلى فريق الدعم لدينا مباشرة على admin@uwo24.com."
             }
         ]
     },
@@ -894,7 +894,7 @@
             "messagePlaceholder": "أخبرنا المزيد عن استفسارك..."
         },
         "info": {
-            "email": "info@uwo.ai",
+            "email": "admin@uwo24.com",
             "office": "المقر الرئيسي لـ يو دبليو أو™، دبي، الإمارات العربية المتحدة"
         },
         "success": "تم إرسال رسالتك بنجاح!",

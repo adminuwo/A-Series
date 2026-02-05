@@ -604,7 +604,7 @@
                 "title": "Reporting",
                 "text1": "If you find a vulnerability, please report it.",
                 "text2": "We offer a bug bounty program.",
-                "text3": "report@a-series.in"
+                "text3": "admin@uwo24.com"
             },
             "section6": {
                 "title": "User Responsibility",
@@ -840,7 +840,7 @@
             },
             {
                 "question": "मी बग किंवा समस्येची तक्रार कशी करू?",
-                "answer": "तुम्हाला काही समस्या आल्यास, कृपया 'संपर्क साधा' फॉर्म वापरा किंवा आमच्या सपोर्ट टीमला थेट support@a-series.in वर ईमेल करा."
+                "answer": "तुम्हाला काही समस्या आल्यास, कृपया 'संपर्क साधा' फॉर्म वापरा किंवा आमच्या सपोर्ट टीमला थेट admin@uwo24.com वर ईमेल करा."
             }
         ],
         "contactSupport": "आणखी मदत हवी आहे का?",
@@ -893,7 +893,7 @@
             "messagePlaceholder": "तुमच्या चौकशीबद्दल अधिक सांगा..."
         },
         "info": {
-            "email": "info@uwo.ai",
+            "email": "admin@uwo24.com",
             "office": "यूवो™ मुख्यालय, दुबई, UAE"
         },
         "success": "तुमचा संदेश यशस्वीरित्या पाठविला गेला आहे!",
@@ -1060,10 +1060,6 @@
     "userRole": "वापरकर्ता",
     "adminRole": "प्रशासक",
     "developerRole": "डेव्हलपर",
-    "actions": "कृती",
-    "details": "तपशील",
-    "close": "बंद करा",
-    "success": "यश",
     "disabled": "अक्षम",
     "selectTimezone": "वेळ क्षेत्र निवडा",
     "timezoneKeywords": {

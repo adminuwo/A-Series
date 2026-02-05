@@ -1,4 +1,4 @@
-{
+﻿{
     "brandName": "A-Series™",
     "regions": {
         "World": "World",
@@ -669,7 +669,7 @@
                 "title": "Reporting",
                 "text1": "If you find a vulnerability, please report it.",
                 "text2": "We offer a bug bounty program.",
-                "text3": "report@a-series.in"
+                "text3": "admin@uwo24.com"
             },
             "section6": {
                 "title": "User Responsibility",
@@ -825,7 +825,7 @@
             },
             {
                 "question": "How do I report a bug or issue?",
-                "answer": "If you encounter any issues, please use the 'Contact Us' form or email our support team directly at support@a-series.in."
+                "answer": "If you encounter any issues, please use the 'Contact Us' form or email our support team directly at admin@uwo24.com."
             }
         ]
     },
@@ -858,7 +858,7 @@
             "messagePlaceholder": "Tell us more about your inquiry..."
         },
         "info": {
-            "email": "info@uwo.ai",
+            "email": "admin@uwo24.com",
             "office": "UWO™ HQ, Dubai, UAE"
         },
         "success": "Your message has been sent successfully!",

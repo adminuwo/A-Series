@@ -36,7 +36,7 @@ const Landing = () => {
   const btnClass = "px-8 py-4 bg-surface border border-border rounded-2xl font-bold text-lg text-maintext hover:bg-secondary transition-all duration-300 flex items-center justify-center gap-2";
 
   const [contactInfo, setContactInfo] = useState({
-    email: 'support@a-series.in',
+    email: 'admin@uwo24.com',
     phone: '+91 98765 43210'
   });
 

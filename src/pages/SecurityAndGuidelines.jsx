@@ -11,7 +11,7 @@ const SecurityAndGuidelines = () => {
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [contactInfo, setContactInfo] = useState({
-        email: 'support@a-series.in',
+        email: 'admin@uwo24.com',
         phone: '+91 98765 43210'
     });
 

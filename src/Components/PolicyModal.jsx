@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
-const PolicyModal = ({ isOpen, onClose, type, contactInfo = { email: 'support@a-series.in' } }) => {
+const PolicyModal = ({ isOpen, onClose, type, contactInfo = { email: 'admin@uwo24.com' } }) => {
     const { t } = useLanguage();
     if (!isOpen) return null;
 
