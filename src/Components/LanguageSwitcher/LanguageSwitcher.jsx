@@ -61,7 +61,7 @@ const LanguageSwitcher = ({ variant = 'default' }) => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isLanding
+                className={`flex items-center gap-2 px-2 sm:px-3 py-2 rounded-xl border transition-all ${isLanding
                     ? 'bg-surface border-border text-subtext hover:text-primary hover:border-primary/50'
                     : 'bg-surface border-border/50 text-maintext hover:bg-surface/80 hover:border-primary/30'
                     }`}

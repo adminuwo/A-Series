@@ -68,7 +68,7 @@ const Landing = () => {
       <header className="relative z-50 px-4 py-4 md:px-6 md:py-6 flex justify-between items-center max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 md:gap-3">
           <img src={logo} alt="Logo" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
-          <span className="text-xl md:text-3xl font-black tracking-tighter text-maintext">{t('brandName')}</span>
+          <span className="hidden sm:block text-xl md:text-3xl font-black tracking-tighter text-maintext">{t('brandName')}</span>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
