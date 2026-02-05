@@ -64,7 +64,7 @@ export const AppRoute = {
 
 
 // export const API = "https://a-series-backend-561947379084.asia-south1.run.app/api";
-export const API = "http://localhost:8080/api";
+export const API = import.meta.env.VITE_API_BASE_URL || "https://a-series-backend-m1ls.onrender.com/api";
 
 export const apis = {
   emailVerificationApi: `${API}/email_varification`,
