@@ -1,0 +1,74 @@
+{
+    "English": {
+        "marketplace": {
+            "title": "Agent Marketplace",
+            "subtitle": "Discover and install powerful AI agents for your workflow.",
+            "searchPlaceholder": "Search agents...",
+            "categories": {
+                "all": "All",
+                "business_os": "Business OS",
+                "data_intelligence": "Data & Intelligence",
+                "sales_marketing": "Sales & Marketing",
+                "hr_finance": "HR & Finance",
+                "design_creative": "Design & Creative",
+                "medical_health": "Medical & Health AI"
+            },
+            "demo": "Demo",
+            "openApp": "Open App",
+            "subscribe": "Subscribe",
+            "subscribed": "Subscribed",
+            "unavailable": "Unavailable",
+            "productDemo": "Agent Product Demo",
+            "gotIt": "Got it!",
+            "aiPersonalAssistant": "AI Personal Assistant",
+            "productivity": "Productivity",
+            "personalAssistantDesc": "Your smart daily routine manager with voice reminders and scheduling."
+        },
+        "myAgents": {
+            "title": "My Agents",
+            "subtitle": "Manage your personalized AI assistants.",
+            "createNew": "Create New Agent",
+            "loading": "Loading agents...",
+            "createCustom": "Create Custom Agent",
+            "createCustomDesc": "Configure a new assistant template",
+            "useAgent": "Use Agent",
+            "deleteConfirm": "Are you sure you want to delete this agent?"
+        }
+    },
+    "Hindi": {
+        "marketplace": {
+            "title": "एजेंट मार्केटप्लेस",
+            "subtitle": "अपने वर्कफ़्लो के लिए शक्तिशाली AI एजेंट खोजें और इंस्टॉल करें।",
+            "searchPlaceholder": "एजेंट खोजें...",
+            "categories": {
+                "all": "सभी",
+                "business_os": "बिजनेस ओएस",
+                "data_intelligence": "डेटा और इंटेलिजेंस",
+                "sales_marketing": "बिक्री और विपणन",
+                "hr_finance": "एचआर और वित्त",
+                "design_creative": "डिजाइन और रचनात्मक",
+                "medical_health": "मेडिकल और हेल्थ एआई"
+            },
+            "demo": "डेमो",
+            "openApp": "ऐप खोलें",
+            "subscribe": "सदस्यता लें",
+            "subscribed": "सदस्यता ली गई",
+            "unavailable": "अनुपलब्ध",
+            "productDemo": "एजेंट उत्पाद डेमो",
+            "gotIt": "समझ गया!",
+            "aiPersonalAssistant": "एआई व्यक्तिगत सहायक",
+            "productivity": "उत्पादकता",
+            "personalAssistantDesc": "आवाज अनुस्मारक और शेड्यूलिंग के साथ आपका स्मार्ट दैनिक दिनचर्या प्रबंधक।"
+        },
+        "myAgents": {
+            "title": "मेरे एजेंट्स",
+            "subtitle": "अपने व्यक्तिगत AI सहायकों को प्रबंधित करें।",
+            "createNew": "नया एजेंट बनाएं",
+            "loading": "एजेंट लोड हो रहे हैं...",
+            "createCustom": "कस्टम एजेंट बनाएं",
+            "createCustomDesc": "नया सहायक टेम्पलेट कॉन्फ़िगर करें",
+            "useAgent": "एजेंट का उपयोग करें",
+            "deleteConfirm": "क्या आप वाकई इस एजेंट को हटाना चाहते हैं?"
+        }
+    }
+}

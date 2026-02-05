@@ -15,11 +15,19 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.token) {
-        config.headers.Authorization = `Bearer ${userData.token}`;
+    let token = localStorage.getItem('token');
+
+    if (!token && user) {
+      try {
+        const userData = JSON.parse(user);
+        token = userData.token;
+      } catch (e) {
+        console.error("Error parsing user data for token", e);
       }
+    }
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -114,6 +122,16 @@ export const apiService = {
     }
   },
 
+  async getAdminTransactions() {
+    try {
+      const response = await apiClient.get('/revenue/admin/all-transactions');
+      return response.data;
+    } catch (error) {
+      console.error('Backend fetch transactions failed:', error.message);
+      return []; // Return empty array on failure to prevent crashes
+    }
+  },
+
   async getAuditLogs(search = '') {
     try {
       const params = search ? { search } : {};
@@ -146,6 +164,16 @@ export const apiService = {
     }
   },
 
+  async getAgentById(id) {
+    try {
+      const response = await apiClient.get(`/agents/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to fetch agent details:", error);
+      throw error;
+    }
+  },
+
   async createAgent(agentData) {
     try {
       const response = await apiClient.post('/agents', agentData);
@@ -166,9 +194,9 @@ export const apiService = {
     }
   },
 
-  async deleteAgent(id) {
+  async deleteAgent(id, force = false) {
     try {
-      await apiClient.delete(`/agents/${id}`);
+      await apiClient.delete(`/agents/${id}`, { params: { force } });
       return true;
     } catch (error) {
       console.error("Failed to delete agent:", error);
@@ -252,6 +280,16 @@ export const apiService = {
     }
   },
 
+  async deleteNotification(id) {
+    try {
+      const response = await apiClient.delete(`/notifications/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+      throw error;
+    }
+  },
+
   // --- Automations ---
   async getAutomations() {
     try {
@@ -315,6 +353,21 @@ export const apiService = {
     } catch (error) {
       localStorage.setItem('mock_admin_settings', JSON.stringify(settings));
       return settings;
+    }
+  },
+
+  async getPublicSettings() {
+    try {
+      const response = await apiClient.get('/settings/public');
+      return response.data;
+    } catch (error) {
+      console.warn("Failed to fetch public settings, using defaults");
+      return {
+        platformName: 'A-Series™',
+        supportPhone: '',
+        announcement: '',
+        contactEmail: ''
+      };
     }
   },
 
@@ -409,6 +462,26 @@ export const apiService = {
       return response.data;
     } catch (error) {
       console.error("Failed to update support ticket status:", error);
+      throw error;
+    }
+  },
+
+  async deleteReport(id) {
+    try {
+      const response = await apiClient.delete(`/reports/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to delete report:", error);
+      throw error;
+    }
+  },
+
+  async deleteSupportTicket(id) {
+    try {
+      const response = await apiClient.delete(`/support/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to delete support ticket:", error);
       throw error;
     }
   },

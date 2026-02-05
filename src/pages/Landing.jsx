@@ -6,24 +6,54 @@ import {
   Linkedin, Mail, MapPin, Phone, Facebook, Instagram, Youtube, MessageSquare, MessageCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { logo, name } from '../constants';
+import { logo } from '../constants';
 import { getUserData } from '../userStore/userData';
 import { AppRoute } from '../types';
 import { FaXTwitter } from "react-icons/fa6";
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 import { Link } from 'react-router';
+import PolicyModal from '../Components/PolicyModal';
 import HelpFAQModal from '../Components/Help/HelpFAQModal';
+import { apiService } from '../services/apiService';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../Components/LanguageSwitcher/LanguageSwitcher';
+
+import SecurityModal from '../Components/Security/SecurityModal';
+import ContactUsModal from '../Components/Contact/ContactUsModal';
 // Added Link import which was missing
 
 const Landing = () => {
   const navigate = useNavigate();
   const user = getUserData();
+  const { t } = useLanguage();
 
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [isContactUsModalOpen, setIsContactUsModalOpen] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(null); // 'privacy' | 'terms' | 'cookie'
   const { theme, setTheme } = useTheme();
   const btnClass = "px-8 py-4 bg-surface border border-border rounded-2xl font-bold text-lg text-maintext hover:bg-secondary transition-all duration-300 flex items-center justify-center gap-2";
+
+  const [contactInfo, setContactInfo] = useState({
+    email: 'support@a-series.in',
+    phone: '+91 98765 43210'
+  });
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await apiService.getPublicSettings();
+        setContactInfo(prev => ({
+          email: settings.contactEmail || prev.email,
+          phone: settings.supportPhone || prev.phone
+        }));
+      } catch (e) {
+        console.warn('Failed to load contact info', e);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // ... (rest of code)
 
@@ -35,13 +65,18 @@ const Landing = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
-      <header className="relative z-10 px-4 py-4 md:px-6 md:py-6 flex justify-between items-center max-w-7xl mx-auto w-full">
+      <header className="relative z-50 px-4 py-4 md:px-6 md:py-6 flex justify-between items-center max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 md:gap-3">
           <img src={logo} alt="Logo" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
-          <span className="text-xl md:text-3xl font-black tracking-tighter text-maintext">{name}</span>
+          <span className="text-xl md:text-3xl font-black tracking-tighter text-maintext">{t('brandName')}</span>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
+
+
+          {/* Language Switcher */}
+          <LanguageSwitcher variant="landing" />
+
           {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -55,14 +90,14 @@ const Landing = () => {
               onClick={() => navigate("/login")}
               className="text-sm md:text-base text-subtext hover:text-primary font-medium transition-colors whitespace-nowrap"
             >
-              Sign In
+              {t('landing.signIn')}
             </button>
 
             <button
               onClick={() => navigate("/signup")}
               className="bg-primary text-white px-4 py-2 md:px-5 md:py-2 text-sm md:text-base rounded-full font-semibold hover:opacity-90 transition-colors shadow-lg shadow-primary/20 whitespace-nowrap"
             >
-              Get Started
+              {t('landing.getStarted')}
             </button>
           </div>}
         </div>
@@ -77,17 +112,17 @@ const Landing = () => {
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-sm text-subtext mb-8"
         >
           <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-          Powered by UWO
+          {t('landing.poweredBy')}
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-maintext"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-maintext"
         >
-          The Future of <br />
-          <span className="text-primary">Conversational AI</span>
+          {t('landing.heroTitle1')} <br />
+          <span className="text-primary">{t('landing.heroTitle2')}</span>
         </motion.h1>
 
         <motion.p
@@ -96,8 +131,7 @@ const Landing = () => {
           transition={{ delay: 0.2 }}
           className="text-lg text-subtext max-w-2xl mb-10 leading-relaxed"
         >
-          Experience the next generation of intelligent assistance.
-          A-Series learns, adapts, and creates with you in real-time through a stunning interface.
+          {t('landing.heroSubtitle')}
         </motion.p>
 
         <motion.div
@@ -113,7 +147,7 @@ const Landing = () => {
             onClick={() => navigate("/dashboard/chat/new")}
             className="px-8 py-4 bg-primary rounded-2xl font-bold text-lg text-white shadow-xl shadow-primary/30 hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2"
           >
-            Start Now <ArrowRight className="w-5 h-5" />
+            {t('landing.startNow')} <ArrowRight className="w-5 h-5" />
           </motion.button>
 
 
@@ -125,7 +159,7 @@ const Landing = () => {
               onClick={() => navigate("/login")}
               className={btnClass}
             >
-              Existing User
+              {t('landing.existingUser')}
             </motion.button>
           )}
         </motion.div>
@@ -146,9 +180,9 @@ const Landing = () => {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Bot className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-maintext">Smart Agents</h3>
+            <h3 className="text-xl font-bold mb-2 text-maintext">{t('landing.features.smartAgents.title')}</h3>
             <p className="text-subtext">
-              Access a marketplace of specialized AI agents for coding, writing, and analysis.
+              {t('landing.features.smartAgents.desc')}
             </p>
           </div>
 
@@ -156,9 +190,9 @@ const Landing = () => {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Zap className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-maintext">Real-time Speed</h3>
+            <h3 className="text-xl font-bold mb-2 text-maintext">{t('landing.features.realTime.title')}</h3>
             <p className="text-subtext">
-              Powered by the fastest AI models for instant, fluid conversation.
+              {t('landing.features.realTime.desc')}
             </p>
           </div>
 
@@ -166,9 +200,9 @@ const Landing = () => {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Shield className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-maintext">Secure & Private</h3>
+            <h3 className="text-xl font-bold mb-2 text-maintext">{t('landing.features.secure.title')}</h3>
             <p className="text-subtext">
-              Enterprise-grade security ensures your data and conversations stay private.
+              {t('landing.features.secure.desc')}
             </p>
           </div>
         </motion.div>
@@ -187,9 +221,9 @@ const Landing = () => {
                 <span className="text-2xl font-black tracking-tighter text-maintext">{name}</span>
               </div>
               <p className="text-sm text-subtext leading-relaxed max-w-sm">
-                A-Series™ - India’s First AI App Marketplace <br />
-                100 AI Apps | A-Series™ | Partner Integrations<br />
-                Powered by UWO™
+                {t('landing.footer.description')} <br />
+                {t('landing.footer.appCount')}<br />
+                {t('landing.footer.poweredBy')}
               </p>
               <div className="flex items-center gap-4">
                 {[
@@ -255,11 +289,11 @@ const Landing = () => {
 
             {/* Explore Column */}
             <div>
-              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">Explore</h4>
+              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">{t('landing.footer.explore')}</h4>
               <ul className="space-y-4">
                 {[
-                  { label: "Marketplace", onClick: () => navigate(AppRoute.DASHBOARD + "/marketplace") },
-                  { label: "My Agents", onClick: () => navigate(AppRoute.DASHBOARD + "/agents") },
+                  { label: t('landing.footer.marketplace'), onClick: () => navigate(AppRoute.DASHBOARD + "/marketplace") },
+                  { label: t('landing.footer.myAgents'), onClick: () => navigate(AppRoute.DASHBOARD + "/agents") },
                 ].map((link, i) => (
                   <li key={i}>
                     <button
@@ -275,12 +309,12 @@ const Landing = () => {
 
             {/* Support Column */}
             <div>
-              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">Support</h4>
+              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">{t('landing.footer.support')}</h4>
               <ul className="space-y-4">
                 {[
-                  { label: "Help Center", onClick: () => setIsHelpModalOpen(true) },
-                  { label: "Security & Guidelines", onClick: () => navigate(AppRoute.SECURITY) },
-                  { label: "Contact Us", path: "/contact-us" },
+                  { label: t('landing.footer.helpCenter'), onClick: () => setIsHelpModalOpen(true) },
+                  { label: t('landing.footer.securityGuidelines'), onClick: () => setIsSecurityModalOpen(true) },
+                  { label: t('landing.footer.contactUs'), onClick: () => setIsContactUsModalOpen(true) },
                 ].map((link, i) => (
                   <li key={i}>
                     {link.onClick ? (
@@ -305,7 +339,7 @@ const Landing = () => {
 
             {/* Contact Column */}
             <div className="space-y-6">
-              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">Contact</h4>
+              <h4 className="text-sm font-bold text-maintext uppercase tracking-widest mb-6">{t('landing.footer.contact')}</h4>
               <div className="space-y-4">
                 <a
                   href="https://www.google.com/maps/search/?api=1&query=Jabalpur+Madhya+Pradesh"
@@ -315,25 +349,25 @@ const Landing = () => {
                 >
                   <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0 group-hover:scale-110 transition-transform" />
                   <p className="text-sm text-subtext leading-relaxed group-hover:text-primary transition-colors">
-                    Jabalpur, Madhya Pradesh
+                    {t('landing.footer.location')}
                   </p>
                 </a>
                 <a
-                  href="mailto:admin@uwo24.com"
+                  href={`mailto:${contactInfo.email}`}
                   className="flex items-center gap-3 group"
                 >
                   <Mail className="w-5 h-5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
                   <span className="text-sm text-subtext group-hover:text-primary transition-colors font-medium">
-                    admin@uwo24.com
+                    {contactInfo.email}
                   </span>
                 </a>
                 <a
-                  href="tel:+918358990909"
+                  href={`tel:${contactInfo.phone}`}
                   className="flex items-center gap-3 group"
                 >
                   <Phone className="w-5 h-5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
                   <span className="text-sm text-subtext group-hover:text-primary transition-colors font-medium">
-                    +91 83589 90909
+                    {contactInfo.phone}
                   </span>
                 </a>
               </div>
@@ -343,12 +377,12 @@ const Landing = () => {
           {/* Bottom Bar */}
           <div className="pt-10 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6">
             <p className="text-xs text-subtext font-medium">
-              © {new Date().getFullYear()} {name}. All rights reserved. Partnered with UWO-LINK™.
+              © {new Date().getFullYear()} {name}. {t('landing.footer.allRightsReserved')}
             </p>
             <div className="flex items-center gap-8">
-              <button onClick={() => setPolicyOpen('privacy')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">Privacy Policy</button>
-              <button onClick={() => setPolicyOpen('terms')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">Terms of Service</button>
-              <button onClick={() => setPolicyOpen('cookie')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">Cookie Policy</button>
+              <button onClick={() => setPolicyOpen('privacy')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">{t('landing.footer.privacyPolicy')}</button>
+              <button onClick={() => setPolicyOpen('terms')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">{t('landing.footer.termsOfService')}</button>
+              <button onClick={() => setPolicyOpen('cookie')} className="text-xs text-subtext hover:text-maintext transition-colors font-medium">{t('landing.footer.cookiePolicy')}</button>
             </div>
           </div>
         </div>
@@ -360,118 +394,26 @@ const Landing = () => {
         user={user}
       />
 
+      <SecurityModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+      />
+
+      <ContactUsModal
+        isOpen={isContactUsModalOpen}
+        onClose={() => setIsContactUsModalOpen(false)}
+      />
+
       {/* Policy Modal */}
       <PolicyModal
         isOpen={!!policyOpen}
         onClose={() => setPolicyOpen(null)}
         type={policyOpen}
+        contactInfo={contactInfo}
       />
     </div >
   );
 };
 
-const PolicyModal = ({ isOpen, onClose, type }) => {
-  if (!isOpen) return null;
-
-  const content = {
-    privacy: {
-      title: "Privacy Policy",
-      sections: [
-        {
-          h: "Compliance with Indian Law (DPDP Act 2023)",
-          p: "As a 'Data Fiduciary', we adhere to the mandatory standards of the Digital Personal Data Protection Act, 2023. We collect only the data necessary to provide our service."
-        },
-        {
-          h: "Core Promise: Zero-Training",
-          p: "We operate under a strict 'Zero-Training' policy for our paid workspaces. Your private workspace data (documents, chat logs, images) is never used to train public AI models."
-        },
-        {
-          h: "Right to be Forgotten",
-          p: "Upon request, we will permanently delete all your account data, chat history, and generated assets from our servers within 30 days."
-        },
-        {
-          h: "Grievance Redressal",
-          p: "Our Data Protection Officer (DPO) handles privacy complaints within 72 hours. Contact: privacy@a-series.in"
-        }
-      ]
-    },
-    terms: {
-      title: "Terms of Service",
-      sections: [
-        {
-          h: "Intellectual Property (IP)",
-          p: "You retain 100% ownership rights to all content generated by our AI agents (text, images, and video)."
-        },
-        {
-          h: "Acceptable Use Policy",
-          p: "We strictly prohibit: NSFW/Adult Content, Hate Speech, Deepfakes, Impersonation, and Political Propaganda at scale."
-        },
-        {
-          h: "AI Safety Disclaimer",
-          p: "AI models can sometimes generate incorrect information. Users are advised to verify critical facts (dates, math, historical events)."
-        },
-        {
-          h: "High-Risk Use Cases",
-          p: "Our AI is an assistant, not a professional. It must not be used as the sole source for critical medical diagnoses or legal judgments."
-        }
-      ]
-    },
-    cookie: {
-      title: "Cookie Policy",
-      sections: [
-        {
-          h: "How we use Cookies",
-          p: "A-Series™ uses cookies for functionality, security, and optimization. These help us remember your preferences and ensure your session remains secure."
-        },
-        {
-          h: "Types of Cookies",
-          p: "We use essential cookies for login persistence and analytical cookies (PostHog/Google Analytics) to improve our platform performance."
-        },
-        {
-          h: "Third Party Cookies",
-          p: "Third-party services like Stripe/Razorpay and Google Cloud may set cookies to facilitate payment and cloud processing."
-        }
-      ]
-    }
-  };
-
-  const active = content[type] || content.privacy;
-
-  return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-secondary border border-border rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
-      >
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-maintext">{active.title}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-surface rounded-xl text-subtext transition-colors">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
-          {active.sections.map((s, i) => (
-            <div key={i} className="space-y-3">
-              <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                {s.h}
-              </h3>
-              <p className="text-subtext leading-relaxed">{s.p}</p>
-            </div>
-          ))}
-        </div>
-        <div className="p-6 border-t border-border bg-secondary/50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
-          >
-            Got it
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 export default Landing;

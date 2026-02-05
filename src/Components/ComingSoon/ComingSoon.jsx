@@ -53,7 +53,7 @@ export default function ComingSoon() {
 
                     {/* Description */}
                     <p className="text-xl text-subtext text-center mb-12 max-w-2xl mx-auto leading-relaxed">
-                        We're crafting exceptional AI agents to revolutionize your A-Series experience.
+                        We're crafting exceptional AI agents to revolutionize your A-Series™ experience.
                         Get ready for something extraordinary!
                     </p>
 
@@ -77,32 +77,34 @@ export default function ComingSoon() {
                         })}
                     </div>
 
-                    {/* Progress indicator */}
-                    <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-maintext text-sm font-semibold">Development Progress</span>
+                    {/* Progress indicator and CTA */}
+                    <div className="bg-card border border-border p-8 rounded-[32px] shadow-2xl mb-8 backdrop-blur-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-maintext text-sm font-semibold">{t('comingSoon.progressLabel')}</span>
                             <span className="text-primary text-sm font-bold">85%</span>
                         </div>
-                        <div className="w-full bg-border rounded-full h-3 overflow-hidden border border-border">
-                            <div className="bg-primary h-full rounded-full relative overflow-hidden" style={{ width: '85%' }}>
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-secondary/30 to-transparent animate-pulse"></div>
-                            </div>
+                        <div className="w-full bg-secondary h-3 rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '85%' }}
+                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                className="h-full bg-primary"
+                            />
                         </div>
-                    </div>
 
-                    {/* Call to action */}
-                    <div className="text-center">
-                        <p className="text-subtext mb-6 text-base">Stay tuned for the launch and be the first to know!</p>
-                        <button className="bg-primary hover:bg-primary/90 text-secondary font-semibold px-8 py-3.5 rounded-full transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center space-x-2">
-                            <Bell className="w-5 h-5" strokeWidth={2.5} />
-                            <span>Notify Me</span>
-                        </button>
+                        <div className="mt-8 text-left border-t border-border pt-8">
+                            <p className="text-subtext mb-6 text-base">{t('comingSoon.stayTuned')}</p>
+                            <button className="w-full bg-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+                                <Bell className="w-5 h-5" />
+                                <span>{t('comingSoon.notifyMe')}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Footer text */}
                 <p className="text-center text-subtext mt-8 text-sm">
-                    🚀 Exciting features are on the way
+                    {t('comingSoon.footerText')}
                 </p>
             </div>
         </div>

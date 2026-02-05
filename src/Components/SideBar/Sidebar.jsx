@@ -44,6 +44,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const user = currentUserData.user || getUserData() || { name: "Loading...", email: "...", role: "user" };
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFaqOpen, setIsFaqOpen] = useState(false);
+  const [networkErrorShown, setNetworkErrorShown] = useState(false);
 
   const issueOptions = [
     "General Inquiry",
@@ -56,7 +57,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
 
   const handleLogout = () => {
-    localStorage.clear();
+    clearUser();
     navigate(AppRoute.LANDING);
   };
   const token = user?.token || localStorage.getItem('token')
@@ -84,13 +85,33 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     // Notifications
     const fetchNotifications = async () => {
+      // Check if notifications are enabled in settings
+      const savedSettings = localStorage.getItem('user_settings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        // If emailNotif (acting as master toggle in Profile UI) is false, do not fetch
+        if (settings.emailNotif === false) {
+          setNotifications([]);
+          return;
+        }
+      }
+
       try {
         const res = await axios.get(apis.notifications, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setNotifications(Array.isArray(res.data) ? res.data : []);
+        if (networkErrorShown) setNetworkErrorShown(false); // Reset error flag on success
       } catch (err) {
-        console.error("Notifications fetch failed", err);
+        if (!err.response || err.code === 'ERR_NETWORK') {
+          // Connection Refused / Network Error
+          if (!networkErrorShown) {
+            console.warn("Cannot connect to notification service (Backend likely down). Retrying silently...");
+            setNetworkErrorShown(true);
+          }
+        } else {
+          console.error("Notifications fetch failed", err);
+        }
       }
     };
 
@@ -100,7 +121,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       const interval = setInterval(fetchNotifications, 5000);
       return () => clearInterval(interval);
     }
-  }, [token])
+  }, [token, networkErrorShown])
   if (notifiyTgl.notify) {
     setTimeout(() => {
       setNotifyTgl({ notify: false })
@@ -115,19 +136,12 @@ const Sidebar = ({ isOpen, onClose }) => {
 
 
 
+  const displayName = user.name === 'Admin' ? t('adminName') : (user.name || t('userRole'));
+
   return (
     <>
       <AnimatePresence>
-        {notifiyTgl.notify && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className='fixed w-full z-10 flex justify-center items-center mt-5 ml-6'
-          >
-            <NotificationBar msg={"Successfully Owned"} />
-          </motion.div>
-        )}
+        {/* The toast notification handles the display, so the motion.div for NotificationBar is removed */}
       </AnimatePresence>
 
       {/* Backdrop for Mobile/Tablet */}
@@ -141,7 +155,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-[100] w-full sm:w-72 lg:w-64 bg-secondary border-r border-border 
+          fixed inset-y-0 left-0 z-[100] w-[280px] max-w-[85vw] sm:w-72 lg:w-64 bg-secondary border-r border-border 
           flex flex-col transition-transform duration-300 ease-in-out 
           lg:relative lg:translate-x-0 shadow-2xl lg:shadow-none
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -150,7 +164,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Brand */}
         <div className="p-4 flex items-center justify-between">
           <Link to="/">
-            <h1 className="text-xl font-bold text-primary">A-Series <sup className="text-xs">TM</sup></h1>
+            <h1 className="text-xl font-bold text-primary">{t('brandName')}</h1>
           </Link>
 
 
@@ -171,43 +185,26 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           <NavLink to={AppRoute.MY_AGENTS} className={navItemClass} onClick={onClose}>
             <Bot className="w-5 h-5" />
-            <span>{t('myAgents')}</span>
+            <span>{t('myAgentsPage.title')}</span>
           </NavLink>
 
           <NavLink to={AppRoute.MARKETPLACE} className={navItemClass} onClick={onClose}>
             <ShoppingBag className="w-5 h-5" />
-            <span>{t('marketplace')}</span>
+            <span>{t('marketplacePage.title')}</span>
           </NavLink>
 
-
-
-          {/* <NavLink to="/vendor/overview" className={navItemClass} onClick={onClose}>
-            <LayoutGrid className="w-5 h-5" />
-            <span>{t('vendorDashboard')}</span>
-          </NavLink> */}
-
-          {/*<NavLink to={AppRoute.INVOICES} className={navItemClass} onClick={onClose}>
-            <FileText className="w-5 h-5" />
-            <span>{t('billing')}</span>
-          </NavLink>*/}
-
-
-
-          {/* <NavLink to="/dashboard/automations" className={navItemClass} onClick={onClose}>
-            <Zap className="w-5 h-5" />
-            <span>Automations</span>
-          </NavLink> */}
-          <NavLink to={AppRoute.ADMIN} className={navItemClass} onClick={onClose}>
-            <Settings className="w-5 h-5" />
-            <span>{t('adminDashboard')}</span>
-          </NavLink>
-
-
+          {/* Admin Dashboard Link - Only for admin users */}
+          {user.role === 'admin' && (
+            <NavLink to={AppRoute.ADMIN} className={navItemClass} onClick={onClose}>
+              <LayoutGrid className="w-5 h-5" />
+              <span>{t('adminDashboard')}</span>
+            </NavLink>
+          )}
         </div>
 
-        {/* User Profile Footer */}
-        <div className="p-3 border-t border-border bg-secondary/30 relative space-y-2">
-          {/* Moved Updates Link */}
+        {/* Footer / Profile */}
+        <div className="p-3 border-t border-border bg-secondary/30">
+          {/* Updates Link */}
           <NavLink to={AppRoute.NOTIFICATIONS} className={navItemClass} onClick={onClose}>
             <div className="relative">
               <Bell className="w-5 h-5" />
@@ -220,39 +217,39 @@ const Sidebar = ({ isOpen, onClose }) => {
                 );
               })()}
             </div>
-            <span>{t('updates') || 'Updates'}</span>
+            <span>{t('updates')}</span>
           </NavLink>
-          {token ? (
-            /* Integrated Profile Card */
+
+
+
+
+          {user && user.email ? (
             <div
-              onClick={() => {
-                navigate(AppRoute.PROFILE);
-                onClose();
-              }}
-              className="rounded-xl border border-transparent hover:bg-secondary transition-all cursor-pointer flex items-center gap-2 p-2 group"
+              className="rounded-xl border border-transparent flex items-center gap-2 p-2 hover:bg-surface transition-colors cursor-pointer group"
+              onClick={() => navigate(AppRoute.PROFILE)}
             >
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 overflow-hidden border border-primary/10 group-hover:bg-primary/30 transition-colors">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user.name}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       const parent = e.target.parentElement;
                       if (parent) {
                         parent.classList.add("flex", "items-center", "justify-center");
-                        parent.innerText = user.name ? user.name.charAt(0).toUpperCase() : "U";
+                        parent.innerText = displayName.charAt(0).toUpperCase();
                       }
                     }}
                   />
                 ) : (
-                  user.name ? user.name.charAt(0).toUpperCase() : "U"
+                  displayName.charAt(0).toUpperCase()
                 )}
               </div>
 
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-bold text-maintext truncate group-hover:text-primary transition-colors">{user.name}</p>
+                <p className="text-sm font-bold text-maintext truncate group-hover:text-primary transition-colors">{displayName}</p>
                 <p className="text-[11px] text-subtext truncate">{user.email}</p>
               </div>
 
@@ -269,30 +266,12 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 border border-primary/10 group-hover:bg-primary/20 transition-colors">
                 <User className="w-4 h-4" />
               </div>
-              <div className="font-bold text-maintext text-xs group-hover:text-primary transition-colors">
-                Log In
-              </div>
+              {t('auth.login')}
             </div>
           )}
 
           <div className="mt-1 flex flex-col gap-1">
-            {/* Region/Language Indicator - Only show if logged in */}
-            {token && (
-              <button
-                onClick={() => {
-                  navigate(AppRoute.PROFILE, { state: { openLanguage: true, timestamp: Date.now() } });
-                  onClose();
-                }}
-                className="group flex items-center justify-center gap-2 px-2 py-1.5 rounded-lg text-subtext hover:bg-secondary hover:text-maintext transition-all text-[10px] font-bold uppercase tracking-wider border border-transparent hover:border-border"
-              >
-                <img
-                  src={getFlagUrl(regionFlags[region] || 'in')}
-                  alt={region}
-                  className="w-3.5 h-2.5 object-cover rounded-sm shadow-sm"
-                />
-                <span>{regionFlags[region] || 'IN'} - {language.substring(0, 2).toUpperCase()}</span>
-              </button>
-            )}
+
 
             {/* FAQ Button */}
             <button
@@ -307,7 +286,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       </div >
 
       {/* FAQ Modal */}
-      <HelpFAQModal
+      < HelpFAQModal
         isOpen={isFaqOpen}
         onClose={() => setIsFaqOpen(false)}
         user={user}

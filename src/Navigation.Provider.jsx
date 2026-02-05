@@ -7,6 +7,7 @@ import Signup from './pages/Signup';
 import VerificationForm from './pages/VerificationForm';
 import Chat from './pages/Chat';
 import Sidebar from './Components/SideBar/Sidebar.jsx';
+import Navbar from './Components/Navbar/Navbar.jsx';
 import Marketplace from './pages/Marketplace';
 import MyAgents from './pages/MyAgents';
 import DashboardOverview from './pages/DashboardOverview';
@@ -29,6 +30,9 @@ import ResetPassword from './pages/ResetPassword.jsx';
 
 import { lazy, Suspense } from 'react';
 import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute.jsx';
+import { useLanguage } from './context/LanguageContext';
+import LanguageSwitcher from './Components/LanguageSwitcher/LanguageSwitcher';
+import UserDropdown from './Components/Navbar/UserDropdown';
 
 
 const SecurityAndGuidelines = lazy(() => import('./pages/SecurityAndGuidelines'));
@@ -45,6 +49,8 @@ const AuthenticatRoute = ({ children }) => {
 // Dashboard Layout (Auth pages)
 // ------------------------------
 
+import AnnouncementBanner from './Components/Banner/AnnouncementBanner.jsx';
+
 const DashboardLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
@@ -55,6 +61,19 @@ const DashboardLayout = () => {
   );
 
   const navigate = useNavigate();
+  const { setLanguage, setRegion, t } = useLanguage();
+
+  // Sync Language from User Settings on Mount
+  React.useEffect(() => {
+    const currentLang = localStorage.getItem('user-language');
+    // Only set from user object if no explicit language choice has been made in this browser session
+    if (!currentLang && user?.settings?.language) {
+      setLanguage(user.settings.language);
+    }
+    if (user?.settings?.region) {
+      setRegion(user.settings.region);
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 flex bg-transparent text-maintext overflow-hidden font-sans">
@@ -68,6 +87,16 @@ const DashboardLayout = () => {
       {!isFullScreen && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
 
       <div className="flex-1 flex flex-col min-w-0 bg-transparent h-full relative">
+        {/* Outlet for pages */}
+
+        {/* Desktop Navbar */}
+        {!isFullScreen && location.pathname !== '/chat' && (
+          <div className="hidden lg:flex items-center justify-end shrink-0 z-50 bg-white">
+            <Navbar />
+          </div>
+        )}
+
+
 
         {/* Mobile Header */}
         {!isFullScreen && (
@@ -79,14 +108,12 @@ const DashboardLayout = () => {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <span className="font-bold text-lg text-primary">A-Series</span>
+              <span className="font-bold text-lg text-primary">{t('brandName')}</span>
             </div>
 
-            <div
-              onClick={() => navigate(user.email ? '/dashboard/profile' : '/login')}
-              className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm uppercase cursor-pointer hover:bg-primary/30 transition-colors"
-            >
-              {user.name?.charAt(0) || 'U'}
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher />
+              <UserDropdown isMobile={true} />
             </div>
           </div>
         )}
@@ -99,7 +126,7 @@ const DashboardLayout = () => {
               className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-black/50 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-white/10 transition-all text-sm font-medium"
             >
               <Menu className="w-4 h-4" />
-              <span>Menu</span>
+              <span>{t('navigation.menu')}</span>
             </button>
           </div>
         )}
@@ -117,12 +144,15 @@ const DashboardLayout = () => {
 // Placeholder Page
 // ------------------------------
 
-const PlaceholderPage = ({ title }) => (
-  <div className="flex items-center justify-center h-full text-subtext flex-col">
-    <h2 className="text-2xl font-bold mb-2 text-maintext">{title}</h2>
-    <p>Coming soon...</p>
-  </div>
-);
+const PlaceholderPage = ({ title }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="flex items-center justify-center h-full text-subtext flex-col">
+      <h2 className="text-2xl font-bold mb-2 text-maintext">{title}</h2>
+      <p>{t('navigation.comingSoon')}</p>
+    </div>
+  );
+};
 
 // ------------------------------
 // App Router
@@ -131,6 +161,7 @@ const PlaceholderPage = ({ title }) => (
 import { Toaster } from 'react-hot-toast';
 
 const NavigateProvider = () => {
+  const { t } = useLanguage();
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
@@ -160,19 +191,19 @@ const NavigateProvider = () => {
           <Route path="ai-personal-assistant" element={<ProtectedRoute><AiPersonalAssistantDashboard /></ProtectedRoute>} />
           <Route path="agents" element={<ProtectedRoute><MyAgents /></ProtectedRoute>} />
           <Route path="automations" element={<ProtectedRoute><Automations /></ProtectedRoute>} />
-          <Route path="admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-          <Route path="settings" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="admin" element={<ProtectedRoute requireAdmin={true}><Admin /></ProtectedRoute>} />
+          <Route path="settings" element={<ProtectedRoute requireAdmin={true}><Admin /></ProtectedRoute>} />
           <Route path="invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
           <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="transactions" element={<ProtectedRoute><UserTransactions /></ProtectedRoute>} />
           <Route path="security" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-full">Loading...</div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full">{t('navigation.loading')}</div>}>
               <SecurityAndGuidelines />
             </Suspense>
           } />
           <Route path="trust-safety-compliance" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-full">Loading...</div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full">{t('navigation.loading')}</div>}>
               <TrustSafetyCompliance />
             </Suspense>
           } />

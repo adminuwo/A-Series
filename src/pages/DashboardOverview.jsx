@@ -3,8 +3,11 @@ import { apiService } from '../services/apiService';
 import {
   MessageSquare, Cpu, Clock, Zap, TrendingUp, Users, ArrowUpRight, IndianRupee
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
 const DashboardOverview = () => {
   const [stats, setStats] = useState(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const loadStats = async () => {
@@ -20,16 +23,16 @@ const DashboardOverview = () => {
 
   if (!stats) return (
     <div className="p-8 text-subtext">
-      Loading dashboard...
+      {t('dashboardData.loading')}
     </div>
   );
 
   return (
     <div className="p-4 md:p-8 h-full overflow-y-auto bg-secondary">
       <header className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">Overview</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">{t('dashboardData.overview')}</h1>
         <p className="text-sm md:text-base text-subtext">
-          Welcome back, here's what's happening with your agents today.
+          {t('dashboardData.welcomeMessage')}
         </p>
       </header>
 
@@ -43,7 +46,7 @@ const DashboardOverview = () => {
           </div>
           <div className="flex items-center gap-3 mb-2 text-primary">
             <MessageSquare className="w-5 h-5" />
-            <span className="font-semibold text-sm uppercase tracking-wide">Total Chats</span>
+            <span className="font-semibold text-sm uppercase tracking-wide">{t('dashboardData.totalChats')}</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">{stats.totalChats}</div>
           <div className="text-xs text-subtext flex items-center gap-1">
@@ -58,13 +61,13 @@ const DashboardOverview = () => {
           </div>
           <div className="flex items-center gap-3 mb-2 text-primary">
             <IndianRupee className="w-5 h-5" />
-            <span className="font-semibold text-sm uppercase tracking-wide">Total Credits</span>
+            <span className="font-semibold text-sm uppercase tracking-wide">{t('dashboardData.totalCredits')}</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">
             {/* {(stats.tokensUsed / 1000).toFixed(1)}k */}
             0
           </div>
-          <div className="text-xs text-subtext">Next reset in 14 days</div>
+          <div className="text-xs text-subtext">{t('dashboardData.nextReset')}</div>
         </div>
 
         {/* Active Agents */}
@@ -74,13 +77,13 @@ const DashboardOverview = () => {
           </div>
           <div className="flex items-center gap-3 mb-2 text-primary">
             <Zap className="w-5 h-5 " />
-            <span className="font-semibold text-sm uppercase tracking-wide">Active Agents</span>
+            <span className="font-semibold text-sm uppercase tracking-wide">{t('dashboardData.activeAgents')}</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">
             {stats.activeAgents}
           </div>
           <div className="text-xs text-subtext flex items-center gap-1">
-            All systems operational
+            {t('dashboardData.allSystemsOperational')}
           </div>
         </div>
 
@@ -91,10 +94,10 @@ const DashboardOverview = () => {
           </div>
           <div className="flex items-center gap-3 mb-2 text-primary">
             <Clock className="w-5 h-5" />
-            <span className="font-semibold text-sm uppercase tracking-wide">Time Saved</span>
+            <span className="font-semibold text-sm uppercase tracking-wide">{t('dashboardData.timeSaved')}</span>
           </div>
           <div className="text-3xl font-bold text-maintext mb-1">{stats.savedTime}</div>
-          <div className="text-xs text-subtext">Estimated manual work equivalent</div>
+          <div className="text-xs text-subtext">{t('dashboardData.manualWorkEquivalent')}</div>
         </div>
 
       </div>
@@ -104,8 +107,8 @@ const DashboardOverview = () => {
         {/* Recent Activity */}
         <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-maintext">Recent Activity</h2>
-            <button className="text-sm text-primary hover:text-opacity-80">View All</button>
+            <h2 className="text-lg font-bold text-maintext">{t('dashboardData.recentActivity')}</h2>
+            <button className="text-sm text-primary hover:text-opacity-80">{t('dashboardData.viewAll')}</button>
           </div>
 
           <div className="space-y-4">
@@ -133,19 +136,19 @@ const DashboardOverview = () => {
 
         {/* Quick Actions */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-maintext mb-6">Quick Actions</h2>
+          <h2 className="text-lg font-bold text-maintext mb-6">{t('dashboardData.quickActions')}</h2>
 
           <div className="space-y-3">
             <button className="w-full p-3 rounded-xl bg-primary text-white font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-              <MessageSquare className="w-4 h-4" /> New Chat
+              <MessageSquare className="w-4 h-4" /> {t('dashboardData.newChat')}
             </button>
 
             <button className="w-full p-3 rounded-xl bg-surface border border-border text-subtext hover:bg-gray-100 hover:text-maintext transition-colors flex items-center justify-center gap-2">
-              <Users className="w-4 h-4" /> Invite Team Member
+              <Users className="w-4 h-4" /> {t('dashboardData.inviteTeam')}
             </button>
 
             <button className="w-full p-3 rounded-xl bg-surface border border-border text-subtext hover:bg-gray-100 hover:text-maintext transition-colors flex items-center justify-center gap-2">
-              <Cpu className="w-4 h-4" /> Deploy Agent
+              <Cpu className="w-4 h-4" /> {t('dashboardData.deployAgent')}
             </button>
           </div>
         </div>

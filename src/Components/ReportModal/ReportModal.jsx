@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertTriangle, Bug, Shield, Send } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import { getUserData } from '../../userStore/userData';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ReportModal = ({ isOpen, onClose }) => {
+    const { t } = useLanguage();
     const [step, setStep] = useState('form'); // 'form' | 'success'
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -63,8 +65,8 @@ const ReportModal = ({ isOpen, onClose }) => {
                             <form onSubmit={handleSubmit} className="p-6">
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
-                                        <h2 className="text-xl font-bold text-maintext">Report an Issue</h2>
-                                        <p className="text-sm text-subtext">Help us improve by reporting bugs or security concerns.</p>
+                                        <h2 className="text-xl font-bold text-maintext">{t('reportIssue.title')}</h2>
+                                        <p className="text-sm text-subtext">{t('reportIssue.subtitle')}</p>
                                     </div>
                                     <button
                                         type="button"
@@ -78,12 +80,12 @@ const ReportModal = ({ isOpen, onClose }) => {
                                 <div className="space-y-4">
                                     {/* Issue Type */}
                                     <div>
-                                        <label className="block text-sm font-medium text-maintext mb-2">Issue Type</label>
+                                        <label className="block text-sm font-medium text-maintext mb-2">{t('reportIssue.typeLabel')}</label>
                                         <div className="grid grid-cols-3 gap-3">
                                             {[
-                                                { id: 'bug', label: 'Bug', icon: <Bug className="w-4 h-4" /> },
-                                                { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
-                                                { id: 'other', label: 'Other', icon: <AlertTriangle className="w-4 h-4" /> }
+                                                { id: 'bug', label: t('reportIssue.bug'), icon: <Bug className="w-4 h-4" /> },
+                                                { id: 'security', label: t('reportIssue.security'), icon: <Shield className="w-4 h-4" /> },
+                                                { id: 'other', label: t('reportIssue.other'), icon: <AlertTriangle className="w-4 h-4" /> }
                                             ].map((type) => (
                                                 <button
                                                     key={type.id}
@@ -103,26 +105,26 @@ const ReportModal = ({ isOpen, onClose }) => {
 
                                     {/* Priority */}
                                     <div>
-                                        <label className="block text-sm font-medium text-maintext mb-2">Priority</label>
+                                        <label className="block text-sm font-medium text-maintext mb-2">{t('reportIssue.priorityLabel')}</label>
                                         <select
                                             value={formData.priority}
                                             onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-maintext focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                         >
-                                            <option value="low">Low - Minor cosmetic issue</option>
-                                            <option value="medium">Medium - Functionality impacted</option>
-                                            <option value="high">High - Critical system failure</option>
+                                            <option value="low">{t('reportIssue.low')}</option>
+                                            <option value="medium">{t('reportIssue.medium')}</option>
+                                            <option value="high">{t('reportIssue.high')}</option>
                                         </select>
                                     </div>
 
                                     {/* Description */}
                                     <div>
-                                        <label className="block text-sm font-medium text-maintext mb-2">Description</label>
+                                        <label className="block text-sm font-medium text-maintext mb-2">{t('reportIssue.descriptionLabel')}</label>
                                         <textarea
                                             required
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            placeholder="Please describe the issue in detail..."
+                                            placeholder={t('reportIssue.descriptionPlaceholder')}
                                             className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-maintext placeholder:text-subtext/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none min-h-[120px] resize-none transition-all"
                                         />
                                     </div>
@@ -135,7 +137,7 @@ const ReportModal = ({ isOpen, onClose }) => {
                                         onClick={handleClose}
                                         className="px-4 py-2 text-sm font-medium text-subtext hover:text-maintext transition-colors"
                                     >
-                                        Cancel
+                                        {t('reportIssue.cancel')}
                                     </button>
                                     <button
                                         type="submit"
@@ -146,7 +148,7 @@ const ReportModal = ({ isOpen, onClose }) => {
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         ) : (
                                             <>
-                                                <span>Submit Report</span>
+                                                <span>{t('reportIssue.submit')}</span>
                                                 <Send className="w-4 h-4" />
                                             </>
                                         )}
@@ -162,13 +164,13 @@ const ReportModal = ({ isOpen, onClose }) => {
                                 >
                                     <CheckCircle className="w-8 h-8" />
                                 </motion.div>
-                                <h3 className="text-xl font-bold text-maintext mb-2">Report Submitted!</h3>
-                                <p className="text-subtext max-w-[250px] mb-6">Thank you for helping us make A-Series better. We've received your report.</p>
+                                <h3 className="text-xl font-bold text-maintext mb-2">{t('reportIssue.successTitle')}</h3>
+                                <p className="text-subtext max-w-[250px] mb-6">{t('reportIssue.successMessage')}</p>
                                 <button
                                     onClick={handleClose}
                                     className="px-6 py-2 bg-surface border border-border text-maintext rounded-xl font-medium hover:bg-secondary transition-colors"
                                 >
-                                    Close
+                                    {t('reportIssue.close')}
                                 </button>
                             </div>
                         )}

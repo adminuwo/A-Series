@@ -56,7 +56,7 @@ export const generateChatResponse = async (history, currentMessage, systemInstru
             // Allow backend detail to override if present, otherwise default
             const detail = error.response?.data?.details || error.response?.data?.error;
             if (detail) return `System Busy (429): ${detail}`;
-            return "The A-Series system is currently busy (Quota limit reached). Please wait 60 seconds and try again.";
+            return "The system is currently busy (Quota limit reached). Please wait 60 seconds and try again.";
         }
         // Return backend error message if available
         if (error.response?.data?.error) {
@@ -66,6 +66,6 @@ export const generateChatResponse = async (history, currentMessage, systemInstru
         if (error.response?.data?.details) {
             return `System Error: ${error.response.data.details}`;
         }
-        return "Sorry, I am having trouble connecting to the A-Series network right now. Please check your connection.";
+        return "Sorry, I am having trouble connecting to the network right now. Please check your connection.";
     }
 };

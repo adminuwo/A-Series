@@ -1,0 +1,15 @@
+﻿121:         "English": {
+703:         "Hindi": {
+1257:         "Spanish": {
+1692:         "French": {
+2127:         "Japanese": {
+2513:         "German": {
+2948:         "Portuguese": {
+3383:         "Korean": {
+3818:         "Russian": {
+4253:         "Arabic": {
+4525:         "Bengali": {
+5227:         "Turkish": {
+5499:         "Tamil": {
+6846:         "Mandarin Chinese": {
+7118:         "Gujarati": {

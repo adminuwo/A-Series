@@ -8,10 +8,11 @@ import { useRecoilState } from 'recoil';
 import { useNavigate, useSearchParams } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import NotificationBar from '../Components/NotificationBar/NotificationBar';
-
+import { useLanguage } from '../context/LanguageContext';
 
 
 const Marketplace = () => {
+  const { t } = useLanguage();
   const [agents, setAgents] = useState([]);
   const [searchParams] = useSearchParams();
   const initialCategory = searchParams.get('category');
@@ -94,7 +95,7 @@ const Marketplace = () => {
     "Medical & Health AI",];
 
   return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto bg-transparent">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-white">
 
       <AnimatePresence>
         {subToggle.subscripPgTgl && <SubscriptionForm id={agentId} />}
@@ -109,7 +110,7 @@ const Marketplace = () => {
               <button
                 onClick={() => setShowDemo(false)}
                 className="absolute -top-4 -right-4 bg-card p-2 rounded-full shadow-lg hover:bg-surface transition-colors"
-                title="Close"
+                title={t('chatPage.cancel')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -125,26 +126,27 @@ const Marketplace = () => {
                 ></iframe>
               </div>
               <div className="mt-4 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-maintext">Agent Product Demo</h3>
+                <h3 className="text-xl font-bold text-maintext">{t('marketplacePage.productDemo')}</h3>
                 <button
                   onClick={() => setShowDemo(false)}
                   className="bg-primary text-white px-6 py-2 rounded-xl font-semibold"
                 >
-                  Got it!
+                  {t('marketplacePage.gotIt')}
                 </button>
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        )
+        }
+      </AnimatePresence >
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      < div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4" >
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">
-            Agent Marketplace
+            {t('marketplacePage.title')}
           </h1>
           <p className="text-sm md:text-base text-subtext">
-            Discover and install powerful AI agents for your workflow.
+            {t('marketplacePage.subtitle')}
           </p>
         </div>
 
@@ -153,34 +155,47 @@ const Marketplace = () => {
           <Search className="absolute left-3 top-3 w-4 h-4 text-subtext" />
           <input
             type="text"
-            placeholder="Search agents..."
+            placeholder={t('marketplacePage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-surface border border-border rounded-xl py-2.5 pl-10 pr-4 text-maintext focus:outline-none focus:border-primary transition-colors shadow-sm"
           />
         </div>
-      </div>
+      </div >
 
       {/* Categories */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-all border ${filter === cat
-              ? 'bg-primary text-white border-primary'
-              : 'bg-card text-subtext border-border hover:bg-surface'
-              }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      < div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none" >
+        {
+          categories.map(cat => {
+            const catKeyMap = {
+              'all': 'all',
+              "Business OS": 'business_os',
+              "Data & Intelligence": 'data_intelligence',
+              "Sales & Marketing": 'sales_marketing',
+              "HR & Finance": 'hr_finance',
+              "Design & Creative": 'design_creative',
+              "Medical & Health AI": 'medical_health'
+            };
+            return (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-all border ${filter === cat
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-card text-subtext border-border hover:bg-surface'
+                  }`}
+              >
+                {t(`marketplacePage.categories.${catKeyMap[cat] || 'all'}`)}
+              </button>
+            )
+          })
+        }
+      </div >
 
       {/* Agents Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      < div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" >
         {/* Personal Assistant App Card */}
-        <div className="group bg-card border border-border hover:border-primary/50 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 flex flex-col h-full shadow-sm relative overflow-hidden">
+        < div className="group bg-card border border-border hover:border-primary/50 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 flex flex-col h-full shadow-sm relative overflow-hidden" >
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Calendar className="w-24 h-24 text-primary" />
           </div>
@@ -195,23 +210,23 @@ const Marketplace = () => {
           </div>
 
           <div className="mb-1 relative z-10">
-            <h3 className="text-lg font-bold text-maintext">AI Personal Assistant</h3>
+            <h3 className="text-lg font-bold text-maintext">{t('marketplacePage.aiPersonalAssistant')}</h3>
           </div>
 
-          <span className="text-xs text-primary uppercase tracking-wider font-semibold mb-3 relative z-10">Productivity</span>
+          <span className="text-xs text-primary uppercase tracking-wider font-semibold mb-3 relative z-10">{t('marketplacePage.productivity')}</span>
 
           <p className="text-sm text-subtext mb-6 flex-1 relative z-10">
-            Your smart daily routine manager with voice reminders and scheduling.
+            {t('marketplacePage.personalAssistantDesc')}
           </p>
 
           <button
             onClick={() => navigate('/dashboard/ai-personal-assistant')}
             className="w-full py-2.5 rounded-xl font-semibold bg-primary text-white hover:opacity-90 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 relative z-10"
           >
-            Open App
+            {t('marketplacePage.openApp')}
           </button>
-        </div>
-        {loading ? <h1>Loading.....</h1> : filteredAgents.map(agent => (
+        </div >
+        {loading ? <h1>{t('myAgentsPage.loading')}</h1> : filteredAgents.map(agent => (
           <div
             key={agent._id}
             className="group bg-card border border-border hover:border-primary/50 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 flex flex-col h-full shadow-sm"
@@ -228,7 +243,7 @@ const Marketplace = () => {
                     ? 'bg-green-500/10 text-green-500 border-green-500/20'
                     : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                     }`}>
-                    {agent.status}
+                    {t(`statusLabels.${agent.status?.toLowerCase().replace(/\s+/g, '')}`) || agent.status}
                   </span>
                 )}
               </div>
@@ -247,12 +262,22 @@ const Marketplace = () => {
                 }}
                 className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold"
               >
-                <Play className="w-3 h-3 fill-primary" /> Demo
+                <Play className="w-3 h-3 fill-primary" /> {t('marketplacePage.demo')}
               </button>
             </div>
 
             <span className="text-xs text-primary uppercase tracking-wider font-semibold mb-3">
-              {agent.category}
+              {(() => {
+                const catKeyMap = {
+                  "Business OS": 'business_os',
+                  "Data & Intelligence": 'data_intelligence',
+                  "Sales & Marketing": 'sales_marketing',
+                  "HR & Finance": 'hr_finance',
+                  "Design & Creative": 'design_creative',
+                  "Medical & Health AI": 'medical_health'
+                };
+                return t(`marketplacePage.categories.${catKeyMap[agent.category] || 'all'}`) || agent.category;
+              })()}
             </span>
 
             <p className="text-sm text-subtext mb-6 flex-1">{agent.description}</p>
@@ -271,15 +296,15 @@ const Marketplace = () => {
               >
                 {userAgent.some((ag) => ag && agent._id == ag._id) ? (
                   <>
-                    <Check className="w-4 h-4" /> Subscribed
+                    <Check className="w-4 h-4" /> {t('marketplacePage.subscribed')}
                   </>
                 ) : (agent.status && agent.status.toLowerCase() !== 'live' && agent.status.toLowerCase() !== 'active' && agent.status.toLowerCase() !== 'coming soon') ? (
                   <>
-                    Unavailable
+                    {t('marketplacePage.unavailable')}
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4" /> Subscribe
+                    <Download className="w-4 h-4" /> {t('marketplacePage.subscribe')}
                   </>
                 )}
               </button>
@@ -289,7 +314,7 @@ const Marketplace = () => {
                     navigate(AppRoute.INVOICES);
                   }}
                   className="p-2.5 rounded-xl bg-surface border border-border text-subtext hover:text-primary transition-all"
-                  title="Download Invoice"
+                  title={t('marketplacePage.viewInvoice')}
                 >
                   <FileText className="w-5 h-5" />
                 </button>

@@ -207,7 +207,11 @@ const SubscriptionForm = ({ id }) => {
                       />
                       <label htmlFor={plan.id || plan._id || `plan-${index}`}>
                         <div className="plan-info">
-                          <span className="plan-cost">₹{plan.price}</span>
+                          <span className="plan-cost">
+                            {typeof plan.price === 'object' && plan.price !== null
+                              ? `₹${plan.price.monthly || plan.price.yearly || plan.price.amount || 0}`
+                              : `₹${plan.price}`}
+                          </span>
                           <span className="plan-name">{plan.name}</span>
                           {plan.desc && <span className="text-[10px] text-subtext mt-1">{plan.desc}</span>}
                         </div>

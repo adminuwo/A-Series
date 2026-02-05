@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router';
 import { Lock, Eye, EyeOff, Loader, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { apis } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 const ResetPassword = () => {
     const { token } = useParams();
     const navigate = useNavigate();
+    const { t, language } = useLanguage();
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,7 +21,7 @@ const ResetPassword = () => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            setError("Passwords don't match");
+            setError(t('auth.passwordsDoNotMatch'));
             return;
         }
 
@@ -31,7 +33,8 @@ const ResetPassword = () => {
             // ideally use env var for API URL
             const response = await axios.post(`${apis.resetPassword}/${token}`, {
                 password,
-                confirmPassword
+                confirmPassword,
+                lang: language
             });
             setMessage(response.data.message);
 
@@ -53,10 +56,10 @@ const ResetPassword = () => {
                 <div className="bg-white border border-border p-8 rounded-3xl shadow-xl">
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-maintext mb-2">
-                            Reset Password
+                            {t('auth.resetPassTitle')}
                         </h1>
                         <p className="text-subtext">
-                            Enter your new password below.
+                            {t('auth.enterNewPasswordDesc')}
                         </p>
                     </div>
 
@@ -76,7 +79,7 @@ const ResetPassword = () => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-maintext mb-2 ml-1">
-                                New Password
+                                {t('auth.newPassword')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-subtext" />
@@ -101,7 +104,7 @@ const ResetPassword = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-maintext mb-2 ml-1">
-                                Confirm New Password
+                                {t('auth.confirmPassword')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-subtext" />
@@ -125,10 +128,10 @@ const ResetPassword = () => {
                             {loading ? (
                                 <>
                                     <Loader className="w-5 h-5 animate-spin mr-2" />
-                                    Resetting Password...
+                                    {t('auth.resettingBtn')}
                                 </>
                             ) : (
-                                'Reset Password'
+                                t('auth.resetPassBtn')
                             )}
                         </button>
                     </form>

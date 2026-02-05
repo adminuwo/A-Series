@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import { Bell, Check, Trash2, Clock, ShieldAlert, BadgeInfo, BadgeCheck } from 'lucide-react';
 import axios from 'axios';
 import { apis } from '../types';
@@ -7,6 +8,7 @@ import { useRecoilState } from 'recoil';
 import apiService from '../services/apiService';
 
 const Notifications = () => {
+    const { t } = useLanguage();
     const [notifications, setNotifications] = useRecoilState(notificationsState);
     const [loading, setLoading] = useState(true);
     const token = getUserData()?.token;
@@ -39,6 +41,16 @@ const Notifications = () => {
         }
     };
 
+    const deleteNotification = async (id) => {
+        try {
+            await apiService.deleteNotification(id);
+            // Update global state immediately
+            setNotifications(prev => prev.filter(n => n._id !== id));
+        } catch (err) {
+            console.error('Error deleting notification:', err);
+        }
+    };
+
     const getIcon = (type) => {
         switch (type) {
             case 'ALERT': return <ShieldAlert className="w-6 h-6 text-red-500" />;
@@ -47,11 +59,61 @@ const Notifications = () => {
         }
     };
 
+    // Mapping for Legacy (Hardcoded in DB) Notifications to New Keys
+    const legacyTranslationMap = {
+        "New Subscriber": "notificationsPage.newSubscriber.title",
+        "System Maintenance": "notificationsPage.systemMaintenance.title",
+        "The system is currently in maintenance mode.": "notificationsPage.systemMaintenance.message",
+        "System Restored": "notificationsPage.systemRestored.title",
+        "Maintenance is complete. System is fully operational.": "notificationsPage.systemRestored.message",
+        "Critical Alert": "notificationsPage.criticalAlert.title",
+        "Global Kill-Switch Activated. All AI services are momentarily suspended.": "notificationsPage.criticalAlert.message",
+        "Services Restored": "notificationsPage.servicesRestored.title",
+        "Global Kill-Switch Deactivated. All AI services are now active.": "notificationsPage.servicesRestored.message",
+    };
+
+    const translateContent = (content) => {
+        if (!content) return "";
+
+        // 1. Check if it's already a valid key or in our legacy map
+        const key = legacyTranslationMap[content] || content;
+        const translated = t(key);
+
+        // If translation happened (it's different from the key and doesn't look like a key path), return it
+        if (translated !== key && !translated.startsWith('notificationsPage.')) {
+            return translated;
+        }
+
+        // 2. Handle Dynamic Legacy Strings (e.g. "A user has subscribed to 'Manychats'")
+        // Matches: "New Subscriber: A user has subscribed to 'Manychats'" OR "A user has subscribed to 'Manychats'"
+        if (content.includes("A user has subscribed to")) {
+            const prefix = "A user has subscribed to";
+            // Extract the agent name by removing known prefixes and cleaning up quotes
+            let agentName = content
+                .replace("New Subscriber:", "")
+                .replace("New Subscriber", "")
+                .replace(prefix, "")
+                .trim()
+                .replace(/^'|'$/g, '')
+                .replace(/^\.|.$/g, ''); // Remove trailing/leading dots if any
+
+            const translatedPrefix = t("notificationsPage.newSubscriber.messagePrefix");
+
+            // If we have a translation for the prefix, reconstruct the sentence
+            if (translatedPrefix !== "notificationsPage.newSubscriber.messagePrefix") {
+                return `${translatedPrefix} '${agentName}'`;
+            }
+        }
+
+        // 3. Fallback: Return original
+        return content;
+    };
+
     return (
         <div className="p-4 md:p-8 h-full bg-secondary overflow-y-auto">
             <div className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">Notifications</h1>
-                <p className="text-sm md:text-base text-subtext">Stay updated with your account and subscription status.</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">{t("notificationsPage.title")}</h1>
+                <p className="text-sm md:text-base text-subtext">{t("notificationsPage.subtitle")}</p>
             </div>
 
             <div className="grid gap-4 max-w-3xl">
@@ -61,9 +123,9 @@ const Notifications = () => {
                         <BadgeInfo className="w-6 h-6 text-blue-500" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="font-bold text-maintext">Welcome to A-Series!</h3>
+                        <h3 className="font-bold text-maintext">{t("notificationsPage.welcomeTitle")}</h3>
                         <p className="text-sm text-subtext leading-relaxed">
-                            We're glad to have you here. This is your notifications center where you'll receive updates about your subscriptions, payments, and new agent launches.
+                            {t("notificationsPage.welcomeMessage")}
                         </p>
                     </div>
                 </div>
@@ -84,15 +146,24 @@ const Notifications = () => {
                         <div className="flex-1">
                             <div className="flex justify-between items-start mb-1">
                                 <h3 className={`font-bold ${!notif.isRead ? 'text-maintext' : 'text-subtext'}`}>
-                                    {notif.title}
+                                    {translateContent(notif.title)}
                                 </h3>
-                                <span className="text-[10px] text-subtext flex items-center gap-1 bg-surface px-2 py-1 rounded-full">
-                                    <Clock className="w-3 h-3" />
-                                    {new Date(notif.createdAt).toLocaleDateString()}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-subtext flex items-center gap-1 bg-surface px-2 py-1 rounded-full">
+                                        <Clock className="w-3 h-3" />
+                                        {new Date(notif.createdAt).toLocaleDateString()}
+                                    </span>
+                                    <button
+                                        onClick={() => deleteNotification(notif._id)}
+                                        className="p-1.5 hover:bg-red-50 text-subtext hover:text-red-500 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                                        title={t("notificationsPage.delete")}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                             <p className={`text-sm leading-relaxed ${!notif.isRead ? 'text-subtext' : 'text-subtext/70'}`}>
-                                {notif.message}
+                                {translateContent(notif.message)}
                             </p>
 
                             {!notif.isRead && (
@@ -100,7 +171,7 @@ const Notifications = () => {
                                     onClick={() => markAsRead(notif._id)}
                                     className="mt-3 text-xs font-bold text-primary flex items-center gap-1 hover:underline"
                                 >
-                                    <Check className="w-3 h-3" /> Mark as read
+                                    <Check className="w-3 h-3" /> {t("notificationsPage.markRead")}
                                 </button>
                             )}
                         </div>

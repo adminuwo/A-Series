@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
-import { faqs } from '../../constants';
 import axios from 'axios';
 import { apis } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
@@ -13,14 +12,27 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
     const [issueType, setIssueType] = useState("General Inquiry");
     const [isSending, setIsSending] = useState(false);
     const [sendStatus, setSendStatus] = useState(null);
+    const [supportPhone, setSupportPhone] = useState(null);
+    const [contactEmail, setContactEmail] = useState("support@a-series.in");
+
+    useEffect(() => {
+        if (isOpen) {
+            import('../../services/apiService').then(({ default: api }) => {
+                api.getPublicSettings().then(settings => {
+                    if (settings?.supportPhone) setSupportPhone(settings.supportPhone);
+                    if (settings?.contactEmail) setContactEmail(settings.contactEmail);
+                }).catch(err => console.warn("Failed to load support info", err));
+            });
+        }
+    }, [isOpen]);
 
     const issueOptions = [
-        "General Inquiry",
-        "Payment Issue",
-        "Refund Request",
-        "Technical Support",
-        "Account Access",
-        "Other"
+        t('faqHelp.issueOptions.generalInquiry'),
+        t('faqHelp.issueOptions.paymentIssue'),
+        t('faqHelp.issueOptions.refundRequest'),
+        t('faqHelp.issueOptions.technicalSupport'),
+        t('faqHelp.issueOptions.accountAccess'),
+        t('faqHelp.issueOptions.other')
     ];
 
     const handleSupportSubmit = async () => {
@@ -57,13 +69,13 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                             onClick={() => setActiveTab('faq')}
                             className={`text-lg font-bold px-4 py-2 rounded-lg transition-colors ${activeTab === 'faq' ? 'bg-primary/10 text-primary' : 'text-subtext hover:text-maintext'}`}
                         >
-                            FAQ
+                            {t('faqHelp.faqTab')}
                         </button>
                         <button
                             onClick={() => setActiveTab('help')}
                             className={`text-lg font-bold px-4 py-2 rounded-lg transition-colors ${activeTab === 'help' ? 'bg-primary/10 text-primary' : 'text-subtext hover:text-maintext'}`}
                         >
-                            Help
+                            {t('faqHelp.helpTab')}
                         </button>
                     </div>
                     <button
@@ -77,8 +89,8 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {activeTab === 'faq' ? (
                         <>
-                            <p className="text-sm text-subtext font-medium">Get quick answers to common questions about our platform</p>
-                            {faqs.map((faq, index) => (
+                            <p className="text-sm text-subtext font-medium">{t('faqHelp.faqSubtitle')}</p>
+                            {t('faqHelp.faqs').map((faq, index) => (
                                 <div key={index} className="border border-border rounded-xl bg-card overflow-hidden hover:border-primary/30 transition-all">
                                     <button
                                         onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
@@ -104,7 +116,7 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                     ) : (
                         <div className="flex flex-col gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-maintext mb-2">Select Issue Category</label>
+                                <label className="block text-sm font-bold text-maintext mb-2">{t('faqHelp.issueCategory')}</label>
                                 <div className="relative">
                                     <select
                                         value={issueType}
@@ -120,10 +132,10 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-maintext mb-2">Describe your issue</label>
+                                <label className="block text-sm font-bold text-maintext mb-2">{t('faqHelp.describeIssue')}</label>
                                 <textarea
                                     className="w-full p-4 rounded-xl bg-secondary border border-border focus:border-primary outline-none resize-none text-maintext min-h-[150px]"
-                                    placeholder="Please provide details about the problem you are facing..."
+                                    placeholder={t('faqHelp.issuePlaceholder')}
                                     value={issueText}
                                     onChange={(e) => setIssueText(e.target.value)}
                                 />
@@ -139,26 +151,33 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                                 ) : (
                                     <>
                                         <MessageSquare className="w-5 h-5" />
-                                        Send to Support
+                                        {t('faqHelp.sendToSupport')}
                                     </>
                                 )}
                             </button>
 
                             {sendStatus === 'success' && (
                                 <div className="p-3 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text-sm text-center font-medium border border-green-500/20 animate-in fade-in slide-in-from-top-2">
-                                    Ticket Submitted Successfully! Our team will contact you soon.
+                                    {t('faqHelp.ticketSuccess')}
                                 </div>
                             )}
 
                             {sendStatus === 'error' && (
                                 <div className="p-3 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-sm text-center font-medium border border-red-500/20 animate-in fade-in slide-in-from-top-2">
-                                    Failed to submit ticket. Please try again or email us directly.
+                                    {t('faqHelp.ticketError')}
                                 </div>
                             )}
 
-                            <p className="text-xs text-center text-subtext">
-                                Or email us directly at <a href="mailto:support@a-series.in" className="text-primary font-medium hover:underline">support@a-series.in</a>
-                            </p>
+                            <div className="text-center text-xs text-subtext space-y-1">
+                                <p>
+                                    {t('faqHelp.emailDirectly')} <a href={`mailto:${contactEmail}`} className="text-primary font-medium hover:underline">{contactEmail}</a>
+                                </p>
+                                {supportPhone && (
+                                    <p>
+                                        {t('faqHelp.customerSupport')} <span className="text-maintext font-bold">{supportPhone}</span>
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -168,7 +187,7 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                         onClick={onClose}
                         className="px-6 py-2 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20"
                     >
-                        Close
+                        {t('faqHelp.close')}
                     </button>
                 </div>
             </div>

@@ -78,6 +78,10 @@ export const chatStorageService = {
   async getSessions() {
     try {
       const token = getUserData()?.token;
+
+      // If no token, skip backend and go straight to fallback
+      if (!token) throw new Error("No token available - skipping backend");
+
       // Try Backend First
       const response = await fetch(`${API_BASE_URL}/chat`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -85,7 +89,9 @@ export const chatStorageService = {
       if (!response.ok) throw new Error("Backend failed");
       return await response.json();
     } catch (error) {
-      console.warn("Using IndexedDB storage fallback.");
+      if (error.message !== "No token available - skipping backend") {
+        console.warn("Using IndexedDB storage fallback:", error.message);
+      }
       const sessions = [];
       const keys = await idbGetAllKeys();
 
@@ -108,6 +114,8 @@ export const chatStorageService = {
     if (sessionId === "new") return [];
     try {
       const token = getUserData()?.token;
+      if (!token) throw new Error("No token available");
+
       const response = await fetch(`${API_BASE_URL}/chat/${sessionId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });

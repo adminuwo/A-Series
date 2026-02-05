@@ -7,6 +7,7 @@ import { apis, AppRoute } from '../types';
 import { setUserData, userData as userDataAtom } from '../userStore/userData';
 import { logo } from '../constants';
 import { useSetRecoilState } from 'recoil';
+import { useLanguage } from '../context/LanguageContext';
 
 
 const Login = () => {
@@ -20,6 +21,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const setUserRecoil = useSetRecoilState(userDataAtom);
+  const { t } = useLanguage();
 
   const payload = { email, password }
   const handleSubmit = (e) => {
@@ -57,8 +59,8 @@ const Login = () => {
           <div className="inline-block rounded-full  w-25">
             <img src={logo} alt="" />
           </div>
-          <h2 className="text-3xl font-bold text-maintext mb-2">Welcome Back</h2>
-          <p className="text-subtext">Sign in to continue to A-Series</p>
+          <h2 className="text-3xl font-bold text-maintext mb-2">{t('auth.welcomeBack')}</h2>
+          <p className="text-subtext">{t('auth.signInSubtitle')}</p>
         </div>
 
         {/* Card */}
@@ -78,7 +80,7 @@ const Login = () => {
             {/* Email */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-maintext ml-1">
-                Email Address
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-3.5 w-5 h-5 text-subtext" />
@@ -97,7 +99,7 @@ const Login = () => {
             {/* Password */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-maintext ml-1">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-subtext" />
@@ -126,7 +128,7 @@ const Login = () => {
 
             <div className="flex justify-end">
               <Link to="/forgot-password" className="text-sm text-primary hover:underline font-medium">
-                Forgot Password?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
 
@@ -136,16 +138,16 @@ const Login = () => {
               disabled={loading}
               className="w-full py-3.5 bg-primary rounded-xl font-bold text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </button>
           </form>
 
           {/* Signup Redirect */}
           <div className="mt-8 text-center text-sm text-subtext space-y-3">
             <div>
-              Don't have an account?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/signup" className="text-primary hover:underline font-medium">
-                Create Account
+                {t('auth.createAccount')}
               </Link>
             </div>
 
@@ -159,7 +161,7 @@ const Login = () => {
           to="/"
           className="mt-8 flex items-center justify-center gap-2 text-subtext hover:text-maintext transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Home
+          <ArrowLeft className="w-4 h-4" /> {t('auth.backToHome')}
         </Link>
 
       </div>

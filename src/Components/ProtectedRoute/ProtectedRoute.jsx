@@ -5,27 +5,28 @@ import { Navigate, useLocation } from 'react-router';
  * Wraps around routes that require authentication.
  * Redirects to login if user is not authenticated.
  */
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const location = useLocation();
 
-  // Check if user is authenticated
-  const isAuthenticated = () => {
+  const getUser = () => {
     try {
-      const user = localStorage.getItem('user');
-      if (!user) return false;
-
-      const userData = JSON.parse(user);
-      // Check if user object has required fields
-      return userData && userData.email;
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      return false;
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      return null;
     }
   };
 
-  if (!isAuthenticated()) {
-    // Redirect to login page, preserving the intended destination
+  const user = getUser();
+
+  // 1. Check Authentication
+  if (!user || !user.email) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // 2. Check Admin Role (if required)
+  if (requireAdmin && user.role !== 'admin') {
+    return <Navigate to="/dashboard/marketplace" replace />;
   }
 
   return children;

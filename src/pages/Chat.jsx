@@ -85,6 +85,7 @@ const TOOL_PRICING = {
 const Chat = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [messages, setMessages] = useState([]);
   const [excelHTML, setExcelHTML] = useState(null);
@@ -250,7 +251,7 @@ const Chat = () => {
         [selectedToolType]: modelId
       }));
       const selectedModel = TOOL_PRICING[selectedToolType].models.find(m => m.id === modelId);
-      toast.success(`Switched to ${selectedModel?.name}`);
+      toast.success(`${t('chatPage.switchedTo')} ${selectedModel?.name}`);
       setIsModelSelectorOpen(false);
     }
   };
@@ -419,7 +420,7 @@ const Chat = () => {
 
       if (hasAttachments) {
         SYSTEM_INSTRUCTION = `
-You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by A-Series.
+You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by ${t('brandName')}.
 CRITICAL MODE: DOCUMENT/IMAGE ANALYSIS.
 You have received ${filePreviews.length} file(s) from the user.
 
@@ -473,7 +474,7 @@ ${activeAgent.instructions}` : ''}
 `;
       } else {
         SYSTEM_INSTRUCTION = `
-You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by A-Series.
+You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by ${t('brandName')}.
 ${activeAgent.category ? `Your specialization is in ${activeAgent.category}.` : ''}
 
 ### FIRST MESSAGE / GREETING LOGIC (CRITICAL):
@@ -482,7 +483,7 @@ Determine if the user's first message is a simple greeting or a specific questio
 **Scenario 1: Simple Greeting / Unclear Intent**
 (e.g., "Hello", "Hi", "Aisa", "Start", ".")
 1. **Welcome**: "Hello... welcome to ${activeAgent.agentName || 'AISA'}" (Translate to user's language).
-2. **Intro**: Briefly describe yourself as a specialized AI agent in the ${activeAgent.category || 'General'} category on A-Series.
+2. **Intro**: Briefly describe yourself as a specialized AI agent in the ${activeAgent.category || 'General'} category on ${t('brandName')}.
 3. **Guide**: You MUST present the "Quick Links" below to help them explore categories:
    - * [Business OS](/dashboard/marketplace?category=Business%20OS)
    - * [Data & Intelligence](/dashboard/marketplace?category=Data%20%26%20Intelligence)
@@ -1117,7 +1118,7 @@ ${activeAgent.instructions}` : ''}
             await navigator.share({
               files: [file],
               title: 'AI Response',
-              text: 'Here is the response from A-Series AI.'
+              text: 'Here is the response from A-Series™ AI.'
             });
           } catch (shareErr) {
             if (shareErr.name !== 'AbortError') {
@@ -1387,7 +1388,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             className: "docx-viewer"
           }).catch(err => {
             console.error("Docx Preview Error:", err);
-            docContainerRef.current.innerHTML = '<div class="text-center p-10 text-subtext">Preview not available.<br/>Please download to view.</div>';
+            docContainerRef.current.innerHTML = `<div class="text-center p-10 text-subtext">${t('chatPage.previewNotAvailable')}<br/>${t('chatPage.pleaseDownloadToView')}</div>`;
           });
         });
     }
@@ -1408,7 +1409,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         })
         .catch(err => {
           console.error("Excel Preview Error:", err);
-          setExcelHTML('<div class="text-center p-10 text-red-500">Failed to load Excel preview.</div>');
+          setExcelHTML(`<div class="text-center p-10 text-red-500">${t('chatPage.failedToLoadExcel')}</div>`);
         });
     }
   }, [viewingDoc]);
@@ -1473,14 +1474,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   <button
                     onClick={() => handleDownload(viewingDoc.url, viewingDoc.name)}
                     className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors text-subtext"
-                    title="Download"
+                    title={t('chatPage.download')}
                   >
                     <Download className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setViewingDoc(null)}
                     className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors text-subtext"
-                    title="Close"
+                    title={t('chatPage.close')}
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -1509,7 +1510,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   <iframe
                     src={viewingDoc.url}
                     className="w-full h-full border-0"
-                    title="Document Viewer"
+                    title={t('chatPage.documentViewer')}
                   />
                 ) : viewingDoc.name.match(/\.(mp4|webm|ogg|mov)$/i) || viewingDoc.type.startsWith('video/') ? (
                   <video controls className="max-w-full max-h-full rounded-lg shadow-lg" src={viewingDoc.url}>
@@ -1524,7 +1525,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     </div>
                     <div className="text-center">
                       <h3 className="font-bold text-lg mb-1">{viewingDoc.name}</h3>
-                      <p className="text-xs text-subtext">Audio File Player</p>
+                      <p className="text-xs text-subtext">{t('chatPage.audioFilePlayer')}</p>
                     </div>
                     <audio controls className="w-full min-w-[300px]" src={viewingDoc.url}>
                       Your browser does not support the audio element.
@@ -1535,7 +1536,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3e3e42] shrink-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-[#cccccc] uppercase tracking-wider">
-                          {viewingDoc.name.match(/\.(rar|zip|exe|dll|bin|iso|7z)$/i) ? 'BINARY CONTENT' : 'CODE READER'}
+                          {viewingDoc.name.match(/\.(rar|zip|exe|dll|bin|iso|7z)$/i) ? t('chatPage.binaryContent') : t('chatPage.codeReader')}
                         </span>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-[#0e639c] text-white font-mono shadow-sm">
@@ -1564,7 +1565,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             onSave={(newFile) => {
               processFile(newFile);
               setIsEditingImage(false);
-              toast.success("Image updated!");
+              toast.success(t('chatPage.imageUpdated'));
             }}
           />
         )}
@@ -1579,13 +1580,26 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         pricing={TOOL_PRICING}
       />
 
+      {/* Backdrop for Mobile History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setShowHistory(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <div
         className={`
           flex flex-col flex-shrink-0 bg-surface border-r border-border
           transition-all duration-300 ease-in-out
           
           /* Mobile: Absolute overlay */
-          absolute inset-y-0 left-0 z-50 w-full sm:w-72
+          absolute inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] sm:w-72
           ${showHistory ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
 
           /* Desktop: Relative flow, animate width instead of transform */
@@ -1595,7 +1609,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
       >
         <div className="p-3">
           <div className="flex justify-between items-center mb-3 lg:hidden">
-            <span className="font-bold text-lg text-maintext">History</span>
+            <span className="font-bold text-lg text-maintext">{t('chatPage.history')}</span>
             <button
               onClick={() => setShowHistory(false)}
               className="p-2 hover:bg-secondary rounded-full text-subtext transition-colors"
@@ -1608,13 +1622,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             onClick={handleNewChat}
             className="w-full bg-primary hover:opacity-90 text-white font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/20 text-sm"
           >
-            <Plus className="w-4 h-4" /> New Chat
+            <Plus className="w-4 h-4" /> {t('chatPage.newChat')}
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 space-y-1">
           <h3 className="px-4 py-2 text-xs font-semibold text-subtext uppercase tracking-wider">
-            Recent
+            {t('chatPage.recent')}
           </h3>
 
           {sessions.map((session) => (
@@ -1636,7 +1650,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               <button
                 onClick={(e) => handleDeleteSession(e, session.sessionId)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-subtext hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Delete Chat"
+                title={t('chatPage.deleteChat')}
               >
                 <Plus className="w-4 h-4 rotate-45" />
               </button>
@@ -1644,7 +1658,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
           ))}
 
           {sessions.length === 0 && (
-            <div className="px-4 text-xs text-subtext italic">No recent chats</div>
+            <div className="px-4 text-xs text-subtext italic">{t('chatPage.noRecentChats')}</div>
           )}
         </div>
       </div>
@@ -1659,7 +1673,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         {isDragging && (
           <div className="absolute inset-0 z-50 bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none">
             <Cloud className="w-16 h-16 text-primary mb-4 animate-bounce" />
-            <h3 className="text-2xl font-bold text-primary">Drop to Upload</h3>
+            <h3 className="text-2xl font-bold text-primary">{t('chatPage.dropToUpload')}</h3>
           </div>
         )}
 
@@ -1675,7 +1689,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             </button>
 
             <div className="flex items-center gap-2 text-subtext min-w-0">
-              <span className="text-sm hidden md:inline shrink-0">Chat with:</span>
+              <span className="text-sm hidden md:inline shrink-0">{t('chatPage.chatWith')}</span>
               <Menu as="div" className="relative inline-block text-left min-w-0 shrink">
                 <Menu.Button className="flex items-center gap-2 text-maintext bg-surface px-3 py-1.5 rounded-lg border border-border cursor-pointer hover:bg-secondary transition-colors truncate max-w-[140px] sm:max-w-xs">
                   <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
@@ -1687,7 +1701,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     />
                   </div>
                   <span className="text-sm font-medium truncate">
-                    {activeAgent.agentName || activeAgent.name} <sup>TM</sup>
+                    {(activeAgent.agentName || activeAgent.name) === 'AISA' ? t('aisaName') : (activeAgent.agentName || activeAgent.name)} <sup>TM</sup>
                   </span>
                   <ChevronDown className="w-3 h-3 text-subtext shrink-0" />
                 </Menu.Button>
@@ -1709,7 +1723,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                             <button
                               onClick={() => {
                                 setActiveAgent(agent);
-                                toast.success(`Switched to ${agent.agentName || agent.name}`);
+                                toast.success(`${t('chatPage.switchedTo')} ${agent.agentName || agent.name}`);
                               }}
                               className={`${active ? 'bg-primary text-white' : 'text-maintext'
                                 } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium gap-3 transition-colors`}
@@ -1739,19 +1753,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* Model Selector Button */}
-            <button
-              onClick={() => {
-                setSelectedToolType('chat');
-                setIsModelSelectorOpen(true);
-              }}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-surface text-maintext hover:bg-secondary transition-colors text-xs font-medium"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>
-                {isCompareMode ? 'Compare Mode (All)' : (TOOL_PRICING.chat.models.find(m => m.id === toolModels?.chat)?.name || 'Model')}
-              </span>
-              <ChevronDown className="w-3 h-3 text-subtext" />
-            </button>
+
 
             {/* Compare Mode Toggle */}
 
@@ -1766,10 +1768,10 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
               </div>
               <h2 className="text-xl font-medium text-maintext mb-2">
-                How can I help you today?
+                {t('chatPage.howCanIHelp')}
               </h2>
               <p className="text-subtext text-sm sm:text-base">
-                Start a conversation with your AI agent.
+                {t('chatPage.startConversation')}
               </p>
             </div>
           ) : (
@@ -1814,7 +1816,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                             <div key={idx} className="w-full">
                               {att.type === 'image' ? (
                                 <div
-                                  className="relative group/image overflow-hidden rounded-xl border border-white/20 shadow-lg transition-all hover:scale-[1.01] cursor-pointer max-w-[320px]"
+                                  className="relative group/image overflow-hidden rounded-xl border border-white/20 shadow-lg transition-all hover:scale-[1.01] cursor-pointer max-w-full sm:max-w-[320px]"
                                   onClick={() => setViewingDoc(att)}
                                 >
                                   <img
@@ -1828,7 +1830,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       handleDownload(att.url, att.name);
                                     }}
                                     className="absolute top-2 right-2 p-2 bg-black/40 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-all hover:bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center"
-                                    title="Download"
+                                    title={t('chatPage.download')}
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
@@ -1863,11 +1865,11 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       <p className="text-[10px] opacity-70 uppercase tracking-tight font-medium">
                                         {(() => {
                                           const name = (att.name || '').toLowerCase();
-                                          if (name.endsWith('.pdf')) return 'PDF • Preview';
-                                          if (name.match(/\.(doc|docx)$/)) return 'WORD • Preview';
-                                          if (name.match(/\.(xls|xlsx|csv)$/)) return 'EXCEL';
-                                          if (name.match(/\.(ppt|pptx)$/)) return 'SLIDES';
-                                          return 'DOCUMENT';
+                                          if (name.endsWith('.pdf')) return t('chatPage.pdfPreview');
+                                          if (name.match(/\.(doc|docx)$/)) return t('chatPage.wordPreview');
+                                          if (name.match(/\.(xls|xlsx|csv)$/)) return t('chatPage.excel');
+                                          if (name.match(/\.(ppt|pptx)$/)) return t('chatPage.slides');
+                                          return t('chatPage.document');
                                         })()}
                                       </p>
                                     </div>
@@ -1878,7 +1880,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       handleDownload(att.url, att.name);
                                     }}
                                     className={`p-2 rounded-lg transition-colors shrink-0 ${msg.role === 'user' ? 'hover:bg-white/20 text-white' : 'hover:bg-primary/10 text-primary'}`}
-                                    title="Download"
+                                    title={t('chatPage.download')}
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
@@ -1910,13 +1912,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                               onClick={cancelEdit}
                               className="text-white/80 hover:text-white text-sm font-medium transition-colors"
                             >
-                              Cancel
+                              {t('chatPage.cancel')}
                             </button>
                             <button
                               onClick={() => saveEdit(msg)}
                               className="bg-white text-primary px-6 py-2 rounded-full text-sm font-bold hover:bg-white/90 transition-colors shadow-sm"
                             >
-                              Update
+                              {t('chatPage.update')}
                             </button>
                           </div>
                         </div>
@@ -1965,12 +1967,12 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                           <button
                                             onClick={() => {
                                               navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                                              toast.success("Code copied!");
+                                              toast.success(t('chatPage.codeCopied'));
                                             }}
                                             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
                                           >
                                             <Copy className="w-3.5 h-3.5" />
-                                            Copy code
+                                            {t('chatPage.copyCode')}
                                           </button>
                                         </div>
                                         <div className="p-4 overflow-x-auto custom-scrollbar bg-[#1e1e1e]">
@@ -1992,7 +1994,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-0 group-hover/generated:opacity-100 transition-opacity">
                                       <div className="flex items-center gap-2">
                                         <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">AI Generated Asset</span>
+                                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('chatPage.aiGenerated')}</span>
                                       </div>
                                     </div>
                                     <img
@@ -2007,11 +2009,11 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     <button
                                       onClick={() => handleDownload(props.src, 'aisa-generated.png')}
                                       className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-0 group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-90 group-hover/generated:scale-100"
-                                      title="Download High-Res"
+                                      title={t('chatPage.downloadHighRes')}
                                     >
                                       <div className="flex items-center gap-2 px-1">
                                         <Download className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase">Download</span>
+                                        <span className="text-[10px] font-bold uppercase">{t('chatPage.download')}</span>
                                       </div>
                                     </button>
                                   </div>
@@ -2043,28 +2045,28 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                             <button
                               onClick={() => handleCopyMessage(msg.content)}
                               className="text-subtext hover:text-maintext transition-colors"
-                              title="Copy"
+                              title={t('chatPage.copy')}
                             >
                               <Copy className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleThumbsUp(msg.id)}
                               className={`transition-colors ${likedMessages.has(msg.id) ? 'text-blue-500' : 'text-subtext hover:text-primary'}`}
-                              title="Helpful"
+                              title={t('chatPage.helpful')}
                             >
                               <ThumbsUp className={`w-4 h-4 ${likedMessages.has(msg.id) ? 'fill-current' : ''}`} />
                             </button>
                             <button
                               onClick={() => handleThumbsDown(msg.id)}
                               className={`transition-colors ${dislikedMessages.has(msg.id) ? 'text-red-500' : 'text-subtext hover:text-red-500'}`}
-                              title="Not Helpful"
+                              title={t('chatPage.notHelpful')}
                             >
                               <ThumbsDown className={`w-4 h-4 ${dislikedMessages.has(msg.id) ? 'fill-current' : ''}`} />
                             </button>
                             <button
                               onClick={() => handleShare(msg.content)}
                               className="text-subtext hover:text-primary transition-colors"
-                              title="Share Text"
+                              title={t('chatPage.shareText')}
                             >
                               <Share className="w-4 h-4" />
                             </button>
@@ -2096,7 +2098,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                           className={`${active ? 'bg-primary text-white' : 'text-maintext'
                                             } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
                                         >
-                                          Open PDF
+                                          {t('chatPage.openPdf')}
                                         </button>
                                       )}
                                     </Menu.Item>
@@ -2107,7 +2109,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                           className={`${active ? 'bg-primary text-white' : 'text-maintext'
                                             } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
                                         >
-                                          Download
+                                          {t('chatPage.download')}
                                         </button>
                                       )}
                                     </Menu.Item>
@@ -2118,7 +2120,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                           className={`${active ? 'bg-primary text-white' : 'text-maintext'
                                             } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
                                         >
-                                          Share PDF
+                                          {t('chatPage.sharePdf')}
                                         </button>
                                       )}
                                     </Menu.Item>
@@ -2144,7 +2146,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       <button
                         onClick={() => handleCopyMessage(msg.content || msg.text)}
                         className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                        title="Copy"
+                        title={t('chatPage.copy')}
                       >
                         <Copy className="w-4 h-4" />
                       </button>
@@ -2152,7 +2154,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         <button
                           onClick={() => startEditing(msg)}
                           className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                          title="Edit"
+                          title={t('chatPage.edit')}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -2161,7 +2163,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         <button
                           onClick={() => handleRenameFile(msg)}
                           className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                          title="Rename"
+                          title={t('chatPage.rename')}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -2169,7 +2171,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       <button
                         onClick={() => handleMessageDelete(msg.id)}
                         className="p-1.5 text-subtext hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                        title="Delete"
+                        title={t('chatPage.delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -2217,16 +2219,16 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 {filePreviews.map((preview) => (
                   <div
                     key={preview.id}
-                    className="relative shrink-0 w-64 md:w-72 bg-surface/95 dark:bg-zinc-900/95 border border-border/50 rounded-2xl p-2.5 flex items-center gap-3 shadow-xl backdrop-blur-xl animate-in slide-in-from-bottom-2 duration-300 ring-1 ring-black/5"
+                    className="relative shrink-0 w-60 sm:w-64 md:w-72 bg-surface/95 dark:bg-zinc-900/95 border border-border/50 rounded-2xl p-2.5 flex items-center gap-3 shadow-xl backdrop-blur-xl animate-in slide-in-from-bottom-2 duration-300 ring-1 ring-black/5"
                   >
                     <div className="relative group shrink-0">
                       {preview.type.startsWith('image/') ? (
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-border/50 bg-black/5">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border border-border/50 bg-black/5">
                           <img src={preview.url} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         </div>
                       ) : (
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shadow-sm">
-                          <FileText className="w-7 h-7 text-primary" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shadow-sm">
+                          <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
                         </div>
                       )}
 
@@ -2234,8 +2236,8 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         <button
                           type="button"
                           onClick={() => handleRemoveFile(preview.id)}
-                          className="p-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-surface"
-                          title="Remove file"
+                          className="p-1 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-surface"
+                          title={t('chatPage.removeFile')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -2258,7 +2260,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               </div>
             )}
 
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="relative flex items-center gap-1.5 sm:gap-2">
               <input
                 id="file-upload"
                 type="file"
@@ -2299,9 +2301,9 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 type="button"
                 ref={attachBtnRef}
                 onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
-                className={`p-3 sm:p-4 rounded-full border border-primary bg-primary text-white transition-all duration-300 shadow-lg shadow-primary/20 shrink-0 flex items-center justify-center hover:opacity-90
+                className={`p-2.5 sm:p-3 md:p-4 rounded-full border border-primary bg-primary text-white transition-all duration-300 shadow-lg shadow-primary/20 shrink-0 flex items-center justify-center hover:opacity-90
                   ${isAttachMenuOpen ? 'rotate-45' : ''}`}
-                title="Add to chat"
+                title={t('chatPage.addToChat')}
               >
                 <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
@@ -2313,15 +2315,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   setSelectedToolType('chat');
                   setIsModelSelectorOpen(true);
                 }}
-                className="sm:hidden mx-1.5 p-3 rounded-full border border-border bg-surface text-maintext hover:bg-secondary transition-colors flex items-center justify-center shrink-0"
-                title="Select Model"
+                className="sm:hidden mx-0.5 p-2.5 rounded-full border border-border bg-surface text-maintext hover:bg-secondary transition-colors flex items-center justify-center shrink-0"
+                title={t('chatPage.selectModel')}
               >
                 <Sparkles className="w-5 h-5 text-primary" />
               </button>
 
 
 
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-0">
                 <textarea
                   ref={inputRef}
                   value={inputValue}
@@ -2332,10 +2334,10 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   }}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  placeholder="Ask AISA..."
+                  placeholder={t('chatPage.inputPlaceholder')}
                   rows={1}
-                  className={`w-full bg-surface border border-border rounded-[28px] py-3.5 md:py-4 pl-5 sm:pl-6 text-base md:text-lg text-maintext placeholder-subtext focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all resize-none overflow-y-auto custom-scrollbar ${inputValue.trim() ? 'pr-14 md:pr-24' : 'pr-28 md:pr-40'}`}
-                  style={{ minHeight: '54px', maxHeight: '200px', lineHeight: '1.5' }}
+                  className={`w-full bg-surface border border-border rounded-[24px] md:rounded-[28px] py-3 md:py-4 pl-3 sm:pl-4 md:pl-6 text-sm md:text-lg text-maintext placeholder-subtext focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all resize-none overflow-y-auto custom-scrollbar ${inputValue.trim() ? 'pr-10 sm:pr-12 md:pr-24' : 'pr-20 sm:pr-24 md:pr-40'}`}
+                  style={{ minHeight: '44px', maxHeight: '200px', lineHeight: '1.5' }}
                 />
                 <div className="absolute right-2 bottom-2 flex items-center gap-0 sm:gap-1 z-10">
                   {isListening && (
@@ -2346,7 +2348,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       onClick={handleVoiceInput}
                     >
                       <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight">Recording...</span>
+                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight">{t('chatPage.recording')}</span>
                     </motion.div>
                   )}
                   {!isListening && (
@@ -2356,7 +2358,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                           type="button"
                           onClick={() => setIsLiveMode(true)}
                           className="p-2 sm:p-2.5 rounded-full text-primary hover:bg-primary/10 hover:border-primary/20 transition-all flex items-center justify-center border border-transparent"
-                          title="Live Video Call"
+                          title={t('chatPage.liveVideoCall')}
                         >
                           <Video className="w-5 h-5" />
                         </button>
@@ -2367,7 +2369,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                           type="button"
                           onClick={handleVoiceInput}
                           className={`p-2 sm:p-2.5 rounded-full transition-all flex items-center justify-center border border-transparent ${isListening ? 'bg-primary text-white animate-pulse shadow-md shadow-primary/30' : 'text-primary hover:bg-primary/10 hover:border-primary/20'}`}
-                          title="Voice Input"
+                          title={t('chatPage.voiceInput')}
                         >
                           <Mic className="w-5 h-5" />
                         </button>
@@ -2422,7 +2424,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       <Camera className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
                     </div>
                     <div className="flex-1">
-                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">Camera & Scan</span>
+                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.cameraScan')}</span>
                     </div>
                   </label>
                 )}
@@ -2436,7 +2438,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/10 transition-colors shrink-0">
                       <Paperclip className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
                     </div>
-                    <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">Upload files</span>
+                    <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.uploadFiles')}</span>
                   </label>
                 )}
 
@@ -2450,7 +2452,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       <Cloud className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
                     </div>
                     <div className="flex-1">
-                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">Add from Drive</span>
+                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.addFromDrive')}</span>
                     </div>
                   </label>
                 )}
@@ -2524,7 +2526,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     <textarea
                       className="w-full bg-black/5 dark:bg-white/5 rounded-xl p-3 text-sm focus:outline-none border border-transparent focus:border-border text-maintext placeholder-subtext resize-none"
                       rows={3}
-                      placeholder="Share details (optional)"
+                      placeholder={t('chatPage.shareDetailsOptional')}
                       value={feedbackDetails}
                       onChange={(e) => setFeedbackDetails(e.target.value)}
                     />

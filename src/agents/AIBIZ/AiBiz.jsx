@@ -5,8 +5,10 @@ import HistorySidebar from "./components/HistorySidebar";
 import { apis } from "../../types";
 import { getUserData } from "../../userStore/userData";
 import axios from "axios";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function AiBiz() {
+  const { t } = useLanguage();
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
@@ -122,8 +124,8 @@ export default function AiBiz() {
       {/* Mobile Output (shown below form on small screens - actually modal or overlay might be better but adapting original layout) */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 max-h-[50vh] bg-white overflow-auto p-4 border-t border-gray-200 shadow-xl" style={{ display: output ? 'block' : 'none' }}>
         <div className="flex justify-between items-center mb-2">
-          <h3 className="font-bold">Output</h3>
-          <button onClick={() => setOutput("")} className="text-gray-500">Close</button>
+          <h3 className="font-bold">{t('aibiz.output')}</h3>
+          <button onClick={() => setOutput("")} className="text-gray-500">{t('aibiz.close')}</button>
         </div>
         <OutputPanel
           output={output}

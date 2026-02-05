@@ -1,8 +1,10 @@
 import React from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../../context/LanguageContext';
 
 const AgentModal = ({ isOpen, onClose, agent }) => {
+    const { t } = useLanguage();
     if (!isOpen || !agent) return null;
 
     return (
@@ -38,7 +40,7 @@ const AgentModal = ({ isOpen, onClose, agent }) => {
                                 target="_blank"
                                 rel="noreferrer"
                                 className="p-2 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                title="Open in new window"
+                                title={t('marketplacePage.openInNewWindow')}
                             >
                                 <ExternalLink className="w-5 h-5" />
                             </a>

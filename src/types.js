@@ -73,6 +73,7 @@ export const apis = {
   forgotPassword: `${API}/auth/forgot-password`,
   resetPassword: `${API}/auth/reset-password`,
   user: `${API}/user`,
+  uploadAvatar: `${API}/user/avatar`,
   getPayments: `${API}/user/payments`,
   notifications: `${API}/notifications`,
   agents: `${API}/agents`,
@@ -87,4 +88,7 @@ export const apis = {
   synthesizeVoice: `${API}/voice/synthesize`,
   createOrder: `${API}/payments/create-order`,
   verifyPayment: `${API}/payments/verify`,
+  sendForgotOTP: `${API}/auth/send-forgot-otp`,
+  verifyForgotOTP: `${API}/auth/verify-forgot-otp`,
+  resetPasswordOTP: `${API}/auth/reset-password-otp`,
 };

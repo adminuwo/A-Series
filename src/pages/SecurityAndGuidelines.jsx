@@ -2,32 +2,57 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Shield, Lock, FileText, Scale, Eye, AlertTriangle } from 'lucide-react';
 import ReportModal from '../Components/ReportModal/ReportModal';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../Components/LanguageSwitcher/LanguageSwitcher';
+import { apiService } from '../services/apiService';
 
 const SecurityAndGuidelines = () => {
+    const { t } = useLanguage();
+
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [contactInfo, setContactInfo] = useState({
+        email: 'support@a-series.in',
+        phone: '+91 98765 43210'
+    });
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const settings = await apiService.getPublicSettings();
+                setContactInfo(prev => ({
+                    email: settings.contactEmail || prev.email,
+                    phone: settings.supportPhone || prev.phone
+                }));
+            } catch (e) {
+                console.warn('Failed to load contact info', e);
+            }
+        };
+        fetchSettings();
+    }, []);
+
     const sections = [
         {
             id: 1,
-            title: "1. Core Promise: 'Your Data is Yours'",
+            title: t('landing.securityGuidelines.section1.title'),
             icon: <Lock className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-4">
-                    <p className="text-subtext">A-Series™ operates under a strict <span className="text-maintext font-bold">"Zero-Training"</span> policy. Your private data (documents, chat logs, images) is never used to train our public models.</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section1.mainText')}</p>
 
                     <div className="pl-4 border-l-2 border-primary/20 space-y-3">
                         <div>
-                            <h4 className="font-semibold text-maintext">1.1 Compliance with Indian Law (DPDP Act 2023)</h4>
-                            <p className="text-sm text-subtext">As a "Data Fiduciary," we adhere to the Digital Personal Data Protection Act, 2023. This includes consent-based collection, right to withdrawal, and grievance redressal.</p>
+                            <h4 className="font-semibold text-maintext">{t('landing.securityGuidelines.section1.sub1Title')}</h4>
+                            <p className="text-sm text-subtext">{t('landing.securityGuidelines.section1.sub1Text')}</p>
                         </div>
 
                         <div>
-                            <h4 className="font-semibold text-maintext">1.2 Right to be Forgotten</h4>
-                            <p className="text-sm text-subtext">Upon request, A-Series™ will permanently delete all your account data, chat history, and generated assets within <span className="font-bold">30 days</span>.</p>
+                            <h4 className="font-semibold text-maintext">{t('landing.securityGuidelines.section1.sub2Title')}</h4>
+                            <p className="text-sm text-subtext">{t('landing.securityGuidelines.section1.sub2Text')}</p>
                         </div>
 
                         <div>
-                            <h4 className="font-semibold text-maintext">1.3 Grievance Redressal</h4>
-                            <p className="text-sm text-subtext">Our Data Protection Officer (DPO) handles privacy complaints within 72 hours. Contact: <a href="mailto:privacy@a-series.in" className="text-primary hover:underline">privacy@a-series.in</a></p>
+                            <h4 className="font-semibold text-maintext">{t('landing.securityGuidelines.section1.sub3Title')}</h4>
+                            <p className="text-sm text-subtext">{t('landing.securityGuidelines.section1.sub3Text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a></p>
                         </div>
                     </div>
                 </div>
@@ -35,19 +60,19 @@ const SecurityAndGuidelines = () => {
         },
         {
             id: 2,
-            title: "2. Technical Security (The 'Vertex Shield')",
+            title: t('landing.securityGuidelines.section2.title'),
             icon: <Shield className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
-                    <p className="text-subtext">We leverage enterprise-grade security of Google Vertex AI. All data is <span className="font-bold">encrypted at rest (AES-256)</span> and in transit (TLS 1.2+).</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section2.mainText')}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-subtext">
                         <div className="p-3 bg-surface rounded-lg border border-border">
-                            <h4 className="font-bold text-maintext mb-1">Data Residency</h4>
-                            <p>Data stored in Google Cloud India regions (Mumbai/Delhi) for Indian enterprise clients.</p>
+                            <h4 className="font-bold text-maintext mb-1">{t('landing.securityGuidelines.section2.dataResidencyTitle')}</h4>
+                            <p>{t('landing.securityGuidelines.section2.dataResidencyText')}</p>
                         </div>
                         <div className="p-3 bg-surface rounded-lg border border-border">
-                            <h4 className="font-bold text-maintext mb-1">Access Control</h4>
-                            <p>Strict IAM policies ensure even A-Series engineers cannot view private chats without audit.</p>
+                            <h4 className="font-bold text-maintext mb-1">{t('landing.securityGuidelines.section2.accessControlTitle')}</h4>
+                            <p>{t('landing.securityGuidelines.section2.accessControlText')}</p>
                         </div>
                     </div>
                 </div>
@@ -55,122 +80,116 @@ const SecurityAndGuidelines = () => {
         },
         {
             id: 3,
-            title: "3. Acceptable Use Policy (Ethical Guardrails)",
+            title: t('landing.securityGuidelines.section3.title'),
             icon: <AlertTriangle className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
-                    <p className="text-subtext">To maintain a safe ecosystem, we strictly prohibit:</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section3.mainText')}</p>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {[
-                            "NSFW/Adult Content generation",
-                            "Hate Speech & Discrimination",
-                            "Deepfakes & Impersonation",
-                            "Political Campaigning & Propaganda",
-                            "Unprofessional Medical/Legal Advice"
-                        ].map((item, i) => (
+                        {t('landing.securityGuidelines.section3.prohibitedItems').map((item, i) => (
                             <li key={i} className="flex items-center gap-2 text-sm text-subtext bg-surface p-2 rounded-lg border border-border">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                                 {item}
                             </li>
                         ))}
                     </ul>
-                    <p className="text-xs text-subtext mt-2 italic">Violation of these policies will result in immediate account suspension.</p>
+                    <p className="text-xs text-subtext mt-2 italic">{t('landing.securityGuidelines.section3.violationWarning')}</p>
                 </div>
             )
         },
         {
             id: 4,
-            title: "4. AI Safety & Disclaimers",
+            title: t('landing.securityGuidelines.section4.title'),
             icon: <Scale className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
                     <div className="bg-surface/50 p-3 rounded-lg border border-border">
-                        <h4 className="font-semibold text-maintext text-sm mb-1">4.1 Hallucination Warning</h4>
-                        <p className="text-xs text-subtext">AI models can sometimes generate incorrect info. Users must verify critical facts (dates, math, historical events).</p>
+                        <h4 className="font-semibold text-maintext text-sm mb-1">{t('landing.securityGuidelines.section4.sub1Title')}</h4>
+                        <p className="text-xs text-subtext">{t('landing.securityGuidelines.section4.sub1Text')}</p>
                     </div>
                     <div className="bg-surface/50 p-3 rounded-lg border border-border">
-                        <h4 className="font-semibold text-maintext text-sm mb-1">4.2 Watermarking (SynthID)</h4>
-                        <p className="text-xs text-subtext">AI-generated media on Free/Starter plans embed a Digital Watermark (SynthID) for authenticity tracking.</p>
+                        <h4 className="font-semibold text-maintext text-sm mb-1">{t('landing.securityGuidelines.section4.sub2Title')}</h4>
+                        <p className="text-xs text-subtext">{t('landing.securityGuidelines.section4.sub2Text')}</p>
                     </div>
                 </div>
             )
         },
         {
             id: 5,
-            title: "5. File Upload & Document Security",
+            title: t('landing.securityGuidelines.section5.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-2">
-                    <p className="text-subtext">Uploaded files are processed solely for functionality (document analysis, RAG).</p>
-                    <p className="text-subtext">Restrictions apply to file size, type, and content to prevent abuse.</p>
-                    <p className="text-subtext font-medium text-blue-500">Executable or malicious files may be rejected.</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section5.text1')}</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section5.text2')}</p>
+                    <p className="text-subtext font-medium text-blue-500">{t('landing.securityGuidelines.section5.text3')}</p>
                 </div>
             )
         },
         {
             id: 6,
-            title: "6. Cookies & Tracking Technologies",
+            title: t('landing.securityGuidelines.section6.title'),
             icon: <Eye className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-2">
-                    <p className="text-subtext">A-Series™ uses cookies for functionality, security, and optimization.</p>
-                    <p className="text-subtext">Users may manage cookies via browser settings. See <span className="text-primary cursor-pointer hover:underline">Cookie Policy</span>.</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section6.text1')}</p>
+                    <p className="text-subtext">{t('landing.securityGuidelines.section6.text2')}</p>
                 </div>
             )
         },
         {
             id: 7,
-            title: "7. Third-Party Services & Integrations",
+            title: t('landing.securityGuidelines.section7.title'),
             icon: <div className="w-5 h-5 flex items-center justify-center font-bold text-primary text-xs">3P</div>,
-            content: <p className="text-subtext">Integrations with cloud providers and AI services are governed by contracts and limited to operational necessity.</p>
+            content: <p className="text-subtext">{t('landing.securityGuidelines.section7.text')}</p>
         },
         {
             id: 8,
-            title: "8. Intellectual Property",
+            title: t('landing.securityGuidelines.section8.title'),
             icon: <div className="w-5 h-5 flex items-center justify-center font-bold text-primary text-xs">©</div>,
             content: <div className="text-subtext space-y-2">
-                <p><strong>8.1 License:</strong> Limited, non-exclusive, non-transferable access.</p>
-                <p><strong>8.2 Ownership:</strong> All rights remain with A-Series™ and UWO™.</p>
-                <p><strong>8.3 Transfer:</strong> No transfer of ownership implies.</p>
+                <p><strong>{t('landing.securityGuidelines.section8.license')}</strong></p>
+                <p><strong>{t('landing.securityGuidelines.section8.ownership')}</strong></p>
+                <p><strong>{t('landing.securityGuidelines.section8.transfer')}</strong></p>
             </div>
         },
         {
             id: 9,
-            title: "9. Enforcement & Termination",
+            title: t('landing.securityGuidelines.section9.title'),
             icon: <AlertTriangle className="w-5 h-5 text-primary" />,
             content: <ul className="list-disc list-inside text-subtext text-sm">
-                <li>Monitor for compliance</li>
-                <li>Suspend/terminate for violations</li>
-                <li>Immediate action for security threats</li>
+                {t('landing.securityGuidelines.section9.items').map((item, i) => (
+                    <li key={i}>{item}</li>
+                ))}
             </ul>
         },
         {
             id: 10,
-            title: "10. Policy Updates",
+            title: t('landing.securityGuidelines.section10.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
-            content: <p className="text-subtext">Modifications may occur at any time. Continued use constitutes acceptance.</p>
+            content: <p className="text-subtext">{t('landing.securityGuidelines.section10.text')}</p>
         },
         {
             id: 11,
-            title: "11. Contact Information",
+            title: t('landing.securityGuidelines.section11.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
-            content: <p className="text-subtext">For questions, concerns, or rights-related requests, contact <a href="mailto:contact@a-series.in" className="text-primary hover:underline">contact@a-series.in</a>.</p>
+            content: <p className="text-subtext">{t('landing.securityGuidelines.section11.text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a>.</p>
         },
         {
             id: 12,
-            title: "12. Incident Reporting & Support",
+            title: t('landing.securityGuidelines.section12.title'),
             icon: <AlertTriangle className="w-5 h-5 text-blue-500" />,
             content: (
                 <div className="space-y-4">
-                    <p className="text-subtext text-sm">If you witness any security violations, encounter technical issues, or need urgent assistance, please report them immediately.</p>
+                    <p className="text-subtext text-sm">{t('landing.securityGuidelines.section12.mainText')}</p>
                     <div className="flex flex-wrap gap-4">
                         <button onClick={() => setIsReportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-500/20 border border-blue-500/20 transition-colors">
-                            <span>📧 Report in App:</span>
-                            <span className="font-semibold">Open Form</span>
+                            <span>📧 {t('landing.securityGuidelines.section12.reportButton')}</span>
+                            <span className="font-semibold">{t('landing.securityGuidelines.section12.reportButtonText')}</span>
                         </button>
-                        <a href="tel:+918358990909" className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-lg hover:bg-primary/10 border border-primary/20 transition-colors">
-                            <span>📞 Support:</span>
-                            <span className="font-semibold">+91 83589 90909</span>
+                        <a href={`tel:${contactInfo.phone}`} className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-lg hover:bg-primary/10 border border-primary/20 transition-colors">
+                            <span>📞 {t('landing.securityGuidelines.section12.supportButton')}</span>
+                            <span className="font-semibold">{contactInfo.phone}</span>
                         </a>
                     </div>
                 </div>
@@ -182,13 +201,18 @@ const SecurityAndGuidelines = () => {
         <div className="h-full flex flex-col bg-background overflow-hidden relative">
             {/* Header */}
             <header className="px-6 py-5 border-b border-border bg-secondary/30 backdrop-blur-md sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Shield className="w-6 h-6 text-primary" />
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Shield className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-maintext">{t('landing.securityGuidelines.pageTitle')}</h1>
+                            <p className="text-xs text-subtext">{t('landing.securityGuidelines.lastUpdated')}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-maintext">Security & Guidelines</h1>
-                        <p className="text-xs text-subtext">Last Updated: 17/12/2025</p>
+                    <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                     </div>
                 </div>
             </header>
@@ -204,7 +228,7 @@ const SecurityAndGuidelines = () => {
                         className="bg-secondary border border-border rounded-xl p-6 shadow-sm"
                     >
                         <p className="text-subtext leading-relaxed">
-                            This Security & Guidelines section governs the acceptable use, data protection practices, and security standards applicable to <span className="text-maintext font-semibold">A-Series™</span>, operated by <span className="text-maintext font-semibold">UWO™</span>. By accessing or using the platform, you agree to comply with the terms set forth herein.
+                            {t('landing.securityGuidelines.intro')}
                         </p>
                     </motion.div>
 
@@ -240,10 +264,10 @@ const SecurityAndGuidelines = () => {
                             className="bg-surface border border-border rounded-xl p-5"
                         >
                             <h3 className="font-bold text-maintext mb-2 flex items-center gap-2">
-                                🧠 Legal Summary Statement
+                                {t('landing.securityGuidelines.legalSummaryTitle')}
                             </h3>
                             <p className="text-subtext text-sm italic">
-                                "These Security & Guidelines establish the framework for lawful use, data protection, AI governance, and operational security within the A-Series platform."
+                                {t('landing.securityGuidelines.legalSummaryText')}
                             </p>
                         </motion.div>
                     </div>

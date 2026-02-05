@@ -16,10 +16,14 @@ const getAvatarUrl = (user) => {
 
 const processUser = (user) => {
   if (user) {
+    // Create a shallow copy to avoid mutating read-only objects
+    const updatedUser = { ...user };
+
     // Always attempt to set a better avatar if one isn't explicitly set, is the default, or is a relative path
-    if (!user.avatar || user.avatar.includes('gravatar.com') || user.avatar === '/User.jpeg' || user.avatar.startsWith('/')) {
-      user.avatar = getAvatarUrl(user);
+    if (!updatedUser.avatar || updatedUser.avatar.includes('gravatar.com') || updatedUser.avatar === '/User.jpeg' || updatedUser.avatar.startsWith('/')) {
+      updatedUser.avatar = getAvatarUrl(updatedUser);
     }
+    return updatedUser;
   }
   return user;
 };
@@ -32,8 +36,31 @@ export const getUserData = () => {
   const data = JSON.parse(localStorage.getItem('user'))
   return processUser(data);
 }
+
+// New helper to update avatar globally
+export const updateUserAvatar = (avatarUrl) => {
+  const user = getUserData();
+  if (user) {
+    // Add cache-busting timestamp
+    const separator = avatarUrl.includes('?') ? '&' : '?';
+    user.avatar = `${avatarUrl}${separator}t=${Date.now()}`;
+    setUserData(user);
+    return user;
+  }
+  return null;
+};
+
+// Reset function for Recoil state (to be called from components with useSetRecoilState)
+export const resetUserDataState = () => ({
+  user: null
+});
 export const clearUser = () => {
-  localStorage.clear()
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('last_chat_path');
+  localStorage.removeItem('user_settings');
+  // Preferences like user-language, user-region, and app_theme are preserved
 }
 const getUser = () => {
   try {

@@ -190,7 +190,7 @@ const LiveAI = ({ onClose, language }) => {
             const response = await generateChatResponse(
                 history,
                 text,
-                `You are AISA, powered by A-Series. You are in a video call. 
+                `You are AISA, powered by A-Series™. You are in a video call. 
                  CRITICAL LANGUAGE INSTRUCTION:
                  - If the user speaks Hindi, respond in pure, natural, and polite Hindi (Devanagari script). 
                  - Avoid heavy English words unless unavoidable (like "AI" or "Agent").
@@ -198,7 +198,7 @@ const LiveAI = ({ onClose, language }) => {
                  - Your text will be converted to speech, so write in a way that sounds natural when spoken.
                  Current Language Setting: ${language}.
                  
-                 If asked, explain A-Series as a platform to discover and create AI agents.`,
+                 If asked, explain A-Series™ as a platform to discover and create AI agents.`,
                 attachment,
                 language
             );

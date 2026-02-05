@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
 import { Zap, Mail, GitBranch, Database, Calendar, Plus } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const Automations = () => {
+  const { t } = useLanguage();
   const [automations, setAutomations] = useState([]);
 
   useEffect(() => {
@@ -40,16 +42,16 @@ const Automations = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-maintext mb-2">
-            Automations
+            {t('automationsPage.title')}
           </h1>
           <p className="text-sm md:text-base text-subtext">
-            Manage background workflows and agent triggers.
+            {t('automationsPage.subtitle')}
           </p>
         </div>
 
         <button className="bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:opacity-90 transition-colors flex items-center gap-2 shadow-md">
           <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">New Automation</span>
+          <span className="hidden sm:inline">{t('automationsPage.newAutomation')}</span>
         </button>
       </div>
 
@@ -59,8 +61,8 @@ const Automations = () => {
           <div
             key={auto.id}
             className={`relative p-6 rounded-2xl border transition-all duration-300 shadow-sm ${auto.active
-                ? 'bg-card border-primary shadow-lg shadow-primary/5'
-                : 'bg-surface border-border opacity-70'
+              ? 'bg-card border-primary shadow-lg shadow-primary/5'
+              : 'bg-surface border-border opacity-70'
               }`}
           >
             <div className="flex justify-between items-start mb-4">
@@ -86,7 +88,7 @@ const Automations = () => {
                 className={`px-2 py-1 rounded-md ${auto.active ? 'bg-green-500/10 text-green-500' : 'bg-secondary text-subtext'
                   }`}
               >
-                {auto.active ? 'Active' : 'Paused'}
+                {auto.active ? t('automationsPage.active') : t('automationsPage.paused')}
               </span>
 
               <span className="text-subtext">{auto.type}</span>

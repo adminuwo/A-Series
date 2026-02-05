@@ -1,0 +1,1150 @@
+{
+    "brandName": "A-Series™",
+    "hideAll": "Ocultar todo",
+    "showAll": "Mostrar todo",
+    "confirmNewPassword": "Confirme la nueva contraseña",
+    "enterNewPassword": "Ingrese la nueva contraseña",
+    "enterCurrentPassword": "Ingrese la contraseña actual",
+    "confirmPassword": "Confirmar contraseña",
+    "newPassword": "Nueva contraseña",
+    "currentPassword": "Contraseña actual",
+    "deleteAccount": "Eliminar cuenta",
+    "changePassword": "Cambiar contraseña",
+    "changeLanguage": "Cambiar idioma",
+    "darkMode": "Modo oscuro",
+    "lightMode": "Modo claro",
+    "displayLanguage": "Idioma de pantalla",
+    "dashboard": "Tablero",
+    "chat": "Chat",
+    "myAgents": "Mis agentes",
+    "marketplace": "Mercado",
+    "vendorDashboard": "Tablero del vendedor",
+    "billing": "Facturación",
+    "adminDashboard": "Tablero del administrador",
+    "updates": "Actualizaciones",
+    "helpFaq": "Ayuda y FAQ",
+    "logout": "Cerrar sesión",
+    "hi": "Hola",
+    "profile": "Perfil",
+    "joined": "Se unió en diciembre de 2025",
+    "securityBtn": "Seguridad y directrices",
+    "totalSessions": "Sesiones totales",
+    "proFeatures": "Funciones Pro",
+    "accountSettings": "Configuración de la cuenta",
+    "credits": "Créditos",
+    "accountPreferences": "Preferencias de la cuenta",
+    "timezone": "Zona horaria",
+    "currency": "Moneda",
+    "theme": "Tema",
+    "securityStatus": "Estado de seguridad",
+    "accountSecure": "Cuenta totalmente segura",
+    "twoFactor": "Autenticación de dos factores",
+    "enabled": "Habilitado",
+    "manage": "Administrar",
+    "signOut": "Cerrar sesión",
+    "auth": {
+        "welcomeBack": "Bienvenido de nuevo",
+        "signInSubtitle": "Inicia sesión para continuar en A-Series™",
+        "createAccount": "Crear cuenta",
+        "joinSubtitle": "Únete a A-Series™ para desbloquear acceso total",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "fullName": "Nombre completo",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
+        "noAccount": "¿No tienes una cuenta?",
+        "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+        "backToHome": "Volver al inicio",
+        "signIn": "Iniciar sesión",
+        "signUp": "Registrarse",
+        "signingIn": "Iniciando sesión...",
+        "creatingAccount": "Creando cuenta...",
+        "login": "Entrar",
+        "otpSent": "Ingrese la OTP enviada a",
+        "verifyOTP": "Verificar OTP",
+        "resetPassword": "Restablecer contraseña",
+        "newPassword": "Nueva contraseña",
+        "confirmPassword": "Confirmar contraseña",
+        "sendOTP": "Enviar OTP",
+        "sendingOTP": "Enviando OTP...",
+        "verifying": "Verificando...",
+        "resetting": "Restableciendo...",
+        "changeEmail": "Cambiar correo",
+        "enterEmail": "Ingrese su dirección de correo y le enviaremos una OTP para restablecer su contraseña.",
+        "createPassword": "Crea una nueva contraseña para tu cuenta.",
+        "otpSentSuccess": "OTP enviada con éxito",
+        "otpVerifiedSuccess": "OTP verificada con éxito",
+        "passwordResetSuccess": "Contraseña actualizada exitosamente",
+        "passwordsDoNotMatch": "Las contraseñas no coinciden",
+        "enterNewPasswordDesc": "Ingrese su nueva contraseña a continuación.",
+        "resetPassTitle": "Restablecer contraseña",
+        "agreeToTerms": "Acepto los {terms} y la {privacy}.",
+        "resetPassBtn": "Restablecer contraseña",
+        "resettingBtn": "Restableciendo..."
+    },
+    "dashboardData": {
+        "overview": "Resumen",
+        "welcomeMessage": "Bienvenido de nuevo, esto es lo que está sucediendo hoy.",
+        "totalChats": "Chats Totales",
+        "totalCredits": "Créditos Totales",
+        "activeAgents": "Agentes Activos",
+        "timeSaved": "Tiempo Ahorrado",
+        "recentActivity": "Actividad Reciente",
+        "viewAll": "Ver Todo",
+        "quickActions": "Acciones Rápidas",
+        "newChat": "Nuevo Chat",
+        "inviteTeam": "Invitar Miembro",
+        "deployAgent": "Desplegar Agente",
+        "loading": "Cargando tablero...",
+        "allSystemsOperational": "Todos los sistemas operativos",
+        "manualWorkEquivalent": "Equivalente manual estimado",
+        "nextReset": "Próximo reinicio en 14 días"
+    },
+    "admin": {
+        "sidebar": {
+            "overview": "Descripción general",
+            "agents": "Agentes",
+            "revenue": "Ingresos y Pagos",
+            "transactions": "Historial de transacciones",
+            "financials": "Finanzas",
+            "userSupport": "Soporte al usuario",
+            "userManagement": "Gestión de usuarios",
+            "settings": "Configuración",
+            "management": "Gestión",
+            "governance": "Gobernanza",
+            "signOut": "Cerrar sesión",
+            "goToASeries": "Ir a A-Series™"
+        },
+        "header": {
+            "search": "Buscar agentes...",
+            "config": "Configuración de agentes",
+            "brand": "A-Series™"
+        },
+        "overview": {
+            "title": "Descripción general del tablero",
+            "welcome": "Bienvenido de nuevo, A-Series™. Aquí está lo que está pasando hoy.",
+            "systemsOperational": "Sistemas operativos",
+            "systemReady": "Sistema listo",
+            "production": "Producción V2.4",
+            "security": "Seguridad",
+            "systemSecure": "Sistema seguro",
+            "performanceSnapshot": "Instantánea de rendimiento",
+            "financialOverview": "Resumen financiero",
+            "invoice": "FACTURA",
+            "grossSales": "Ventas brutas",
+            "platformFee": "Tarifa de plataforma (50%)",
+            "netEarnings": "Ganancias netas",
+            "status": "Estado",
+            "nextPayout": "Próximo pago",
+            "active": "Activo",
+            "totalUsers": "Usuarios totales",
+            "activeAgents": "Agentes activos",
+            "revenueMtd": "Ingresos (MTD)"
+        },
+        "support": {
+            "all": "Todo",
+            "contactUs": "Contáctenos",
+            "helpCenter": "Centro de ayuda",
+            "security": "Seguridad",
+            "searchPlaceholder": "Buscar por nombre, correo electrónico o asunto...",
+            "messageContent": "Contenido del mensaje",
+            "resolutionNotes": "Notas de resolución y acción",
+            "notesPlaceholder": "Agregar notas internas sobre la resolución o respuesta...",
+            "markResolved": "Marcar como resuelto",
+            "submittedOn": "Enviado el",
+            "senderDetails": "Detalles del remitente",
+            "subject": "Asunto",
+            "deleteInquiry": "Delete Inquiry",
+            "noInquiries": "No inquiries found.",
+            "selectTicket": "Select a Ticket",
+            "selectTicketDesc": "Select an inquiry from the list to view details",
+            "deleteConfirmTitle": "Delete Inquiry?",
+            "deleteConfirmMessage": "Are you sure you want to delete \"{title}\"?",
+            "confirmDelete": "Yes, Delete",
+            "title": "User Support",
+            "subtitle": "Manage user complaints and inquiries",
+            "open": "Open",
+            "resolved": "Resolved",
+            "cancel": "Cancel"
+        },
+        "agents": {
+            "title": "Agents",
+            "newAgent": "New Agent",
+            "agentName": "Agent Name",
+            "pricing": "Pricing",
+            "status": "Status",
+            "permanentDelete": "Permanent Delete",
+            "unnamedAgent": "Unnamed Agent",
+            "free": "Free",
+            "live": "Live",
+            "active": "Active",
+            "inactive": "Inactive",
+            "noAppsFound": "No apps found in inventory.",
+            "deleteConfirmTitle": "Delete Agent?",
+            "deleteConfirmMessage": "Are you sure you want to permanently delete \"{name}\"? This action cannot be undone.",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "success": "Success!",
+            "agentCreated": "Agent \"{name}\" created.",
+            "dismiss": "Dismiss",
+            "createModal": {
+                "title": "Create New Agent",
+                "subtitle": "Add a new AI agent to your marketplace",
+                "basicDetails": "Basic Details",
+                "namePlaceholder": "Agent Name (e.g. FinanceBot)",
+                "descPlaceholder": "Briefly describe what this agent acts like...",
+                "configuration": "Configuration",
+                "liveUrl": "Live URL",
+                "icon": "Icon",
+                "category": "Category",
+                "draftMode": "Draft Mode",
+                "draftModeDesc": "Visible only to you until published.",
+                "createAgent": "Create Agent",
+                "creating": "Creating...",
+                "configureSubscription": "Configure Subscription",
+                "setupPricing": "Set up pricing tiers for your agent",
+                "selectPlans": "Select Plans",
+                "currency": "Currency",
+                "monthly": "Monthly",
+                "yearly": "Yearly",
+                "freePlanSelected": "Free Plan Selected",
+                "freePlanDesc": "Users can access this agent for free.",
+                "confirm": "Confirm",
+                "saved": "Saved! ✓",
+                "pricing": "Pricing",
+                "cancel": "Cancel",
+                "categories": {
+                    "Business OS": "Business OS",
+                    "Data & Intelligence": "Data & Intelligence",
+                    "Sales & Marketing": "Sales & Marketing",
+                    "HR & Finance": "HR & Finance",
+                    "Design & Creative": "Design & Creative",
+                    "Medical & Health AI": "Medical & Health AI",
+                    "general": "General"
+                },
+                "pricingOptions": {
+                    "Free": "Free",
+                    "Subscription": "Subscription"
+                }
+            },
+            "details": {
+                "back": "Back",
+                "approveGoLive": "Approve & Go Live",
+                "delete": "Delete",
+                "performance": "Performance",
+                "activeUsers": "Active Users",
+                "subscribers": "Subscribers",
+                "about": "About Agent",
+                "edit": "Edit",
+                "saveDescription": "Save Description",
+                "configuration": "Configuration",
+                "saveUrl": "Save URL",
+                "missingUrlWarn": "Missing Live URL prevents this agent from being published to the marketplace.",
+                "visibility": "Visibility",
+                "public": "Public",
+                "private": "Private",
+                "reviewStatus": "Review Status",
+                "rejectionNotice": "Submission Rejected"
+            }
+        },
+        "finance": {
+            "revenueOverview": "Revenue Overview",
+            "platformPerformance": "Platform-wide financial performance",
+            "totalGross": "Total Gross Revenue",
+            "grossSubtitle": "Before platform fees & payouts",
+            "operationalCosts": "Operational Costs",
+            "costsSubtitle": "Server & Infrastructure",
+            "netPlatform": "Net Platform Revenue",
+            "netSubtitle": "Platform service fees",
+            "agentPerformance": "Agent-wise Performance",
+            "liveMetrics": "Live Metrics",
+            "agentName": "Agent Name",
+            "totalRevenue": "Total Revenue",
+            "vendorShare": "Vendor Share",
+            "platformNet": "Platform Net",
+            "noData": "No transaction data available yet.",
+            "copied": "Copied!",
+            "transactionHistory": "Transaction History",
+            "searchPlaceholder": "Search transaction...",
+            "filter": "Filter",
+            "id": "Transaction ID",
+            "date": "Date",
+            "type": "Type",
+            "amount": "Amount",
+            "status": "Status",
+            "actions": "Actions",
+            "details": "Details",
+            "loading": "Loading history...",
+            "noTransactions": "No transactions found yet.",
+            "modalTitle": "Transaction Details",
+            "breakdown": "Amount Breakdown",
+            "grossAmount": "Gross Amount",
+            "platformFeePerc": "Platform Fee (50%)",
+            "vendorEarnings": "Vendor Earnings",
+            "close": "Close"
+        },
+        "users": {
+            "title": "User Management",
+            "subtitle": "Manage platform entities and track live subscriptions",
+            "searchPlaceholder": "Search by name, email, or agent...",
+            "tableUser": "User",
+            "tableRole": "Role",
+            "tableAgents": "Agents",
+            "tableStatus": "Status",
+            "tableSpent": "Spent",
+            "tableActions": "Actions",
+            "noSubscriptions": "No Subscriptions",
+            "invested": "Invested",
+            "active": "Active",
+            "block": "Block",
+            "blocked": "Blocked",
+            "noUsersFound": "No platform users found",
+            "toastBlocked": "User blocked successfully",
+            "toastUnblocked": "User unblocked successfully",
+            "toastError": "Failed to update user status"
+        },
+        "complaints": {
+            "title": "Complaints & Escalations",
+            "noComplaints": "No open complaints at the moment.",
+            "systemSmooth": "System is running smoothly.",
+            "exampleTicket": "Example Resolved Ticket",
+            "resolved": "Resolved"
+        },
+        "platformSettings": {
+            "title": "Platform Settings & Safety",
+            "subtitle": "Manage global configuration and emergency controls.",
+            "saveChanges": "Save Changes",
+            "generalConfig": "General Configuration",
+            "generalSubtitle": "Basic platform details and contact info.",
+            "supportPhone": "Support Phone",
+            "contactEmail": "Contact Email",
+            "globalAnnouncement": "Global Announcement (Optional)",
+            "announcementPlaceholder": "e.g. New AI Agents added this week!",
+            "announcementHint": "This message will be broadcasted as a notification to all users' \"Updates\" section.",
+            "safetyEmergency": "Safety & Emergency Controls",
+            "safetySubtitle": "Manage system access and critical overrides.",
+            "maintenanceMode": "Maintenance Mode",
+            "maintenanceDesc": "Disable user access for system upgrades.",
+            "killSwitch": "Global Kill-Switch",
+            "killSwitchDesc": "Immediately disable ALL AI Agent inference APIs.",
+            "toastSaved": "Settings saved successfully",
+            "toastError": "Failed to save settings",
+            "toastLoadError": "Failed to load platform settings"
+        },
+        "auditLogs": {
+            "title": "Audit Logs",
+            "action": "Action",
+            "user": "User",
+            "target": "Target",
+            "time": "Time"
+        }
+    },
+    "notificationsPage": {
+        "title": "Actualizaciones",
+        "subtitle": "Manténgase informado con los últimos anuncios de la plataforma y alertas de cuenta.",
+        "welcomeTitle": "¡Bienvenido a A-Series™!",
+        "welcomeMessage": "Nos alegra tenerte aquí. Este es su centro de actualizaciones donde recibirá anuncios de la plataforma, alertas de suscripción y lanzamiento de nuevos agentes.",
+        "markRead": "Marcar como leído",
+        "delete": "Eliminar",
+        "systemMaintenance": {
+            "title": "Mantenimiento del Sistema",
+            "message": "El sistema está actualmente en modo de mantenimiento.",
+            "newSubscriber": {
+                "title": "Nuevo Suscriptor",
+                "messagePrefix": "Nuevo Suscriptor: Un usuario se ha suscrito a"
+            }
+        },
+        "systemRestored": {
+            "title": "Sistema Restaurado",
+            "message": "Mantenimiento completado. El sistema está totalmente operativo."
+        },
+        "criticalAlert": {
+            "title": "Alerta Crítica",
+            "message": "Interruptor de Apagado Global Activado. Todos los servicios de IA están suspendidos momentáneamente."
+        },
+        "servicesRestored": {
+            "title": "Servicios Restaurados",
+            "message": "Interruptor de Apagado Global Desactivado. Todos los servicios de IA están activos ahora."
+        },
+        "newAnnouncement": "Nuevo Anuncio"
+    },
+    "chatPage": {
+        "newChat": "Nuevo chat",
+        "history": "Historial",
+        "recent": "Reciente",
+        "noRecentChats": "Sin chats recientes",
+        "chatWith": "Chatear con:",
+        "dropToUpload": "Soltar para subir",
+        "howCanIHelp": "¿Cómo puedo ayudarte hoy?",
+        "startConversation": "Inicia una conversación con tu agente de IA.",
+        "inputPlaceholder": "Preguntar a AISA...",
+        "recording": "Grabando...",
+        "shareFeedback": "Compartir comentarios",
+        "submit": "Enviar",
+        "cancel": "Cancelar",
+        "update": "Actualizar",
+        "codeCopied": "¡Código copiado!",
+        "imageUpdated": "¡Imagen actualizada!",
+        "switchedTo": "Cambiado a",
+        "openPdf": "Abrir PDF",
+        "download": "Descargar",
+        "sharePdf": "Compartir PDF",
+        "binaryContent": "CONTENIDO BINARIO",
+        "codeReader": "LECTOR DE CÓDIGO",
+        "cameraScan": "Cámara y escaneo",
+        "uploadFiles": "Subir archivos",
+        "addFromDrive": "Agregar desde Drive",
+        "pdfPreview": "PDF • Vista previa",
+        "wordPreview": "WORD • Vista previa",
+        "excel": "EXCEL",
+        "slides": "DIAPOSITIVAS",
+        "document": "DOCUMENTO",
+        "copyCode": "Copiar código",
+        "aiGenerated": "Activo generado por IA",
+        "downloadHighRes": "Descargar alta resolución",
+        "previewNotAvailable": "Vista previa no disponible.",
+        "pleaseDownloadToView": "Por favor descargue para ver.",
+        "failedToLoadExcel": "Error al cargar la vista previa de Excel.",
+        "audioFilePlayer": "Reproductor de archivos de audio",
+        "documentViewer": "Visor de documentos",
+        "deleteChat": "Eliminar chat",
+        "helpful": "Útil",
+        "notHelpful": "No es útil",
+        "shareText": "Compartir texto",
+        "removeFile": "Eliminar archivo",
+        "addToChat": "Agregar al chat",
+        "selectModel": "Seleccionar modelo",
+        "liveVideoCall": "Videollamada en vivo",
+        "voiceInput": "Entrada de voz",
+        "shareDetailsOptional": "Compartir detalles (opcional)",
+        "copy": "Copiar",
+        "edit": "Editar",
+        "rename": "Renombrar",
+        "delete": "Eliminar"
+    },
+    "landing": {
+        "signIn": "Iniciar sesión",
+        "getStarted": "Empezar",
+        "heroTitle1": "El Futuro de la",
+        "heroTitle2": "IA Conversacional",
+        "heroSubtitle": "Experimente la próxima generación de asistencia inteligente. A-Series™ aprende, se adapta y crea con usted en tiempo real a través de una interfaz impresionante.",
+        "startNow": "Empezar ahora",
+        "existingUser": "Usuario existente",
+        "poweredBy": "Desarrollado por UWO™",
+        "features": {
+            "smartAgents": {
+                "title": "Agentes Inteligentes",
+                "desc": "Acceda a un mercado de agentes de IA especializados para codificación, escritura y análisis."
+            },
+            "realTime": {
+                "title": "Velocidad en tiempo real",
+                "desc": "Impulsado por los modelos de IA más rápidos para una conversación instantánea y fluida."
+            },
+            "secure": {
+                "title": "Seguro y Privado",
+                "desc": "La seguridad de grado empresarial garantiza que sus datos y conversaciones permanezcan privados."
+            }
+        },
+        "footer": {
+            "description": "A-Series™ - El primer mercado de aplicaciones de IA de la India",
+            "appCount": "Más de 100 aplicaciones de IA | A-Series™ | Integración con socios",
+            "poweredBy": "Desarrollado por UWO™",
+            "explore": "Explorar",
+            "marketplace": "Mercado",
+            "myAgents": "Mis Agentes",
+            "support": "Soporte",
+            "contact": "Contacto",
+            "helpCenter": "Centro de Ayuda",
+            "securityGuidelines": "Guías de Seguridad",
+            "contactUs": "Contáctenos",
+            "privacyPolicy": "Política de Privacidad",
+            "termsOfService": "Términos de Servicio",
+            "cookiePolicy": "Política de Cookies",
+            "allRightsReserved": "Todos los derechos reservados. En asociación con UWO™-LINK™.",
+            "location": "Jabalpur, Madhya Pradesh"
+        },
+        "securityGuidelines": {
+            "pageTitle": "Pautas de seguridad",
+            "lastUpdated": "Actualizado: Febrero 2026",
+            "intro": "En A-Series, nos tomamos la seguridad en serio.",
+            "legalSummaryTitle": "Resumen legal",
+            "legalSummaryText": "Al usar nuestra plataforma, acepta estos estándares de seguridad.",
+            "section1": {
+                "title": "Protección de datos",
+                "mainText": "Protegemos sus datos.",
+                "sub1Title": "Cifrado",
+                "sub1Text": "Cifrado de extremo a extremo.",
+                "sub2Title": "Almacenamiento",
+                "sub2Text": "Almacenamiento seguro en la nube.",
+                "sub3Title": "Privacidad",
+                "sub3Text": "Controles estrictos. Contacto: "
+            },
+            "section2": {
+                "title": "Infrastructure",
+                "mainText": "Our infrastructure is built on world-class secure foundations.",
+                "dataResidencyTitle": "Data Residency",
+                "dataResidencyText": "Data stored in compliance with local regulations.",
+                "accessControlTitle": "Access Control",
+                "accessControlText": "Strict role-based access control."
+            },
+            "section3": {
+                "title": "Contenido prohibido",
+                "mainText": "Prohibido:",
+                "prohibitedItems": [
+                    "Malware",
+                    "Discurso de odio",
+                    "Ilegal",
+                    "Acoso"
+                ],
+                "violationWarning": "La cuenta será suspendida."
+            },
+            "section4": {
+                "title": "Compliance",
+                "sub1Title": "GDPR",
+                "sub1Text": "We are fully GDPR compliant.",
+                "sub2Title": "SOC2",
+                "sub2Text": "Audit logs available upon request."
+            },
+            "section5": {
+                "title": "Reporting",
+                "text1": "If you find a vulnerability, please report it.",
+                "text2": "We offer a bug bounty program.",
+                "text3": "report@a-series.in"
+            },
+            "section6": {
+                "title": "User Responsibility",
+                "text1": "Keep your credentials safe.",
+                "text2": "Enable 2FA for added security."
+            },
+            "section7": {
+                "title": "Third Party",
+                "text": "We review all third-party integrations for security risks."
+            },
+            "section8": {
+                "title": "Intellectual Property",
+                "license": "Content maintained by user.",
+                "ownership": "Platform owns code.",
+                "transfer": "Rights transfer policy."
+            },
+            "section9": {
+                "title": "API Security",
+                "items": [
+                    "Rate limiting",
+                    "API Keys",
+                    "HTTPS only"
+                ]
+            },
+            "section10": {
+                "title": "Monitoring",
+                "text": "We monitor for suspicious activity 24/7."
+            },
+            "section11": {
+                "title": "Contact Security",
+                "text": "For security concerns, email "
+            },
+            "section12": {
+                "title": "Emergencia",
+                "mainText": "Violación de seguridad:",
+                "reportButton": "Correo",
+                "reportButtonText": "Reportar",
+                "supportButton": "Llamar"
+            }
+        },
+        "trustSafety": {
+            "pageTitle": "Trust & Safety",
+            "lastUpdated": "Updated",
+            "heroTitle": "Trust Center",
+            "heroText": "Building trust through transparency and security.",
+            "footerNote": "Trust is the foundation of our platform.",
+            "section1": {
+                "title": "Privacy First",
+                "italicText": "Your privacy is our priority.",
+                "sub1Title": "No Tracking",
+                "sub1Text": "We do not track you across sites.",
+                "sub2Title": "No Selling",
+                "sub2Text": "We never sell your data.",
+                "sub3Title": "Control",
+                "sub3Text": "You have full control over your data."
+            },
+            "section2": {
+                "title": "Compliance Standards",
+                "mainText": "We follow global standards.",
+                "standard1": "ISO: 27001 Certified",
+                "standard2": "GDPR: Compliant",
+                "standard3": "CCPA: Compliant"
+            },
+            "section3": {
+                "title": "Security Measures",
+                "layerHeader": "Layer",
+                "measureHeader": "Measure",
+                "encryptionLabel": "Encryption",
+                "encryptionText": "AES-256",
+                "residencyLabel": "Residency",
+                "residencyText": "Local",
+                "accessLabel": "Access",
+                "accessText": "MFA",
+                "certLabel": "Certifications",
+                "certText": "Industry Standard"
+            },
+            "section4": {
+                "title": "Usage Policy",
+                "intro": "Responsible use of AI.",
+                "prohibitedTitle": "Prohibited",
+                "item1": "Deepfakes",
+                "item2": "Misinformation",
+                "item3": "Harmful content",
+                "highRiskTitle": "High Risk",
+                "item4": "Medical advice",
+                "item5": "Legal advice",
+                "item6": "Financial advice"
+            },
+            "section5": {
+                "title": "Transparency",
+                "item1": "Open algorithms",
+                "item2": "Explainable AI",
+                "item3": "Clear policies"
+            }
+        },
+        "policies": {
+            "gotIt": "Entendido",
+            "privacy": {
+                "title": "Política de Privacidad",
+                "compliance": {
+                    "heading": "Cumplimiento y Protección de Datos",
+                    "content": "A-Series™ cumple estrictamente con las regulaciones globales de protección de datos, incluidos los estándares GDPR, CCPA y SOC2. Priorizamos la seguridad de su información personal mediante un cifrado robusto y controles de acceso estrictos."
+                },
+                "zeroTraining": {
+                    "heading": "Política de Cero Entrenamiento con Datos del Usuario",
+                    "content": "Respetamos su propiedad intelectual. A-Series™ NO utiliza sus datos privados, documentos cargados o historial de conversaciones para entrenar nuestros modelos principales de IA. Su información propietaria permanece aislada y segura."
+                },
+                "rightToForgotten": {
+                    "heading": "Derechos de Datos y Derecho al Olvido",
+                    "content": "Usted conserva la plena propiedad de sus datos. Tiene derecho a solicitar una copia completa de sus datos o solicitar estrictamente la eliminación permanente de su cuenta y toda la información asociada de nuestros servidores en cualquier momento."
+                },
+                "grievance": {
+                    "heading": "Reparación de Agravios",
+                    "content": "Para cualquier inquietud sobre privacidad o para ejercer sus derechos de datos, comuníquese con nuestro Oficial de Protección de Datos dedicado en: "
+                }
+            },
+            "terms": {
+                "title": "Términos de Servicio",
+                "intellectualProperty": {
+                    "heading": "Derechos de Propiedad Intelectual",
+                    "content": "Usted conserva todos los derechos, títulos e intereses sobre el contenido que crea o carga en la Plataforma. A-Series™ no reclama propiedad sobre su lógica comercial propietaria, agentes personalizados o resultados generados."
+                },
+                "acceptableUse": {
+                    "heading": "Política de Uso Aceptable",
+                    "content": "Usted acepta no utilizar la plataforma para fines ilegales, incluidos, entre otros: generar discursos de odio, facilitar ciberataques, crear malware o participar en acoso. La violación de estos términos resultará en la suspensión inmediata de la cuenta."
+                },
+                "aiSafety": {
+                    "heading": "Seguridad de IA y Uso Responsable",
+                    "content": "Los usuarios deben emplear agentes de IA de manera responsable. A-Series™ implementa barreras de seguridad, pero los usuarios son responsables de verificar los resultados críticos. La toma de decisiones automatizada siempre debe ser supervisada por juicio humano en escenarios de alto riesgo."
+                },
+                "highRisk": {
+                    "heading": "Descargo de Responsabilidad de Dominio de Alto Riesgo",
+                    "content": "Los agentes de A-Series™ no sustituyen el asesoramiento profesional en los campos médico, legal o financiero. No aceptamos responsabilidad por decisiones tomadas únicamente en base a recomendaciones de IA en estas industrias reguladas."
+                }
+            },
+            "cookie": {
+                "title": "Política de Cookies",
+                "howWeUse": {
+                    "heading": "Cómo Utilizamos las Cookies",
+                    "content": "Utilizamos cookies para mejorar su experiencia de navegación, mantener su sesión iniciada de forma segura y recordar sus configuraciones personalizadas, como las preferencias de idioma y tema."
+                },
+                "types": {
+                    "heading": "Tipos de Cookies que Utilizamos",
+                    "content": "Cookies Esenciales (necesarias para seguridad e inicio de sesión), Cookies Funcionales (para preferencias) y Cookies Analíticas (datos anónimos para mejorar el rendimiento de la plataforma)."
+                },
+                "thirdParty": {
+                    "heading": "Cookies de Terceros",
+                    "content": "Limitamos las cookies de terceros a proveedores de servicios esenciales (por ejemplo, pasarelas de pago). No vendemos sus datos de navegación a anunciantes ni a corredores de datos de terceros."
+                }
+            }
+        },
+        "contactUs": {
+            "pageTitle": "Contáctenos",
+            "pageSubtitle": "Póngase en contacto con nuestro equipo",
+            "emailTitle": "Envíenos un correo",
+            "emailResponse": "Solemos responder en 24 horas",
+            "phoneTitle": "Llámenos",
+            "phoneHours": "Lun-Vie de 8am a 5pm",
+            "locationTitle": "Visítenos",
+            "locationCity": "Jabalpur",
+            "locationState": "Madhya Pradesh",
+            "supportHoursTitle": "Horario de soporte",
+            "supportHoursWeekday": "Lun - Vie: 9AM - 6PM",
+            "supportHoursWeekend": "Sáb - Dom: 10AM - 2PM",
+            "formNameLabel": "NOMBRE COMPLETO",
+            "formNamePlaceholder": "Juan Pérez",
+            "formEmailLabel": "CORREO ELECTRÓNICO",
+            "formEmailPlaceholder": "juan@ejemplo.com",
+            "formPhoneLabel": "NÚMERO DE TELÉFONO",
+            "formPhonePlaceholder": "+34 612 345 678",
+            "formCategoryLabel": "CATEGORÍA",
+            "formSubjectLabel": "ASUNTO",
+            "formSubjectPlaceholder": "Breve resumen de su problema",
+            "formMessageLabel": "MENSAJE",
+            "formMessagePlaceholder": "¿Cómo podemos ayudarle?",
+            "formSubmitButton": "Enviar mensaje",
+            "formSubmitting": "Enviando...",
+            "faqTitle": "Preguntas frecuentes",
+            "validationNameRequired": "El nombre es obligatorio",
+            "validationEmailRequired": "El correo es obligatorio",
+            "validationEmailInvalid": "Correo inválido",
+            "validationSubjectRequired": "El asunto es obligatorio",
+            "validationMessageRequired": "El mensaje es obligatorio",
+            "validationMessageTooShort": "El mensaje debe tener al menos 10 caracteres",
+            "toastError": "Por favor corrija los errores en el formulario",
+            "toastSuccess": "¡Mensaje enviado con éxito!",
+            "toastFailed": "Error al enviar el mensaje",
+            "categories": {
+                "general": "Consulta general",
+                "technical": "Soporte técnico",
+                "bug": "Reportar un error",
+                "feedback": "Comentarios",
+                "partnership": "Asociación"
+            }
+        },
+        "analytics": {
+            "title": "Platform Analytics",
+            "revenueGrowth": "Revenue Growth",
+            "newUsers": "New Users",
+            "topPerforming": "Top Performing Agents",
+            "vendor": "Vendor",
+            "installs": "installs"
+        }
+    },
+    "faqHelp": {
+        "faqTab": "FAQ",
+        "helpTab": "Ayuda",
+        "faqSubtitle": "Preguntas Frecuentes",
+        "faqs": [
+            {
+                "question": "¿Cómo funciona A-Series™?",
+                "answer": "A-Series™ utiliza modelos de lenguaje avanzados para proporcionar respuestas precisas y en tiempo real."
+            },
+            {
+                "question": "¿Cómo puedo crear un agente personalizado?",
+                "answer": "Vaya a 'Mis agentes' y haga clic en 'Crear nuevo agente' para comenzar la personalización."
+            },
+            {
+                "question": "¿Están seguros mis datos?",
+                "answer": "Sí, utilizamos cifrado de grado empresarial para garantizar que sus conversaciones permanezcan privadas."
+            },
+            {
+                "question": "¿Cómo actualizo mi información de facturación?",
+                "answer": "Puede actualizar su método de pago y detalles de facturación en la sección Configuración > Facturación y pagos."
+            },
+            {
+                "question": "¿Puedo exportar mi historial de chat?",
+                "answer": "Sí, puede exportar chats individuales como documentos PDF o Word utilizando el botón de exportación en la interfaz de chat."
+            },
+            {
+                "question": "¿Qué idiomas admite A-Series?",
+                "answer": "Actualmente admitimos 10 idiomas principales, incluidos inglés, hindi, español, francés, árabe y varios idiomas regionales indios."
+            },
+            {
+                "question": "¿Cómo informo un error o problema?",
+                "answer": "Si encuentra algún problema, utilice el formulario 'Contáctenos' o envíe un correo electrónico a nuestro equipo de soporte directamente a support@a-series.in."
+            }
+        ],
+        "contactSupport": "¿Necesitas más ayuda?",
+        "contactBtn": "Contáctenos",
+        "issueCategory": "Categoría de Problema",
+        "describeIssue": "Describa su problema",
+        "issuePlaceholder": "Describa su problema en detalle...",
+        "sendToSupport": "Enviar a Soporte",
+        "ticketSuccess": "¡Ticket enviado con éxito!",
+        "ticketError": "Error al enviar el ticket. Por favor inténtelo de nuevo.",
+        "emailDirectly": "O envíenos un correo directamente a",
+        "customerSupport": "Soporte al Cliente:",
+        "close": "Cerrar",
+        "optional": "opcional",
+        "issueOptions": {
+            "generalInquiry": "Consulta General",
+            "paymentIssue": "Problema de Pago",
+            "refundRequest": "Solicitud de Reembolso",
+            "technicalSupport": "Soporte Técnico",
+            "accountAccess": "Acceso a la Cuenta",
+            "other": "Otro"
+        }
+    },
+    "securityGuidelines": {
+        "title": "Directrices de Seguridad",
+        "subtitle": "Nuestro compromiso con su privacidad y seguridad de datos.",
+        "lastUpdated": "Última actualización: Diciembre de 2025",
+        "sections": {
+            "dataPrivacy": "Privacidad de Datos",
+            "dataPrivacyDesc": "Ciframos todos los datos y nos aseguramos de que sus conversaciones no se compartan con terceros.",
+            "accountSecurity": "Seguridad de la Cuenta",
+            "accountSecurityDesc": "Habilite la autenticación de dos factores para una mayor protección de su cuenta.",
+            "bestPractices": "Mejores Prácticas",
+            "bestPracticesDesc": "No comparta su contraseña con nadie, ni siquiera con el equipo de soporte de A-Series™."
+        }
+    },
+    "contactUs": {
+        "title": "Contáctenos",
+        "subtitle": "Póngase en contacto con nosotros para cualquier consulta o soporte.",
+        "form": {
+            "name": "Nombre completo",
+            "email": "Dirección de correo electrónico",
+            "subject": "Asunto",
+            "message": "Mensaje",
+            "send": "Enviar mensaje",
+            "sending": "Enviando...",
+            "namePlaceholder": "Tu nombre",
+            "emailPlaceholder": "tu@correo.com",
+            "subjectPlaceholder": "¿De qué se trata esto?",
+            "messagePlaceholder": "Cuéntanos más sobre tu solicitud..."
+        },
+        "info": {
+            "email": "info@uwo.ai",
+            "office": "Oficina central de UWO™, Dubái, EAU"
+        },
+        "success": "¡Su mensaje ha sido enviado con éxito!",
+        "faqs": [
+            {
+                "question": "¿Cómo funciona A-Series™?",
+                "answer": "A-Series™ utiliza modelos de lenguaje avanzados para proporcionar respuestas precisas y en tiempo real."
+            },
+            {
+                "question": "¿Cómo puedo crear un agente personalizado?",
+                "answer": "Vaya a 'Mis agentes' y haga clic en 'Crear nuevo agente' para comenzar la personalización."
+            },
+            {
+                "question": "¿Están seguros mis datos?",
+                "answer": "Sí, utilizamos cifrado de grado empresarial para garantizar que sus conversaciones permanezcan privadas."
+            }
+        ],
+        "validationNameRequired": "El nombre es obligatorio",
+        "validationEmailRequired": "El correo es obligatorio",
+        "validationEmailInvalid": "Correo inválido",
+        "validationSubjectRequired": "El asunto es obligatorio",
+        "validationMessageRequired": "El mensaje es obligatorio",
+        "validationMessageTooShort": "El mensaje debe tener al menos 10 caracteres",
+        "toastError": "Por favor corrija los errores en el formulario",
+        "toastSuccess": "¡Mensaje enviado con éxito!",
+        "toastFailed": "Error al enviar el mensaje",
+        "emailTitle": "Envíenos un correo",
+        "emailResponse": "Solemos responder en 24 horas",
+        "phoneTitle": "Llámenos",
+        "phoneHours": "Lun-Vie de 8am a 5pm",
+        "locationTitle": "Visítenos",
+        "locationCity": "Jabalpur",
+        "locationState": "Madhya Pradesh",
+        "supportHoursTitle": "Horario de soporte",
+        "supportHoursWeekday": "Lun - Vie: 9AM - 6PM",
+        "supportHoursWeekend": "Sáb - Dom: 10AM - 2PM",
+        "formNameLabel": "NOMBRE COMPLETO",
+        "formNamePlaceholder": "Juan Pérez",
+        "formEmailLabel": "CORREO ELECTRÓNICO",
+        "formEmailPlaceholder": "juan@ejemplo.com",
+        "formPhoneLabel": "NÚMERO DE TELÉFONO",
+        "formPhonePlaceholder": "+34 612 345 678",
+        "formCategoryLabel": "CATEGORÍA",
+        "formSubjectLabel": "ASUNTO",
+        "formSubjectPlaceholder": "Breve resumen de su problema",
+        "formMessageLabel": "MENSAJE",
+        "formMessagePlaceholder": "¿Cómo podemos ayudarle?",
+        "formSubmitButton": "Enviar mensaje",
+        "faqTitle": "Preguntas frecuentes",
+        "categories": {
+            "general": "Consulta general",
+            "technical": "Soporte técnico",
+            "bug": "Reportar un error",
+            "feedback": "Comentarios",
+            "partnership": "Asociación"
+        },
+        "pageTitle": "Contáctenos",
+        "pageSubtitle": "Póngase en contacto con nuestro equipo",
+        "formSubmitting": "Enviando..."
+    },
+    "reportIssue": {
+        "title": "Reportar un Problema",
+        "subtitle": "Ayúdenos a mejorar informando errores o problemas de seguridad.",
+        "typeLabel": "Tipo de Problema",
+        "bug": "Error",
+        "security": "Seguridad",
+        "other": "Otro",
+        "priorityLabel": "Prioridad",
+        "low": "Baja - Problema menor",
+        "medium": "Media - Funcionalidad impactada",
+        "high": "Alta - Falla crítica del sistema",
+        "descriptionLabel": "Descripción",
+        "descriptionPlaceholder": "Por favor describa el problema en detalle...",
+        "cancel": "Cancelar",
+        "submit": "Enviar Reporte",
+        "successTitle": "¡Reporte Enviado!",
+        "successMessage": "Gracias por ayudarnos a mejorar A-Series™.",
+        "close": "Cerrar"
+    },
+    "aibiz": {
+        "contentForm": {
+            "title": "Crear Documento Comercial",
+            "subtitle": "Complete los detalles para crear un documento comercial pulido y personalizado",
+            "businessName": "Nombre del negocio",
+            "businessNamePlaceholder": "ej., A-Series™",
+            "ideaLabel": "Idea / Concepto",
+            "ideaHelp": "Seleccione un concepto de la lista.",
+            "industryLabel": "Industria",
+            "industryPlaceholder": "Seleccionar industria",
+            "targetAudienceLabel": "Público Objetivo",
+            "targetAudiencePlaceholder": "¿Quién es su cliente principal?",
+            "toneLabel": "Tono del Documento",
+            "docTypeLabel": "Tipo de Documento",
+            "docTypes": {
+                "business_plan": "Plan de Negocios",
+                "pitch_deck": "Pitch Deck",
+                "strategy": "Documento de Estrategia"
+            },
+            "extraNotesLabel": "Notas adicionales",
+            "extraNotesPlaceholder": "¿Algún punto específico a incluir?",
+            "generate": "Generar Documento",
+            "generating": "Generando...",
+            "selectIdea": "Seleccionar una idea",
+            "ideas": [
+                "Plataforma de automatización impulsada por IA",
+                "Agentes de IA para flujos de trabajo comerciales",
+                "Producto AI SaaS",
+                "Mercado de IA",
+                "Soluciones de IA personalizadas para empresas"
+            ]
+        },
+        "history": {
+            "title": "Historial",
+            "noDocs": "Aún no hay documentos",
+            "recentDocsDesc": "Sus documentos generados aparecerán aquí",
+            "deleteConfirm": "¿Realmente desea eliminar este documento?",
+            "justNow": "Recién ahora",
+            "minAgo": "hace minutos",
+            "hAgo": "hace horas",
+            "dAgo": "hace días"
+        },
+        "output": {
+            "headerTitle": "AIBIZ",
+            "headerSubtitle": "Generador de Documentos Comerciales de IA",
+            "welcomeTitle": "¿Cómo puedo ayudarte hoy?",
+            "welcomeSubtitle": "Complete el formulario y cree su documento comercial.",
+            "generatingTitle": "Su documento se está generando...",
+            "generatingSubtitle": "Esto puede tardar unos momentos",
+            "download": "Descargar Documento"
+        }
+    },
+    "sidebar": {
+        "issueOptions": [
+            "Consulta General",
+            "Problema de Pago",
+            "Solicitud de Reembolso",
+            "Soporte Técnico",
+            "Acceso a la Cuenta",
+            "Otro"
+        ],
+        "notification": {
+            "owned": "Adquirido con éxito"
+        }
+    },
+    "myAgentsPage": {
+        "title": "Mis Agentes",
+        "subtitle": "Gestiona tus asistentes de IA personalizados.",
+        "createNew": "Crear Nuevo Agente",
+        "loading": "Cargando agentes...",
+        "createCustom": "Crear Agente Personalizado",
+        "createCustomDesc": "Configurar una nueva plantilla de asistente",
+        "useAgent": "Usar Agente",
+        "deleteConfirm": "¿Estás seguro de que quieres eliminar este agente?",
+        "defaultName": "Nuevo Agente",
+        "defaultDescription": "Un nuevo asistente personalizado.",
+        "defaultInstructions": "Eres un asistente útil."
+    },
+    "marketplacePage": {
+        "title": "Mercado de IA",
+        "subtitle": "Descubra e implemente agentes de IA especializados para su negocio.",
+        "searchPlaceholder": "Buscar agentes...",
+        "productDemo": "Demostración del producto",
+        "gotIt": "Entendido",
+        "aiPersonalAssistant": "Asistente personal de IA",
+        "productivity": "PRODUCTIVIDAD",
+        "personalAssistantDesc": "Su asistente de IA dedicado para programación, notas y gestión de tareas.",
+        "openApp": "Abrir aplicación",
+        "demo": "Demostración",
+        "subscribe": "Suscribirse",
+        "subscribed": "Suscrito",
+        "unavailable": "No disponible",
+        "viewInvoice": "Ver factura",
+        "categories": {
+            "all": "Todas las categorías",
+            "business_os": "SO empresarial",
+            "data_intelligence": "Datos e inteligencia",
+            "sales_marketing": "Ventas y marketing",
+            "hr_finance": "RRHH y finanzas",
+            "design_creative": "Diseño y creatividad",
+            "medical_health": "IA médica y de salud"
+        },
+        "openInNewWindow": "Abrir en una ventana nueva"
+    },
+    "adminName": "Administrador",
+    "aisaName": "AISA",
+    "free": "Gratis",
+    "draft": "Borrador",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "live": "En vivo",
+    "pending": "Pendiente",
+    "report": "Reporte",
+    "ticket": "Ticket",
+    "general_inquiry": "Consulta general",
+    "app_issue": "Problema de la aplicación",
+    "technical_support": "Soporte técnico",
+    "open": "Abierto",
+    "resolved": "Resuelto",
+    "in-progress": "En progreso",
+    "sender_name": "Nombre",
+    "sender_email": "Dirección de correo",
+    "accountOverview": "Resumen de la cuenta",
+    "accountType": "Tipo de cuenta",
+    "userRole": "Usuario",
+    "adminRole": "Administrador",
+    "developerRole": "Desarrollador",
+    "actions": "Acciones",
+    "details": "Detalles",
+    "close": "Cerrar",
+    "success": "Éxito",
+    "notifications": "Notificaciones",
+    "disabled": "Deshabilitado",
+    "selectTimezone": "Seleccionar zona horaria",
+    "timezoneKeywords": {
+        "Standard Time": "Hora estándar",
+        "Daylight Time": "Hora de verano",
+        "International Date Line West": "Línea internacional de cambio de fecha oeste",
+        "Pacific": "Pacífico",
+        "Mountain": "Montaña",
+        "Central": "Central",
+        "Eastern": "Este",
+        "India": "India"
+    },
+    "regions": {
+        "World": "World",
+        "India": "India",
+        "United States": "United States",
+        "Japan": "Japan",
+        "China": "China",
+        "Germany": "Germany",
+        "France": "France",
+        "Brazil": "Brazil",
+        "United Kingdom": "United Kingdom",
+        "United Arab Emirates": "UAE",
+        "Australia": "Australia",
+        "Canada": "Canada",
+        "Spain": "Spain",
+        "South Korea": "South Korea",
+        "Italy": "Italy",
+        "Russia": "Russia",
+        "Singapore": "Singapore",
+        "Netherlands": "Netherlands",
+        "Mexico": "Mexico",
+        "Turkey": "Turkey",
+        "Switzerland": "Switzerland",
+        "Sweden": "Sweden",
+        "Norway": "Norway",
+        "Denmark": "Denmark",
+        "Finland": "Finland",
+        "Belgium": "Belgium",
+        "Argentina": "Argentina",
+        "Portugal": "Portugal",
+        "New Zealand": "New Zealand",
+        "South Africa": "South Africa"
+    },
+    "user": "Usuario",
+    "emailNotifications": "Notificaciones por correo",
+    "pushNotifications": "Notificaciones push",
+    "receiveUpdates": "Recibir actualizaciones",
+    "countryRegionLanguage": "País/Región e Idioma",
+    "displayTheme": "Tema de visualización",
+    "password": "Contraseña",
+    "billingPayments": "Facturación y pagos",
+    "transactions": "Transacciones",
+    "cancel": "Cancelar",
+    "update": "Actualizar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "comingSoon": {
+        "title": "¡Lanzamiento! Muy pronto",
+        "subtitle": "Nuestros agentes de IA están casi listos para transformar su flujo de trabajo.",
+        "progressLabel": "Progreso del desarrollo",
+        "stayTuned": "¡Esté atento al lanzamiento y sea el primero en saberlo!",
+        "notifyMe": "Notificarme"
+    },
+    "navigation": {
+        "menu": "Menú",
+        "comingSoon": "Muy pronto...",
+        "loading": "Cargando..."
+    },
+    "automationsPage": {
+        "title": "Automatizaciones",
+        "subtitle": "Gestione flujos de trabajo en segundo plano y disparadores de agentes.",
+        "newAutomation": "Nueva automatización",
+        "active": "Activo",
+        "paused": "En pausa"
+    },
+    "profilePage": {
+        "updatingPassword": "Actualizando contraseña...",
+        "passwordUpdated": "¡Contraseña actualizada con éxito!",
+        "failedToUpdate": "Error al actualizar.",
+        "deletionConfirmation": "¿Está seguro de que desea eliminar su cuenta? Esta acción es permanente.",
+        "deletingAccount": "Eliminando cuenta...",
+        "accountDeleted": "Cuenta eliminada con éxito.",
+        "failedToDelete": "Error al eliminar la cuenta.",
+        "updatingProfile": "Actualizando perfil...",
+        "profileUpdated": "¡Perfil actualizado con éxito!",
+        "failedToSave": "Error al guardar los cambios.",
+        "invalidFile": "Formato de archivo inválido. Por favor, suba una imagen.",
+        "fileTooLarge": "El archivo es demasiado grande (máx. 50MB).",
+        "loginRequired": "Por favor, inicie sesión para realizar esta acción.",
+        "uploadingAvatar": "Subiendo avatar...",
+        "avatarUploaded": "¡Avatar subido con éxito!",
+        "sessionExpired": "Sesión expirada. Por favor, inicie sesión de nuevo.",
+        "selectCurrency": "Seleccionar moneda",
+        "shoppingIn": "Comprando en",
+        "changeCountryRegion": "Cambiar país/región",
+        "selectCountryRegion": "Seleccionar país/región"
+    },
+    "invoicesPage": {
+        "title": "Facturación y facturas",
+        "subtitle": "Vea y descargue sus facturas de suscripción.",
+        "table": {
+            "plan": "Plan",
+            "date": "Fecha",
+            "amount": "Monto",
+            "status": "Estado",
+            "invoice": "Factura"
+        },
+        "demoPlan": "Plan inicial (Demo)",
+        "demoId": "ID: demo_transaction_123",
+        "demoStatus": "DEMO",
+        "download": "Descargar"
+    },
+    "transactionsPage": {
+        "title": "Mis transacciones",
+        "subtitle": "Revise su suscripción e historial de pagos.",
+        "loading": "Cargando transacciones...",
+        "noTransactions": "No se encontraron transacciones.",
+        "subscribeHistory": "Suscríbase a agentes para ver su historial aquí.",
+        "detailsModal": {
+            "title": "Detalles de la transacción",
+            "id": "ID de transacción",
+            "date": "Fecha",
+            "appAgent": "Aplicación / Agente",
+            "plan": "Plan",
+            "amountPaid": "Monto pagado",
+            "totalAmount": "Monto total",
+            "paymentStatus": "Estado del pago"
+        }
+    },
+    "statusLabels": {
+        "live": "En vivo",
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "comingSoon": "Muy pronto",
+        "draft": "Borrador",
+        "pending": "Pendiente"
+    }
+}

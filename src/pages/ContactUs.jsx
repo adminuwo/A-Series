@@ -3,8 +3,15 @@ import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiService } from '../services/apiService';
 import { getUserData } from '../userStore/userData';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../Components/LanguageSwitcher/LanguageSwitcher';
+import { useNavigate } from 'react-router';
+import { AppRoute } from '../types';
+import { logo, name } from '../constants';
 
 const ContactUs = () => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,23 +24,36 @@ const ContactUs = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const categories = [
-    { value: 'general', label: 'General Inquiry' },
-    { value: 'technical', label: 'Technical Support' },
-    { value: 'bug', label: 'Bug Report' },
-    { value: 'feedback', label: 'Feedback' },
-    { value: 'partnership', label: 'Partnership' },
-  ];
+  const [contactInfo, setContactInfo] = useState({
+    email: 'support@a-series.in', // Default fallback
+    phone: '+91 98765 43210' // Default fallback
+  });
+
+  React.useEffect(() => {
+    // Fetch dynamic settings
+    const fetchSettings = async () => {
+      try {
+        const settings = await apiService.getPublicSettings();
+        setContactInfo(prev => ({
+          email: settings.contactEmail || prev.email,
+          phone: settings.supportPhone || prev.phone
+        }));
+      } catch (e) {
+        console.warn('Failed to load contact info', e);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
-    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
-    else if (formData.message.trim().length < 10) newErrors.message = 'Message must be at least 10 characters long';
+    if (!formData.name.trim()) newErrors.name = t('landing.contactUs.validationNameRequired');
+    if (!formData.email.trim()) newErrors.email = t('landing.contactUs.validationEmailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t('landing.contactUs.validationEmailInvalid');
+    if (!formData.subject.trim()) newErrors.subject = t('landing.contactUs.validationSubjectRequired');
+    if (!formData.message.trim()) newErrors.message = t('landing.contactUs.validationMessageRequired');
+    else if (formData.message.trim().length < 10) newErrors.message = t('landing.contactUs.validationMessageTooShort');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,19 +77,19 @@ const ContactUs = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Please fill in all required fields correctly');
+      toast.error(t('landing.contactUs.toastError'));
       return;
     }
 
     setLoading(true);
     try {
-      // Map category to issueType
+      // Map category to issueType using translated values
       const categoryMap = {
-        'general': 'General Inquiry',
-        'technical': 'Technical Support',
-        'bug': 'Bug Report',
-        'feedback': 'Feedback',
-        'partnership': 'Partnership'
+        'general': t('landing.contactUs.categories.general'),
+        'technical': t('landing.contactUs.categories.technical'),
+        'bug': t('landing.contactUs.categories.bug'),
+        'feedback': t('landing.contactUs.categories.feedback'),
+        'partnership': t('landing.contactUs.categories.partnership')
       };
 
       // Get user ID if logged in
@@ -88,7 +108,7 @@ const ContactUs = () => {
         source: 'contact_us'
       });
 
-      toast.success(`Ticket Sent! ID: ${userId ? userId : 'None'}`);
+      toast.success(`${t('landing.contactUs.toastSuccess')} ID: ${userId ? userId : 'None'}`);
       console.log("Sent Ticket. UserData:", userData, "Extracted userId:", userId);
       setFormData({
         name: '',
@@ -100,20 +120,27 @@ const ContactUs = () => {
       });
     } catch (error) {
       console.error('Contact form error:', error);
-      toast.error('Failed to send message. Please try again later.');
+      toast.error(t('landing.contactUs.toastFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#eef2ff] to-[#fce7f3] dark:from-[#020617] dark:via-[#0f172a] dark:to-[#1e1b4b] py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#eef2ff] to-[#fce7f3] dark:from-[#020617] dark:via-[#0f172a] dark:to-[#1e1b4b] py-6 px-4">
+      <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(AppRoute.LANDING)}>
+          <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+          <span className="text-xl font-black tracking-tighter text-maintext">{name}</span>
+        </div>
+        <LanguageSwitcher variant="landing" />
+      </div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-maintext mb-4">Get in Touch</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-maintext mb-4">{t('landing.contactUs.pageTitle')}</h1>
           <p className="text-lg text-subtext max-w-2xl mx-auto">
-            Have a question or feedback? We'd love to hear from you. Our team is here to help and will respond as soon as possible.
+            {t('landing.contactUs.pageSubtitle')}
           </p>
         </div>
 
@@ -127,9 +154,9 @@ const ContactUs = () => {
                   <Mail className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-maintext mb-1">Email</h3>
-                  <p className="text-subtext text-sm">admin@uwo24.com</p>
-                  <p className="text-subtext text-sm">We'll respond within 24 hours</p>
+                  <h3 className="font-bold text-maintext mb-1">{t('landing.contactUs.emailTitle')}</h3>
+                  <p className="text-subtext text-sm">{contactInfo.email}</p>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.emailResponse')}</p>
                 </div>
               </div>
             </div>
@@ -141,9 +168,9 @@ const ContactUs = () => {
                   <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-maintext mb-1">Phone</h3>
-                  <p className="text-subtext text-sm">+91 83589 90909</p>
-                  <p className="text-subtext text-sm">Mon-Fri 9AM-6PM IST</p>
+                  <h3 className="font-bold text-maintext mb-1">{t('landing.contactUs.phoneTitle')}</h3>
+                  <p className="text-subtext text-sm">{contactInfo.phone}</p>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.phoneHours')}</p>
                 </div>
               </div>
             </div>
@@ -155,9 +182,9 @@ const ContactUs = () => {
                   <MapPin className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-maintext mb-1">Location</h3>
-                  <p className="text-subtext text-sm">Jabalpur</p>
-                  <p className="text-subtext text-sm">Madhya Pradesh, India</p>
+                  <h3 className="font-bold text-maintext mb-1">{t('landing.contactUs.locationTitle')}</h3>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.locationCity')}</p>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.locationState')}</p>
                 </div>
               </div>
             </div>
@@ -169,9 +196,9 @@ const ContactUs = () => {
                   <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-maintext mb-1">Support Hours</h3>
-                  <p className="text-subtext text-sm">Mon-Fri: 9AM - 6PM</p>
-                  <p className="text-subtext text-sm">Weekend: Closed</p>
+                  <h3 className="font-bold text-maintext mb-1">{t('landing.contactUs.supportHoursTitle')}</h3>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.supportHoursWeekday')}</p>
+                  <p className="text-subtext text-sm">{t('landing.contactUs.supportHoursWeekend')}</p>
                 </div>
               </div>
             </div>
@@ -184,7 +211,7 @@ const ContactUs = () => {
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-semibold text-maintext mb-2">
-                    Full Name *
+                    {t('landing.contactUs.formNameLabel')}
                   </label>
                   <input
                     type="text"
@@ -195,7 +222,7 @@ const ContactUs = () => {
                       ? 'border-red-500 focus:border-red-600'
                       : 'border-border focus:border-primary'
                       } text-maintext placeholder-subtext/50 focus:outline-none`}
-                    placeholder="Your name"
+                    placeholder={t('landing.contactUs.formNamePlaceholder')}
                   />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                 </div>
@@ -203,7 +230,7 @@ const ContactUs = () => {
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-semibold text-maintext mb-2">
-                    Email Address *
+                    {t('landing.contactUs.formEmailLabel')}
                   </label>
                   <input
                     type="email"
@@ -214,7 +241,7 @@ const ContactUs = () => {
                       ? 'border-red-500 focus:border-red-600'
                       : 'border-border focus:border-primary'
                       } text-maintext placeholder-subtext/50 focus:outline-none`}
-                    placeholder="your@email.com"
+                    placeholder={t('landing.contactUs.formEmailPlaceholder')}
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
@@ -224,7 +251,7 @@ const ContactUs = () => {
                 {/* Phone */}
                 <div>
                   <label className="block text-sm font-semibold text-maintext mb-2">
-                    Phone Number (Optional)
+                    {t('landing.contactUs.formPhoneLabel')}
                   </label>
                   <input
                     type="tel"
@@ -232,14 +259,14 @@ const ContactUs = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-lg border-2 border-border bg-transparent text-maintext placeholder-subtext/50 focus:outline-none focus:border-primary transition-colors"
-                    placeholder="+91 XXXXX XXXXX"
+                    placeholder={t('landing.contactUs.formPhonePlaceholder')}
                   />
                 </div>
 
                 {/* Category */}
                 <div>
                   <label className="block text-sm font-semibold text-maintext mb-2">
-                    Category *
+                    {t('landing.contactUs.formCategoryLabel')}
                   </label>
                   <select
                     name="category"
@@ -247,11 +274,11 @@ const ContactUs = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-lg border-2 border-border bg-transparent text-maintext focus:outline-none focus:border-primary transition-colors"
                   >
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value} className="bg-surface">
-                        {cat.label}
-                      </option>
-                    ))}
+                    <option value="general" className="bg-surface">{t('landing.contactUs.categories.general')}</option>
+                    <option value="technical" className="bg-surface">{t('landing.contactUs.categories.technical')}</option>
+                    <option value="bug" className="bg-surface">{t('landing.contactUs.categories.bug')}</option>
+                    <option value="feedback" className="bg-surface">{t('landing.contactUs.categories.feedback')}</option>
+                    <option value="partnership" className="bg-surface">{t('landing.contactUs.categories.partnership')}</option>
                   </select>
                 </div>
               </div>
@@ -259,7 +286,7 @@ const ContactUs = () => {
               {/* Subject */}
               <div>
                 <label className="block text-sm font-semibold text-maintext mb-2">
-                  Subject *
+                  {t('landing.contactUs.formSubjectLabel')}
                 </label>
                 <input
                   type="text"
@@ -270,7 +297,7 @@ const ContactUs = () => {
                     ? 'border-red-500 focus:border-red-600'
                     : 'border-border focus:border-primary'
                     } text-maintext placeholder-subtext/50 focus:outline-none`}
-                  placeholder="What is this about?"
+                  placeholder={t('landing.contactUs.formSubjectPlaceholder')}
                 />
                 {errors.subject && <p className="text-red-500 text-sm mt-1">{errors.subject}</p>}
               </div>
@@ -278,7 +305,7 @@ const ContactUs = () => {
               {/* Message */}
               <div>
                 <label className="block text-sm font-semibold text-maintext mb-2">
-                  Message *
+                  {t('landing.contactUs.formMessageLabel')}
                 </label>
                 <textarea
                   name="message"
@@ -289,7 +316,7 @@ const ContactUs = () => {
                     ? 'border-red-500 focus:border-red-600'
                     : 'border-border focus:border-primary'
                     } text-maintext placeholder-subtext/50 focus:outline-none`}
-                  placeholder="Tell us more about your inquiry..."
+                  placeholder={t('landing.contactUs.formMessagePlaceholder')}
                 />
                 {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message}</p>}
               </div>
@@ -301,7 +328,7 @@ const ContactUs = () => {
                 className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group"
               >
                 <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                {loading ? 'Sending...' : 'Send Message'}
+                {loading ? t('landing.contactUs.formSubmitting') : t('landing.contactUs.formSubmitButton')}
               </button>
             </form>
           </div>
@@ -311,35 +338,14 @@ const ContactUs = () => {
         <div className="bg-white dark:bg-surface rounded-2xl p-8 shadow-lg">
           <h2 className="text-3xl font-bold text-maintext mb-8 flex items-center gap-3">
             <MessageSquare className="w-8 h-8 text-primary" />
-            Frequently Asked Questions
+            {t('landing.contactUs.faqTitle')}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                q: "What is the typical response time?",
-                a: "We aim to respond to all inquiries within 24 hours during business days."
-              },
-              {
-                q: "Can I track my support ticket?",
-                a: "Yes, if you're a registered user, you can track your submissions in your dashboard."
-              },
-              {
-                q: "Do you offer phone support?",
-                a: "Yes, you can call us at +91 83589 90909 during business hours (Mon-Fri, 9AM-6PM IST)."
-              },
-              {
-                q: "How do I report a bug?",
-                a: "Select 'Bug Report' as the category in the contact form and provide as much detail as possible."
-              },
-              {
-                q: "Are there any alternative contact methods?",
-                a: "You can also reach us via email at admin@uwo24.com or check our Help Center."
-              },
-            ].map((faq, i) => (
+            {t('landing.contactUs.faqs').map((faq, i) => (
               <div key={i} className="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                <h3 className="font-semibold text-maintext mb-2">{faq.q}</h3>
-                <p className="text-subtext text-sm">{faq.a}</p>
+                <h3 className="font-semibold text-maintext mb-2">{faq.question}</h3>
+                <p className="text-subtext text-sm">{faq.answer}</p>
               </div>
             ))}
           </div>
