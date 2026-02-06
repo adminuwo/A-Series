@@ -79,18 +79,18 @@ const LanguageSwitcher = ({ variant = 'default' }) => {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className={`absolute mt-2 w-48 sm:w-72 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-[999] ${isLanding ? 'right-0' : 'right-0'
+                        className={`absolute mt-2 w-40 sm:w-72 bg-card border border-border rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-[999] ${isLanding ? 'right-0' : 'right-0'
                             }`}
                     >
-                        <div className="p-3 bg-secondary/30 border-b border-border flex items-center justify-between">
-                            <span className="text-xs font-bold text-subtext uppercase tracking-wider">{t('changeLanguage')}</span>
+                        <div className="p-2 sm:p-3 bg-secondary/30 border-b border-border flex items-center justify-between">
+                            <span className="text-[10px] sm:text-xs font-bold text-subtext uppercase tracking-wider">{t('changeLanguage')}</span>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
                                 <img src={getFlagUrl(regionFlags[region] || 'us')} className="w-3.5 h-2.5 object-cover rounded-sm" alt="" />
                                 <span className="text-[10px] font-bold text-primary">{t(`regions.${region}`) || region}</span>
                             </div>
                         </div>
 
-                        <div className="max-h-64 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                        <div className="max-h-48 sm:max-h-64 overflow-y-auto custom-scrollbar p-1 sm:p-2 space-y-0.5 sm:space-y-1">
                             {languages.sort().map((lang) => (
                                 <button
                                     key={lang}
@@ -98,13 +98,13 @@ const LanguageSwitcher = ({ variant = 'default' }) => {
                                         setLanguage(lang);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group ${language === lang
+                                    className={`w-full flex items-center justify-between px-2 py-1.5 sm:px-3 sm:py-2.5 rounded-lg sm:rounded-xl transition-all group ${language === lang
                                         ? 'bg-primary/10 text-primary'
                                         : 'text-maintext hover:bg-secondary'
                                         }`}
                                 >
-                                    <span className="text-sm font-medium truncate">{getNativeName(lang)}</span>
-                                    {language === lang && <Check className="w-4 h-4 flex-shrink-0 ml-2" />}
+                                    <span className="text-xs sm:text-sm font-medium truncate">{getNativeName(lang)}</span>
+                                    {language === lang && <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ml-2" />}
                                 </button>
                             ))}
                         </div>
