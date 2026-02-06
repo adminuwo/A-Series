@@ -487,7 +487,7 @@ const Profile = () => {
                         <Shield className="w-5 h-5 text-primary" />
                         {t('accountOverview')}
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                         {/* Account Type */}
                         <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-blue-500/5 to-blue-500/10 rounded-2xl border border-blue-500/10 hover:border-blue-500/20 transition-all">
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-500/10 shadow-inner">
@@ -498,30 +498,6 @@ const Profile = () => {
                                 <p className="text-base font-bold text-maintext capitalize">
                                     {(user.role?.toLowerCase() === 'admin') ? t('adminRole') : (user.role?.toLowerCase() === 'developer') ? t('developerRole') : t('userRole')}
                                 </p>
-                            </div>
-                        </div>
-
-                        {/* Notifications with Toggle */}
-                        <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-blue-500/5 to-blue-500/10 rounded-2xl border border-blue-500/10 hover:border-blue-500/20 transition-all">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-500/10 shadow-inner">
-                                <Bell className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-xs font-semibold text-subtext uppercase tracking-wide mb-1">{t('notifications')}</p>
-                                <div className="flex items-center gap-3">
-                                    <p className={`text-base font-bold ${userSettings.emailNotif ? 'text-blue-600' : 'text-gray-500'}`}>
-                                        {userSettings.emailNotif ? t('enabled') : t('disabled')}
-                                    </p>
-                                    {/* Toggle Switch */}
-                                    <button
-                                        onClick={() => toggleSetting('emailNotif')}
-                                        className={`relative w-12 h-6 rounded-full transition-all duration-300 shadow-inner ${userSettings.emailNotif ? 'bg-blue-500' : 'bg-gray-300'
-                                            }`}
-                                    >
-                                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${userSettings.emailNotif ? 'translate-x-6' : ''
-                                            }`}></span>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
