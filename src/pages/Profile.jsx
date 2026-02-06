@@ -405,7 +405,7 @@ const Profile = () => {
                 </div>
             )
         },
-        { key: 'theme', label: t('theme'), value: theme === 'Light' ? t('lightMode') : t('darkMode') },
+        { key: 'theme', label: t('theme'), value: theme === 'light' ? t('lightMode') : t('darkMode') },
         { key: 'timezone', label: t('timezone'), value: translateTimezone(preferences.timezone) },
         { key: 'currency', label: t('currency'), value: preferences.currency }
     ];
@@ -614,9 +614,9 @@ const Profile = () => {
                                         {/* Theme Dropdown */}
                                         {item.key === 'theme' && activeSection === 'theme' && (
                                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 top-full left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-                                                {['Light', 'Dark'].map(mode => (
+                                                {['light', 'dark'].map(mode => (
                                                     <button key={mode} onClick={() => { setTheme(mode); setActiveSection(null); }} className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-primary/5 hover:text-primary transition-colors flex justify-between items-center ${theme === mode ? 'bg-primary/5 text-primary' : 'text-maintext'}`}>
-                                                        <span className="flex items-center gap-2">{mode === 'Light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{mode === 'Light' ? t('lightMode') : t('darkMode')}</span>
+                                                        <span className="flex items-center gap-2">{mode === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{mode === 'light' ? t('lightMode') : t('darkMode')}</span>
                                                         {theme === mode && <Star className="w-3 h-3 fill-primary" />}
                                                     </button>
                                                 ))}
