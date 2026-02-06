@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, MessageSquare, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiService } from '../services/apiService';
 import { getUserData } from '../userStore/userData';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import LanguageSwitcher from '../Components/LanguageSwitcher/LanguageSwitcher';
 import { useNavigate } from 'react-router';
 import { AppRoute } from '../types';
@@ -11,6 +12,7 @@ import { logo, name } from '../constants';
 
 const ContactUs = () => {
   const { t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -133,7 +135,16 @@ const ContactUs = () => {
           <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
           <span className="text-xl font-black tracking-tighter text-maintext">{name}</span>
         </div>
-        <LanguageSwitcher variant="landing" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2.5 rounded-xl bg-white dark:bg-surface border border-border text-subtext hover:text-primary hover:border-primary/50 transition-all shadow-sm"
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <LanguageSwitcher variant="landing" />
+        </div>
       </div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
