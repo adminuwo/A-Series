@@ -95,7 +95,7 @@ const Marketplace = () => {
     "Medical & Health AI",];
 
   return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto bg-white">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-background">
 
       <AnimatePresence>
         {subToggle.subscripPgTgl && <SubscriptionForm id={agentId} />}
