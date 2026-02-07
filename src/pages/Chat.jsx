@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import Loader from '../Components/Loader/Loader';
 import toast from 'react-hot-toast';
 import LiveAI from '../Components/LiveAI';
+import UserDropdown from '../Components/Navbar/UserDropdown';
 
 import ImageEditor from '../Components/ImageEditor';
 import ModelSelector from '../Components/ModelSelector';
@@ -1712,6 +1713,9 @@ For "Remix" requests with an attachment, analyze the attached image, then create
 
             {/* Compare Mode Toggle */}
 
+            <div className="hidden lg:block">
+              <UserDropdown />
+            </div>
           </div>
         </div>
 
