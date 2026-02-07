@@ -63,16 +63,16 @@ const TransactionHistory = () => {
             <div className="bg-card border border-border rounded-2xl md:rounded-[32px] overflow-hidden shadow-sm">
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[1200px]">
-                        <thead className="bg-secondary border-b border-border">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                        <thead className="bg-secondary/50 border-b border-border">
                             <tr>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] w-[100px] md:w-[140px]">{t("admin.finance.id")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] w-[100px] md:w-[120px]">{t("admin.finance.date")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] w-[120px] md:w-[140px]">{t("admin.finance.type")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] min-w-[150px]">{t("admin.users.tableAgents")} / {t("admin.finance.details")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] w-[100px] md:w-[120px]">{t("admin.finance.amount")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] w-[120px] md:w-[140px]">{t("admin.finance.status")}</th>
-                                <th className="px-3 md:px-4 py-4 text-[10px] font-bold text-subtext uppercase tracking-[1.5px] text-right w-[100px] md:w-[120px]">{t("admin.finance.actions")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest w-[100px]">{t("admin.finance.id")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest w-[120px]">{t("admin.finance.date")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest w-[140px]">{t("admin.finance.type")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest">{t("admin.users.tableAgents")} / {t("admin.finance.details")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest text-right w-[120px]">{t("admin.finance.amount")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest text-center w-[140px]">{t("admin.finance.status")}</th>
+                                <th className="px-4 py-3 text-[10px] font-bold text-subtext uppercase tracking-widest text-right w-[100px]">{t("admin.finance.actions")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,39 +87,38 @@ const TransactionHistory = () => {
                                 </tr>
                             ) : transactions.length > 0 ? (
                                 transactions.map((transaction) => (
-                                    <tr key={transaction.id} className="border-b border-secondary hover:bg-secondary transition-colors last:border-0 group">
-                                        <td className="px-3 md:px-4 py-4">
-                                            <span className="text-[10px] md:text-xs font-bold text-maintext">#{transaction.id.substring(transaction.id.length - 8).toUpperCase()}</span>
+                                    <tr key={transaction.id} className="border-b border-border/50 hover:bg-primary/[0.02] transition-colors last:border-0 group">
+                                        <td className="px-4 py-3">
+                                            <span className="text-xs font-bold text-maintext">#{transaction.id.substring(transaction.id.length - 8).toUpperCase()}</span>
                                         </td>
-                                        <td className="px-3 md:px-4 py-4">
-                                            <span className="text-[10px] md:text-xs font-medium text-subtext">{formatDate(transaction.date)}</span>
+                                        <td className="px-4 py-3">
+                                            <span className="text-xs font-medium text-subtext">{formatDate(transaction.date)}</span>
                                         </td>
-                                        <td className="px-3 md:px-4 py-4">
-                                            <div className="flex items-center gap-1.5 md:gap-2">
-                                                <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-blue-500" />
-                                                <span className="text-[10px] md:text-[11px] font-bold text-maintext uppercase tracking-wide">{transaction.type}</span>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                <span className="text-[11px] font-bold text-maintext uppercase tracking-wide">{transaction.type}</span>
                                             </div>
                                         </td>
-                                        <td className="px-3 md:px-4 py-4">
-                                            <span className="text-xs md:text-sm font-bold text-maintext group-hover:text-primary transition-colors truncate block max-w-[120px] md:max-w-none">{transaction.appName}</span>
+                                        <td className="px-4 py-3">
+                                            <span className="text-sm font-bold text-maintext group-hover:text-primary transition-colors truncate block max-w-[200px]">{transaction.appName}</span>
                                         </td>
-                                        <td className="px-3 md:px-4 py-4">
-                                            <span className="text-xs md:text-sm font-black text-maintext">₹{transaction.amount.toFixed(2)}</span>
+                                        <td className="px-4 py-3 text-right">
+                                            <span className="text-sm font-black text-maintext">₹{transaction.amount.toFixed(2)}</span>
                                         </td>
-                                        <td className="px-3 md:px-4 py-4">
-                                            <div className="inline-flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full border border-green-500/20 text-[9px] md:text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
-                                                <div className="w-1 md:w-1.5 h-1 md:h-1.5 bg-green-500 rounded-full" />
+                                        <td className="px-4 py-3 text-center">
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full border border-green-500/20 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+                                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                                                 {transaction.status}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 text-right">
+                                        <td className="px-4 py-3 text-right">
                                             <button
                                                 onClick={() => handleViewDetails(transaction)}
-                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary text-maintext rounded-xl text-xs font-bold hover:bg-border transition-all whitespace-nowrap"
+                                                className="inline-flex items-center justify-center p-2 bg-secondary text-subtext hover:text-primary rounded-xl hover:bg-primary/5 transition-all text-sm font-bold border border-transparent hover:border-primary/10"
                                                 title={t("admin.finance.details")}
                                             >
-                                                <Eye className="w-3.5 h-3.5" />
-                                                {t("admin.finance.details")}
+                                                <Eye className="w-4 h-4" />
                                             </button>
                                         </td>
                                     </tr>
@@ -150,38 +149,40 @@ const TransactionHistory = () => {
                     ) : transactions.length > 0 ? (
                         transactions.map((transaction) => (
                             <div key={transaction.id} className="p-4 space-y-3 hover:bg-secondary/50 transition-colors">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-0.5">
-                                        <p className="text-[10px] font-bold text-maintext">#{transaction.id.substring(transaction.id.length - 8).toUpperCase()}</p>
-                                        <p className="text-[9px] text-subtext font-medium">{formatDate(transaction.date)}</p>
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-black text-maintext">#{transaction.id.substring(transaction.id.length - 8).toUpperCase()}</p>
+                                        <p className="text-[10px] text-subtext font-medium flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {formatDate(transaction.date)}
+                                        </p>
                                     </div>
-                                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-600 rounded-full border border-green-500/20 text-[9px] font-black uppercase">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg border border-green-500/20 text-[9px] font-black uppercase">
                                         <div className="w-1 h-1 bg-green-500 rounded-full" />
                                         {transaction.status}
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-maintext">{transaction.appName}</span>
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-1 h-1 rounded-full bg-blue-500" />
-                                            <span className="text-[10px] font-bold text-subtext uppercase">{transaction.type}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-1">
-                                        <span className="text-[9px] font-black text-subtext uppercase tracking-widest">{t("admin.finance.amount")}</span>
-                                        <span className="text-sm font-black text-maintext">₹{transaction.amount.toFixed(2)}</span>
+                                <div>
+                                    <p className="text-sm font-bold text-maintext line-clamp-1">{transaction.appName}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md uppercase tracking-wide">{transaction.type}</span>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleViewDetails(transaction)}
-                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-maintext rounded-xl text-xs font-bold hover:bg-border transition-all"
-                                >
-                                    <Eye className="w-3.5 h-3.5" />
-                                    {t("admin.finance.details")}
-                                </button>
+                                <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-subtext uppercase tracking-widest">{t("admin.finance.amount")}</span>
+                                        <span className="text-base font-black text-maintext">₹{transaction.amount.toFixed(2)}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleViewDetails(transaction)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-primary/5 text-subtext hover:text-maintext rounded-xl text-xs font-bold transition-all border border-border"
+                                    >
+                                        <Eye className="w-3.5 h-3.5" />
+                                        {t("admin.finance.details")}
+                                    </button>
+                                </div>
                             </div>
                         ))
                     ) : (
