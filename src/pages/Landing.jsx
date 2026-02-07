@@ -60,7 +60,7 @@ const Landing = () => {
 
       {/* Background Shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-100 dark:bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
       <header className="relative z-50 px-4 py-4 md:px-6 md:py-6 flex justify-between items-center max-w-7xl mx-auto w-full">
