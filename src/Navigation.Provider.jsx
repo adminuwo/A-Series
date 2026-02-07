@@ -90,7 +90,7 @@ const DashboardLayout = () => {
 
         {/* Desktop Navbar */}
         {!isFullScreen && location.pathname !== '/chat' && (
-          <div className="hidden lg:flex items-center justify-end shrink-0 z-50 bg-background border-b border-border">
+          <div className="hidden lg:flex items-center justify-end shrink-0 z-50 bg-transparent border-none w-full p-4">
             <Navbar />
           </div>
         )}
