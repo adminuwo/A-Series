@@ -10,9 +10,9 @@ const UserDropdown = ({ isMobile = false }) => {
     if (!user || !user.email) return null;
 
     const getDisplayName = () => {
-        if (!user.name) return "U";
-        if (user.name === 'Admin') return t('adminName');
-        return user.name;
+        if (user.role && user.role.toLowerCase() === 'admin') return t('adminName') || "Admin";
+        if (user.name === 'Admin') return t('adminName') || "Admin";
+        return user.name || "User";
     };
 
     const displayName = getDisplayName();
@@ -43,7 +43,7 @@ const UserDropdown = ({ isMobile = false }) => {
             {/* User Name */}
             <div className="flex items-center gap-1.5">
                 <span className={`font-bold text-maintext truncate ${isMobile ? 'text-xs max-w-[80px]' : 'text-sm'}`}>
-                    {t('hi')}, {user.name === 'Admin' ? displayName : (displayName.split(' ')[0] || 'User')}
+                    {t('hi')}, {user.role?.toLowerCase() === 'admin' ? displayName : (displayName.split(' ')[0] || 'User')}
                 </span>
             </div>
         </div>
