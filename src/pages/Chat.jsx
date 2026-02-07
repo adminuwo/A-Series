@@ -1690,64 +1690,19 @@ For "Remix" requests with an attachment, analyze the attached image, then create
 
             <div className="flex items-center gap-2 text-subtext min-w-0">
               <span className="text-sm hidden md:inline shrink-0">{t('chatPage.chatWith')}</span>
-              <Menu as="div" className="relative inline-block text-left min-w-0 shrink">
-                <Menu.Button className="flex items-center gap-2 text-maintext bg-surface px-3 py-1.5 rounded-lg border border-border cursor-pointer hover:bg-secondary transition-colors truncate max-w-[140px] sm:max-w-xs">
-                  <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                    <img
-                      src={activeAgent.avatar || (activeAgent.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : '/AGENTS_IMG/AIBOT.png')}
-                      alt=""
-                      className="w-4 h-4 rounded-sm object-cover"
-                      onError={(e) => { e.target.src = '/AGENTS_IMG/AISA.png' }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium truncate">
-                    {(activeAgent.agentName || activeAgent.name) === 'AISA' ? t('aisaName') : (activeAgent.agentName || activeAgent.name)} <sup>TM</sup>
-                  </span>
-                  <ChevronDown className="w-3 h-3 text-subtext shrink-0" />
-                </Menu.Button>
-
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left divide-y divide-border rounded-xl bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden border border-border">
-                    <div className="px-1 py-1 max-h-60 overflow-y-auto custom-scrollbar">
-                      {userAgents.map((agent, idx) => (
-                        <Menu.Item key={idx}>
-                          {({ active }) => (
-                            <button
-                              onClick={() => {
-                                setActiveAgent(agent);
-                                toast.success(`${t('chatPage.switchedTo')} ${agent.agentName || agent.name}`);
-                              }}
-                              className={`${active ? 'bg-primary text-white' : 'text-maintext'
-                                } group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium gap-3 transition-colors`}
-                            >
-                              <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${active ? 'bg-white/20' : 'bg-primary/10'}`}>
-                                <img
-                                  src={agent.avatar || (agent.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : '/AGENTS_IMG/AIBOT.png')}
-                                  alt=""
-                                  className="w-4 h-4 rounded-sm object-cover"
-                                  onError={(e) => { e.target.src = '/AGENTS_IMG/AISA.png' }}
-                                />
-                              </div>
-                              <span className="truncate">{agent.agentName || agent.name}</span>
-                              {activeAgent.agentName === agent.agentName && (
-                                <Check className={`w-3 h-3 ml-auto ${active ? 'text-white' : 'text-primary'}`} />
-                              )}
-                            </button>
-                          )}
-                        </Menu.Item>
-                      ))}
-                    </div>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
+              <div className="flex items-center gap-2 text-maintext bg-surface px-3 py-1.5 rounded-lg border border-border truncate max-w-[140px] sm:max-w-xs">
+                <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
+                  <img
+                    src={activeAgent.avatar || (activeAgent.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : '/AGENTS_IMG/AIBOT.png')}
+                    alt=""
+                    className="w-4 h-4 rounded-sm object-cover"
+                    onError={(e) => { e.target.src = '/AGENTS_IMG/AISA.png' }}
+                  />
+                </div>
+                <span className="text-sm font-medium truncate">
+                  {(activeAgent.agentName || activeAgent.name) === 'AISA' ? t('aisaName') : (activeAgent.agentName || activeAgent.name)} <sup>TM</sup>
+                </span>
+              </div>
             </div>
           </div>
 
