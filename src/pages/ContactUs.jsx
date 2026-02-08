@@ -259,7 +259,7 @@ const ContactUs = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-lg border-2 border-border bg-transparent text-maintext placeholder-subtext/50 focus:outline-none focus:border-primary transition-colors"
-                    placeholder={t('landing.contactUs.formPhonePlaceholder')}
+                    placeholder=""
                   />
                 </div>
 
