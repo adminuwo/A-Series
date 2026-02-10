@@ -390,6 +390,7 @@
         "newAnnouncement": "New Announcement"
     },
     "chatPage": {
+        "welcomeMessage": "Hello! I’m Aaisa™, your Artificial Intelligence Super Assistant.",
         "newChat": "New Chat",
         "history": "History",
         "recent": "Recent",

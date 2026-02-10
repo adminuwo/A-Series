@@ -58,8 +58,8 @@ const ModelSelector = ({ isOpen, onClose, toolType, currentModel, onSelectModel,
                                             key={model.id}
                                             onClick={() => onSelectModel(model.id)}
                                             className={`w-full p-4 rounded-xl border-2 transition-all text-left ${currentModel === model.id
-                                                ? 'border-primary bg-primary/5'
-                                                : 'border-border hover:border-primary/50 hover:bg-surface'
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-border hover:border-primary/50 hover:bg-surface'
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between mb-2">

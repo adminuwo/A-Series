@@ -32,6 +32,8 @@ import ProtectedRoute from './Components/ProtectedRoute/ProtectedRoute.jsx';
 import { useLanguage } from './context/LanguageContext';
 import UserDropdown from './Components/Navbar/UserDropdown';
 import { Menu } from 'lucide-react';
+import { useRecoilState } from 'recoil';
+import { toggleState } from './userStore/userData';
 
 
 const SecurityAndGuidelines = lazy(() => import('./pages/SecurityAndGuidelines'));
@@ -51,7 +53,9 @@ const AuthenticatRoute = ({ children }) => {
 import AnnouncementBanner from './Components/Banner/AnnouncementBanner.jsx';
 
 const DashboardLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [tglState, setTglState] = useRecoilState(toggleState);
+  const isSidebarOpen = tglState.sidebarOpen;
+  const setIsSidebarOpen = (val) => setTglState(prev => ({ ...prev, sidebarOpen: val }));
   const location = useLocation();
   const isFullScreen = location.pathname.includes('/ai-personal-assistant');
 

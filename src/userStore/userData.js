@@ -78,7 +78,7 @@ const getUser = () => {
 }
 export const toggleState = atom({
   key: "toggle",
-  default: { subscripPgTgl: false, notify: false }
+  default: { subscripPgTgl: false, notify: false, sidebarOpen: false }
 })
 
 export const userData = atom({
@@ -88,5 +88,10 @@ export const userData = atom({
 
 export const notificationsState = atom({
   key: 'notificationsState',
+  default: []
+})
+
+export const sessionsData = atom({
+  key: 'sessionsData',
   default: []
 })

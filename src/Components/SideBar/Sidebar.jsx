@@ -43,6 +43,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isFaqOpen, setIsFaqOpen] = useState(false);
   const [networkErrorShown, setNetworkErrorShown] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+
+  // Reset avatar error state when user avatar changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user.avatar]);
 
   const issueOptions = [
     "General Inquiry",
@@ -176,9 +182,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Navigation */}
         <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+
+
           <NavLink to="/dashboard/chat" className={navItemClass} onClick={onClose}>
             <MessageSquare className="w-5 h-5" />
-            <span>{t('chat')}</span>
+            <span>{t('chat') || 'Chat'}</span>
           </NavLink>
 
           <NavLink to={AppRoute.MY_AGENTS} className={navItemClass} onClick={onClose}>
@@ -230,19 +238,12 @@ const Sidebar = ({ isOpen, onClose }) => {
               }}
             >
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0 overflow-hidden border border-primary/10 group-hover:bg-primary/30 transition-colors">
-                {user.avatar ? (
+                {user.avatar && !avatarError ? (
                   <img
                     src={user.avatar}
                     alt={displayName}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      const parent = e.target.parentElement;
-                      if (parent) {
-                        parent.classList.add("flex", "items-center", "justify-center");
-                        parent.innerText = displayName.charAt(0).toUpperCase();
-                      }
-                    }}
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   displayName.charAt(0).toUpperCase()

@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect, Fragment } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Square, ArrowLeftRight } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon } from 'lucide-react';
 import { renderAsync } from 'docx-preview';
 import * as XLSX from 'xlsx';
 import { Menu, Transition, Dialog } from '@headlessui/react';
 import { generateChatResponse } from '../services/geminiService';
 import { chatStorageService } from '../services/chatStorageService';
 import { useLanguage } from '../context/LanguageContext';
+import { useRecoilState } from 'recoil';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Loader from '../Components/Loader/Loader';
 import toast from 'react-hot-toast';
 import LiveAI from '../Components/LiveAI';
-import UserDropdown from '../Components/Navbar/UserDropdown';
+import { apiService } from '../services/apiService';
 
 import ImageEditor from '../Components/ImageEditor';
 import ModelSelector from '../Components/ModelSelector';
@@ -21,7 +22,12 @@ import axios from 'axios';
 import { apis } from '../types';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { detectMode, getModeName, getModeIcon, getModeColor, MODES } from '../utils/modeDetection';
+import { getUserData, sessionsData, toggleState } from '../userStore/userData';
+import { usePersonalization } from '../context/PersonalizationContext';
 
+
+const WELCOME_MESSAGE = "Hello! I’m AISA™, your Artificial Intelligence Super Assistant.";
 
 const FEEDBACK_PROMPTS = {
   en: [
@@ -53,13 +59,7 @@ const FEEDBACK_PROMPTS = {
 const TOOL_PRICING = {
   chat: {
     models: [
-      { id: 'gemini-flash', name: 'Gemini Flash', price: 0, speed: 'Fast', description: 'Google`s fastest model' },
-      { id: 'gemini-pro', name: 'Gemini Pro', price: 0.05, speed: 'Balanced', description: 'Advanced reasoning' },
-      { id: 'groq-llama3', name: 'Groq Llama 3.3', price: 0.02, speed: 'Super Fast', description: 'Llama 3.3 70B via Groq' },
-      { id: 'openai-gpt4o', name: 'GPT-4o', price: 0.10, speed: 'Fast', description: 'OpenAI`s flagship model' },
-      { id: 'claude-3-opus', name: 'Claude 3 Opus', price: 0.15, speed: 'Slow', description: 'Anthropic`s most powerful model' },
-      { id: 'kimi', name: 'Kimi (Moonshot)', price: 0.05, speed: 'Balanced', description: 'Long context specialist' },
-      { id: 'kimi-k1.5', name: 'Kimi k1.5', price: 0.07, speed: 'Fast', description: 'Next-gen Kimi model' }
+      { id: 'gemini-flash', name: 'Gemini Flash', price: 0, speed: 'Fast', description: 'Free chat model' }
     ]
   },
   image: {
@@ -83,28 +83,164 @@ const TOOL_PRICING = {
   }
 };
 
+
+const ImageViewer = ({ src, alt }) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [lastTouchDistance, setLastTouchDistance] = useState(null);
+  const imgRef = useRef(null);
+
+  const handleZoomIn = () => setScale(s => Math.min(s + 0.5, 5));
+  const handleZoomOut = () => setScale(s => Math.max(s - 0.5, 1));
+  const handleReset = () => { setScale(1); setPosition({ x: 0, y: 0 }); };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    setScale(s => Math.min(Math.max(1, s + delta), 5));
+  };
+
+  const handleMouseDown = (e) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging && scale > 1) {
+      e.preventDefault();
+      setPosition({
+        x: e.clientX - startPos.x,
+        y: e.clientY - startPos.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // Touch Handlers for Mobile/iOS
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      // Pinch start
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      setLastTouchDistance(dist);
+    } else if (e.touches.length === 1 && scale > 1) {
+      // Drag start
+      setIsDragging(true);
+      setStartPos({
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && lastTouchDistance) {
+      // Pinch Zoom
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      const delta = dist / lastTouchDistance;
+      setScale(s => Math.min(Math.max(1, s * delta), 5));
+      setLastTouchDistance(dist);
+    } else if (e.touches.length === 1 && isDragging && scale > 1) {
+      // Pan
+      e.preventDefault(); // Prevent scroll
+      setPosition({
+        x: e.touches[0].clientX - startPos.x,
+        y: e.touches[0].clientY - startPos.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setLastTouchDistance(null);
+  };
+
+  // Reset position if zoomed out to 1
+  useEffect(() => {
+    if (scale === 1) setPosition({ x: 0, y: 0 });
+  }, [scale]);
+
+  return (
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black/90 select-none">
+      {/* Zoom Controls */}
+      <div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-black/60 backdrop-blur-md rounded-full px-6 py-3 border border-white/10 shadow-xl"
+        onClick={(e) => e.stopPropagation()} // Prevent closing modal
+      >
+        <button onClick={handleZoomOut} className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"><Minus className="w-5 h-5" /></button>
+        <span className="text-white text-sm font-bold font-mono min-w-[3rem] text-center">{Math.round(scale * 100)}%</span>
+        <button onClick={handleZoomIn} className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"><Plus className="w-5 h-5" /></button>
+        <div className="w-px h-6 bg-white/20 mx-2"></div>
+        <button onClick={handleReset} className="p-2 hover:bg-white/10 rounded-full text-white transition-colors" title="Reset"><RotateCcw className="w-4 h-4" /></button>
+      </div>
+
+      <div
+        className="flex-1 w-full h-full flex items-center justify-center overflow-hidden touch-none"
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          style={{
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+            cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+          }}
+          className="max-w-full max-h-full object-contain pointer-events-none"
+          draggable={false}
+        />
+      </div>
+    </div>
+  );
+};
+
 const Chat = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const location = useLocation();
+  const { personalizations, getSystemPromptExtensions } = usePersonalization();
 
   const [messages, setMessages] = useState([]);
   const [excelHTML, setExcelHTML] = useState(null);
   const [textPreview, setTextPreview] = useState(null);
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useRecoilState(sessionsData);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(window.innerWidth >= 1024);
   const messagesEndRef = useRef(null);
   const [currentSessionId, setCurrentSessionId] = useState(sessionId || 'new');
+  const [tglState, setTglState] = useRecoilState(toggleState);
   const [typingMessageId, setTypingMessageId] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   // File Upload State
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLimitReached, setIsLimitReached] = useState(false);
   const [filePreviews, setFilePreviews] = useState([]);
-  const [activeAgent, setActiveAgent] = useState({ name: 'AISA', category: 'General' });
+  const [activeAgent, setActiveAgent] = useState({ agentName: 'AISA', category: 'General' });
   const [userAgents, setUserAgents] = useState([]);
   const [toolModels, setToolModels] = useState({
     chat: 'gemini-flash',
@@ -119,24 +255,34 @@ const Chat = () => {
 
   // Attachment Menu State
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [listeningTime, setListeningTime] = useState(0);
   const timerRef = useRef(null);
   const attachBtnRef = useRef(null);
   const menuRef = useRef(null);
   const recognitionRef = useRef(null);
-  const stopTypingRef = useRef(false);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [selectedToolType, setSelectedToolType] = useState(null);
-  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [currentMode, setCurrentMode] = useState('NORMAL_CHAT');
+  const [isDeepSearch, setIsDeepSearch] = useState(false);
+  const [isImageGeneration, setIsImageGeneration] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isAudioConvertMode, setIsAudioConvertMode] = useState(false);
+  const [isDocumentConvert, setIsDocumentConvert] = useState(false);
+  const abortControllerRef = useRef(null);
+  const voiceUsedRef = useRef(false); // Track if voice input was used
+  const inputRef = useRef(null); // Ref for textarea input
+  const transcriptRef = useRef(''); // Ref for speech transcript
+  const isManualStopRef = useRef(false); // Track manual stop to avoid recursive loops
 
-  // Message feedback state
-  const [likedMessages, setLikedMessages] = useState(new Set());
-  const [dislikedMessages, setDislikedMessages] = useState(new Set());
+  const toolsBtnRef = useRef(null);
+  const toolsMenuRef = useRef(null);
 
   // Close menu on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close Attach Menu
       if (
         menuRef.current &&
         !menuRef.current.contains(event.target) &&
@@ -145,16 +291,26 @@ const Chat = () => {
       ) {
         setIsAttachMenuOpen(false);
       }
+
+      // Close Tools Menu
+      if (
+        toolsMenuRef.current &&
+        !toolsMenuRef.current.contains(event.target) &&
+        toolsBtnRef.current &&
+        !toolsBtnRef.current.contains(event.target)
+      ) {
+        setIsToolsMenuOpen(false);
+      }
     };
 
-    if (isAttachMenuOpen) {
+    if (isAttachMenuOpen || isToolsMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isAttachMenuOpen]);
+  }, [isAttachMenuOpen, isToolsMenuOpen]);
 
   const processFile = (file) => {
     if (!file) return;
@@ -189,7 +345,17 @@ const Chat = () => {
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     files.forEach(file => processFile(file));
+    setIsAttachMenuOpen(false); // Close menu after selection
+
+    // [PROACTIVE FEATURE]: If this is a new chat (no messages), automatically trigger analysis
+    if (messages.length === 0 && !isLoading) {
+      setTimeout(() => {
+        handleSendMessage();
+      }, 1000); // 1s delay to ensure FileReader (in processFile) has finished
+    }
   };
 
   const handlePaste = (e) => {
@@ -242,6 +408,507 @@ const Chat = () => {
       photosInputRef.current?.click();
     } else if (type === 'drive') {
       driveInputRef.current?.click();
+    } else if (type === 'doc-voice') {
+      document.getElementById('doc-voice-upload')?.click();
+    }
+  };
+
+  const handleDocToVoiceSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsAttachMenuOpen(false);
+
+    // 1. Show User Message immediately with the file
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Content = reader.result; // Full Data URL for display
+      const base64Data = base64Content.split(',')[1]; // Raw base64 for backend
+
+      // Add User Message
+      const userMsgId = Date.now().toString();
+      const userMsg = {
+        id: userMsgId,
+        role: 'user',
+        content: `Please convert this document to audio: **${file.name}**`,
+        timestamp: new Date(),
+        attachments: [{
+          url: base64Content,
+          name: file.name,
+          type: file.type
+        }]
+      };
+      setMessages(prev => [...prev, userMsg]);
+
+      // 2. Add Processing Message from AISA
+      const aiMsgId = (Date.now() + 1).toString();
+      const processingMsg = {
+        id: aiMsgId,
+        role: 'assistant',
+        content: `⚡ **EXTRACTING CONTENT...**\nReading text from **${file.name}**...`,
+        timestamp: new Date(),
+        isProcessing: true
+      };
+      setMessages(prev => [...prev, processingMsg]);
+      scrollToBottom();
+
+      // Update UI slightly after extraction
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => msg.id === aiMsgId && msg.isProcessing ? {
+          ...msg,
+          content: `🎧 **CONVERTING TO VOICE...**\nSynthesizing natural audio for **${file.name}**. This won't take long!`
+        } : msg));
+      }, 1500);
+      scrollToBottom();
+
+      // 3. Start Conversion - Added high timeout for long docs
+      try {
+        const response = await axios.post(apis.synthesizeFile, {
+          fileData: base64Data,
+          mimeType: file.type,
+          gender: 'FEMALE'
+        }, {
+          responseType: 'arraybuffer',
+          timeout: 0 // Wait as long as needed for large "jetna bhi long" files
+        });
+
+        // 4. Success - Update AI Message with Player and Download
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        const reader2 = new FileReader();
+        reader2.readAsDataURL(audioBlob);
+        reader2.onloadend = () => {
+          const mp3Base64 = reader2.result.split(',')[1];
+          const rawBytes = response.data.byteLength;
+          const charCount = response.headers['x-text-length'] || 0;
+          const formattedFileSize = rawBytes > 1024 * 1024
+            ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB'
+            : (rawBytes / 1024).toFixed(1) + ' KB';
+
+          setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+            ...msg,
+            isProcessing: false,
+            content: `✅ I have successfully converted **${file.name}** into a full audio voice.`,
+            conversion: {
+              file: mp3Base64,
+              blobUrl: audioUrl,
+              fileName: `${file.name.split('.')[0]}_Audio.mp3`,
+              mimeType: 'audio/mpeg',
+              fileSize: formattedFileSize,
+              rawSize: rawBytes,
+              charCount: charCount
+            }
+          } : msg));
+
+          toast.success("Conversion complete! 🎶");
+          scrollToBottom();
+        };
+
+      } catch (err) {
+        console.error('[DocToVoice Error]:', err);
+        let errorMsg = "Extraction Failed";
+        let errorDetail = "If this is a scanned PDF (image only), I cannot read the text yet. Please ensure it's a searchable PDF or Word file.";
+
+        if (err.response?.data) {
+          try {
+            const errorData = err.response.data instanceof ArrayBuffer
+              ? JSON.parse(new TextDecoder().decode(err.response.data))
+              : err.response.data;
+
+            errorMsg = errorData.error || errorMsg;
+            errorDetail = errorData.details || errorDetail;
+          } catch (e) { }
+        }
+
+        setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+          ...msg,
+          isProcessing: false,
+          content: `❌ **Conversion Failed**\n**${errorMsg}**\n${errorDetail}`
+        } : msg));
+
+        toast.error("Conversion failed");
+      }
+    };
+    reader.readAsDataURL(file);
+
+    e.target.value = ''; // Always reset so user can click/upload same file again
+  };
+
+  const manualFileToAudioConversion = async (file) => {
+    if (!file) return;
+
+    // 1. Show User Message immediately with the file
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Content = reader.result;
+      const base64Data = base64Content.split(',')[1];
+
+      const userMsgId = Date.now().toString();
+      const userMsg = {
+        id: userMsgId,
+        role: 'user',
+        content: `Convert this document to audio: **${file.name}**`,
+        timestamp: new Date(),
+        attachments: [{ url: base64Content, name: file.name, type: file.type }]
+      };
+      setMessages(prev => [...prev, userMsg]);
+
+      const aiMsgId = (Date.now() + 1).toString();
+      const processingMsg = {
+        id: aiMsgId,
+        role: 'assistant',
+        content: `⚡ **EXTRACTING CONTENT...**\nReading **${file.name}**...`,
+        timestamp: new Date(),
+        isProcessing: true
+      };
+      setMessages(prev => [...prev, processingMsg]);
+      scrollToBottom();
+
+      // Second stage update
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => msg.id === aiMsgId && msg.isProcessing ? {
+          ...msg,
+          content: `🎧 **CONVERTING TO VOICE...**\nAlmost there! Preparing your audio for **${file.name}**...`
+        } : msg));
+      }, 1200);
+
+      try {
+        const response = await axios.post(apis.synthesizeFile, {
+          fileData: base64Data,
+          mimeType: file.type,
+          gender: 'FEMALE'
+        }, { responseType: 'arraybuffer', timeout: 0 });
+
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const reader2 = new FileReader();
+        reader2.readAsDataURL(audioBlob);
+        reader2.onloadend = () => {
+          const mp3Base64 = reader2.result.split(',')[1];
+          const rawBytes = response.data.byteLength;
+          const charCount = response.headers['x-text-length'] || 0;
+          const formattedSize = rawBytes > 1024 * 1024 ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB' : (rawBytes / 1024).toFixed(1) + ' KB';
+
+          setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+            ...msg,
+            isProcessing: false,
+            content: `✅ Audio conversion complete for **${file.name}**.`,
+            conversion: {
+              file: mp3Base64,
+              blobUrl: audioUrl,
+              fileName: `${file.name.split('.')[0]}_Audio.mp3`,
+              mimeType: 'audio/mpeg',
+              fileSize: formattedSize,
+              rawSize: rawBytes,
+              charCount: charCount
+            }
+          } : msg));
+          toast.success("File converted successfully!");
+          scrollToBottom();
+        };
+      } catch (err) {
+        console.error('[ManualConversion Error]:', err);
+        const serverError = err.response?.data?.details || err.response?.data?.error || err.message;
+        setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+          ...msg,
+          isProcessing: false,
+          content: `❌ **Conversion Failed**\n${serverError}`
+        } : msg));
+        toast.error("Conversion failed");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const manualTextToAudioConversion = async (text) => {
+    if (!text || !text.trim()) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: `Convert this text to audio: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMsg]);
+
+    const aiMsgId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, {
+      id: aiMsgId,
+      role: 'assistant',
+      content: `🎧 **Generating voice for your text...**`,
+      timestamp: new Date(),
+      isProcessing: true
+    }]);
+    scrollToBottom();
+
+    try {
+      const response = await axios.post(apis.synthesizeFile, {
+        introText: text,
+        gender: 'FEMALE'
+      }, { responseType: 'arraybuffer', timeout: 0 });
+
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const reader2 = new FileReader();
+      reader2.readAsDataURL(audioBlob);
+      reader2.onloadend = () => {
+        const mp3Base64 = reader2.result.split(',')[1];
+        const rawBytes = response.data.byteLength;
+        const charCount = response.headers['x-text-length'] || 0;
+        const formattedSize = rawBytes > 1024 * 1024 ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB' : (rawBytes / 1024).toFixed(1) + ' KB';
+
+        setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+          ...msg,
+          isProcessing: false,
+          content: `✅ Your text has been converted to voice audio.`,
+          conversion: {
+            file: mp3Base64,
+            blobUrl: audioUrl,
+            fileName: `AISA_Voice_${Date.now()}.mp3`,
+            mimeType: 'audio/mpeg',
+            fileSize: formattedSize,
+            rawSize: rawBytes,
+            charCount: charCount
+          }
+        } : msg));
+        toast.success("Text converted successfully!");
+        scrollToBottom();
+      };
+    } catch (err) {
+      console.error('[ManualTextConversion Error]:', err);
+      const serverError = err.response?.data?.details || err.response?.data?.error || err.message;
+      setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
+        ...msg,
+        isProcessing: false,
+        content: `❌ **Conversion Failed**\n${serverError}`
+      } : msg));
+      toast.error("Conversion failed");
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    try {
+      if (!inputRef.current?.value.trim() && selectedFiles.length === 0) {
+        // toast.error('Please enter a prompt or select a file');
+        // Let it slide if it's voice input (handled elsewhere)
+        if (!voiceUsedRef.current) return;
+      }
+
+      const prompt = inputRef.current?.value || "";
+      // const filesToSend = [...selectedFiles]; // Snapshot // This variable is not used
+
+      // Voice Reader Mode Logic
+      if (isVoiceMode) {
+        // 1. Add User Message to UI
+        const userMsgId = Date.now().toString();
+        const newUserMsg = {
+          id: userMsgId,
+          role: 'user', // Ensure role user
+          content: prompt, // Use content
+          timestamp: new Date(),
+          attachments: filePreviews.map(fp => ({
+            url: fp.url,
+            name: fp.name,
+            type: fp.type
+          }))
+        };
+        setMessages(prev => [...prev, newUserMsg]);
+
+        // Clear Inputs
+        setInputValue('');
+        setSelectedFiles([]);
+        setFilePreviews([]);
+        if (inputRef.current) inputRef.current.style.height = 'auto';
+
+        // 2. Trigger Voice Reading Directly
+        // We can use speakResponse, but we need to trick it into thinking it's an AI response?
+        // Or just call speakResponse with the user content? 
+        // SpeakResponse reads content using a specific message ID for state tracking.
+
+        setIsLoading(true);
+
+        // Show a "Reading..." AI bubble
+        const aiMsgId = (Date.now() + 1).toString();
+        const readingMsg = {
+          id: aiMsgId,
+          role: 'assistant', // Ensure role assistant
+          content: "🎧 Reading content aloud...", // Use content
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, readingMsg]);
+
+        setTimeout(() => {
+          speakResponse(prompt, 'en-US', aiMsgId, newUserMsg.attachments);
+          setIsLoading(false);
+        }, 500);
+
+        return; // STOP HERE (Do not call AI API)
+      }
+
+      setIsLoading(true);
+      // isSendingRef.current = true; // Mark as sending // This variable is not defined in the provided context
+
+      // Show a message that video generation is in progress
+      const tempId = Date.now().toString();
+      const newMessage = {
+        id: tempId,
+        role: 'assistant',
+        content: `🎬 Generating video from prompt: "${prompt}"\n\nPlease wait, this may take a moment...`, // Use content
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      if (inputRef.current) inputRef.current.value = '';
+
+      try {
+        // Use apiService
+        const data = await apiService.generateVideo(prompt);
+
+        if (data.videoUrl) {
+          // Add the generated video to the message
+          const videoMessage = {
+            id: tempId, // Keep same ID so we replace the correct one (or just update)
+            role: 'assistant',
+            content: `🎥 Video generated successfully!`, // Use content
+            videoUrl: data.videoUrl,
+            timestamp: new Date(),
+          };
+
+          setMessages(prev => prev.map(msg => msg.id === tempId ? videoMessage : msg));
+
+          toast.success('Video generated successfully!');
+        }
+      } catch (error) {
+        const errorMsg = error.response?.data?.message || 'Failed to generate video';
+        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: `❌ ${errorMsg}` } : msg)); // Use content
+        toast.error(errorMsg);
+      }
+    } catch (error) {
+      console.error('Video generation error:', error);
+      toast.error('Error initiating video generation');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateImage = async (overridePrompt) => {
+    try {
+      if (!inputRef.current?.value.trim() && !overridePrompt) {
+        toast.error('Please enter a prompt for image generation');
+        return;
+      }
+
+      const prompt = overridePrompt || inputRef.current.value;
+      setIsLoading(true);
+
+      // Show a message that image generation is in progress
+      const tempId = Date.now().toString();
+      const newMessage = {
+        id: tempId,
+        role: 'assistant',
+        content: `🎨 Generating image from prompt: "${prompt}"\n\nPlease wait, this may take a moment...`, // Use content
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      if (inputRef.current) inputRef.current.value = '';
+
+      try {
+        // Use apiService
+        const data = await apiService.generateImage(prompt);
+
+        if (data && (data.imageUrl || data.data)) {
+          const finalUrl = data.imageUrl || data.data; // Handle different response structures
+          const imageMessage = {
+            id: tempId, // Keep same ID
+            role: 'assistant',
+            content: `🖼️ Image generated successfully!`, // Use content
+            imageUrl: finalUrl,
+            timestamp: new Date(),
+          };
+
+          setMessages(prev => prev.map(msg => msg.id === tempId ? imageMessage : msg));
+
+          toast.success('Image generated successfully!');
+        }
+      } catch (error) {
+        console.error("Image Gen Error Details:", error);
+        const errorMsg = error.response?.data?.message || error.message || 'Failed to generate image';
+        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: `❌ ${errorMsg}` } : msg)); // Use content
+        toast.error(errorMsg);
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      toast.error('Error initiating image generation');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeepSearch = async () => {
+    try {
+      if (!inputRef.current?.value.trim()) {
+        toast.error('Please enter a topic for deep search');
+        return;
+      }
+
+      const query = inputRef.current.value;
+      setIsLoading(true);
+
+      // Show a message that deep search is in progress
+      const newMessage = {
+        id: Date.now().toString(),
+        type: 'ai',
+        text: `🔍 Performing deep search for: "${query}"\n\nSearching the web and analyzing results... This may take a moment...`,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      inputRef.current.value = '';
+
+      try {
+        // Send message with deep search context
+        const responseData = await generateChatResponse(
+          messages,
+          query,
+          "DEEP SEARCH MODE ENABLED: Analyze the web search results comprehensively.",
+          [],
+          currentLang
+        );
+
+        if (responseData && responseData.reply) {
+          // Add the deep search result
+          const searchMessage = {
+            id: Date.now().toString(),
+            type: 'ai',
+            text: responseData.reply,
+            content: responseData.reply,
+            timestamp: new Date(),
+          };
+
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = searchMessage;
+            return updated;
+          });
+
+          toast.success('Deep search completed!');
+        }
+      } catch (error) {
+        const errorMsg = error.message || 'Failed to perform deep search';
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1].text = `❌ ${errorMsg}`;
+          return updated;
+        });
+        toast.error(errorMsg);
+      }
+    } catch (error) {
+      console.error('Deep search error:', error);
+      toast.error('Error initiating deep search');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -252,9 +919,414 @@ const Chat = () => {
         [selectedToolType]: modelId
       }));
       const selectedModel = TOOL_PRICING[selectedToolType].models.find(m => m.id === modelId);
-      toast.success(`${t('chatPage.switchedTo')} ${selectedModel?.name}`);
+      toast.success(`Switched to ${selectedModel?.name}`);
       setIsModelSelectorOpen(false);
     }
+  };
+
+  // Voice Input Handler
+  const handleVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      toast.error('Voice input not supported in this browser');
+      return;
+    }
+
+    if (isListening) {
+      isManualStopRef.current = true;
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    // Start New Listening session
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    isManualStopRef.current = false;
+    transcriptRef.current = '';
+
+    const langMap = {
+      'Hindi': 'hi-IN',
+      'English': 'en-US',
+      'Spanish': 'es-ES',
+      'French': 'fr-FR',
+      'German': 'de-DE',
+      'Japanese': 'ja-JP'
+    };
+    recognition.lang = langMap[currentLang] || 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+      setInputValue(transcript);
+      transcriptRef.current = transcript;
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+
+      const text = transcriptRef.current.trim();
+      if (!isManualStopRef.current && text) {
+        voiceUsedRef.current = true;
+        handleSendMessage(null, text);
+      }
+      isManualStopRef.current = false;
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech error:', event.error);
+      setIsListening(false);
+      isManualStopRef.current = true;
+      if (event.error === 'not-allowed') toast.error('Microphone access denied');
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Ensure Chat Mic stops when Live Mode starts
+  useEffect(() => {
+    if (isLiveMode && isListening && recognitionRef.current) {
+      console.log("[Chat] Stopping Mic for Live Mode");
+      isManualStopRef.current = true;
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [isLiveMode, isListening]);
+
+  // Helper to clean markdown for TTS
+  const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const audioRef = useRef(null);
+  const audioCacheRef = useRef({});
+
+  // Helper to clean markdown for TTS
+  const cleanTextForTTS = (text) => {
+    if (!text) return "";
+    // Remove emojis using regex range for various emoji blocks
+    return text
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F0F5}\u{1F200}-\u{1F270}]/gu, '')
+      // Remove headers (keep text): ### Title -> Title
+      .replace(/^#+\s+/gm, '')
+      // Remove bold: **text** -> text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      // Remove italic: *text* -> text
+      .replace(/\*(.*?)\*/g, '$1')
+      // Remove underline: __text__ -> text
+      .replace(/__(.*?)__/g, '$1')
+      // Remove strikethrough: ~~text~~ -> text
+      .replace(/~~(.*?)~~/g, '$1')
+      // Remove links: [text](url) -> text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove images: ![alt](url) -> empty
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+      // Remove code blocks (replace with brief pause/text to avoid reading syntax)
+      .replace(/`{3}[\s\S]*?`{3}/g, ' Code snippet. ')
+      // Remove inline code ticks: `text` -> text
+      .replace(/`(.+?)`/g, '$1')
+      // Remove list bullets: - text -> text
+      .replace(/^\s*[-*+]\s+/gm, '')
+      // Remove blockquotes: > text -> text
+      .replace(/^\s*>\s+/gm, '')
+      // Replace Trademark with 'tm' so it's handled by next step
+      .replace(/™|&trade;/g, ' tm ')
+      .replace(/©/g, ' ')
+      // Hinglish Normalization for natural Hindi pronunciation
+      // Ensure 'tm' is spoken as 'tum' clearly (NOT HIDDEN)
+      .replace(/\btm\b/gi, 'tum ')
+      .replace(/\bkkrh\b/gi, 'kya kar rahe ho ')
+      .replace(/\bclg\b/gi, 'college ')
+      .replace(/\bplz\b/gi, 'please ')
+      // Remove specific symbols as requested: , . ? ; " \ * / + - : @ [ ] ( ) | _
+      .replace(/[,\.\?;\"\\\*\/\+\-:@\[\]\(\)\|\_]/g, ' ')
+      // Remove quotes/dashes just in case regex above missed something or for extra safety
+      .replace(/["']/g, '')
+      // Collapse whitespace
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Voice Queue Ref
+  const speechQueueRef = useRef([]);
+  const isSpeakingRef = useRef(false);
+  const currentSpeechResolverRef = useRef(null);
+
+  // Internal function to execute speech
+  const executeSpeak = async (text, language, msgId, attachments = []) => {
+    return new Promise(async (resolve) => {
+      // Store resolve to allow external cancellation
+      currentSpeechResolverRef.current = resolve;
+
+      // Reset State Logic used to be here, now handled by queue manager
+
+      try {
+        let audioBlob = null;
+        let targetLang = 'en-US';
+
+        const readableAttachment = attachments && attachments.length > 0
+          ? attachments.find(a =>
+          (a.type && (
+            a.type.includes('pdf') ||
+            a.type.includes('word') ||
+            a.type.includes('document') ||
+            a.type.includes('text') ||
+            a.type.startsWith('image/')
+          ))
+          ) : null;
+
+        // Check Cache
+        if (msgId && audioCacheRef.current[msgId]) {
+          console.log(`[VOICE] Using cached audio for: ${msgId}`);
+          audioBlob = audioCacheRef.current[msgId];
+        } else {
+          // Not cached, fetch
+          if (readableAttachment) {
+            toast.loading("Processing file & text...", { id: 'voice-loading' });
+            console.log(`[VOICE] Reading attachment: ${readableAttachment.name}`);
+
+            const fileRes = await fetch(readableAttachment.url);
+            const fileBlob = await fileRes.blob();
+
+            const base64Data = await new Promise((res) => {
+              const reader = new FileReader();
+              reader.onloadend = () => res(reader.result.split(',')[1]);
+              reader.readAsDataURL(fileBlob);
+            });
+
+            const headerText = text ? cleanTextForTTS(text) : "";
+
+            const response = await axios.post(apis.synthesizeFile, {
+              fileData: base64Data,
+              mimeType: readableAttachment.type || 'application/pdf',
+              languageCode: null,
+              gender: 'FEMALE',
+              introText: headerText
+            }, {
+              responseType: 'arraybuffer'
+            });
+
+            audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+            toast.dismiss('voice-loading');
+
+          } else {
+            if (!text) {
+              resolve();
+              return;
+            }
+
+            const cleanText = cleanTextForTTS(text);
+            if (!cleanText) {
+              resolve();
+              return;
+            }
+
+            const langMap = {
+              'Hindi': 'hi-IN',
+              'English': 'en-US',
+              'Hinglish': 'hi-IN'
+            };
+            targetLang = /[\u0900-\u097F]/.test(cleanText) ? 'hi-IN' : (langMap[language] || 'en-US');
+
+            // Show loading for normal TTS too
+            toast.loading("Generating voice...", { id: 'voice-loading' });
+
+            const response = await axios.post(apis.synthesizeVoice, {
+              text: cleanText,
+              languageCode: targetLang,
+              gender: 'FEMALE',
+              tone: 'conversational'
+            }, {
+              responseType: 'arraybuffer'
+            });
+
+            toast.dismiss('voice-loading');
+            audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+          }
+
+          // Save to Cache
+          if (msgId && audioBlob) {
+            audioCacheRef.current[msgId] = audioBlob;
+          }
+        }
+
+        // Check if user stopped/switched while we were fetching
+        if (currentSpeechResolverRef.current && currentSpeechResolverRef.current !== resolve) {
+          console.log('[VOICE] Aborted playback - new task started');
+          resolve();
+          return;
+        }
+
+        // DOUBLE CHECK: Stop any existing audio before playing new one
+        if (window.currentAudio) {
+          window.currentAudio.pause();
+          window.currentAudio = null;
+        }
+
+        const url = window.URL.createObjectURL(audioBlob);
+        const audio = new Audio(url);
+
+        window.currentAudio = audio;
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          window.URL.revokeObjectURL(url);
+          if (window.currentAudio === audio) window.currentAudio = null;
+          if (audioRef.current === audio) audioRef.current = null;
+          resolve();
+        };
+
+        audio.onerror = (e) => {
+          console.error(`[VOICE] Audio playback error:`, e);
+          if (!readableAttachment) fallbackSpeak(cleanTextForTTS(text), targetLang);
+          resolve();
+        };
+
+        await audio.play();
+
+      } catch (err) {
+        console.error('[VOICE] Synthesis failed:', err);
+        toast.dismiss('voice-loading');
+        // fallback logic...
+        if (!attachments || attachments.length === 0) {
+          // simple fallback
+          // fallbackSpeak(...)
+        }
+        resolve();
+      }
+    });
+  };
+
+  const processSpeechQueue = async () => {
+    if (isSpeakingRef.current || speechQueueRef.current.length === 0) return;
+
+    isSpeakingRef.current = true;
+    const task = speechQueueRef.current[0];
+
+    setSpeakingMessageId(task.msgId);
+    setIsPaused(false);
+
+    try {
+      await executeSpeak(task.text, task.language, task.msgId, task.attachments);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      // Completed (or stopped)
+      if (speechQueueRef.current.length > 0 && speechQueueRef.current[0] === task) {
+        speechQueueRef.current.shift(); // Remove finished
+      }
+      isSpeakingRef.current = false;
+      currentSpeechResolverRef.current = null;
+
+      if (speechQueueRef.current.length > 0) {
+        processSpeechQueue();
+      } else {
+        setSpeakingMessageId(null);
+      }
+    }
+  };
+
+  const stopCurrentSpeech = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (window.currentAudio) {
+      window.currentAudio.pause();
+      window.currentAudio = null;
+    }
+    window.speechSynthesis.cancel();
+
+    // Resolve any pending promise
+    if (currentSpeechResolverRef.current) {
+      currentSpeechResolverRef.current();
+      currentSpeechResolverRef.current = null;
+    }
+  };
+
+  // Voice Output - Speak AI Response
+  const speakResponse = async (text, language, msgId, attachments = [], force = false) => {
+    // 1. Handle Toggle on the SAME message (Manual Click)
+    // 1. Handle Toggle on the SAME message (Manual Click)
+    if (force && speakingMessageId === msgId) {
+      const activeAudio = audioRef.current || window.currentAudio;
+      if (activeAudio) {
+        if (!activeAudio.paused) {
+          console.log(`[VOICE] Pausing message: ${msgId}`);
+          activeAudio.pause();
+          setIsPaused(true);
+          return;
+        } else {
+          console.log(`[VOICE] Resuming message: ${msgId}`);
+          await activeAudio.play();
+          setIsPaused(false);
+          return;
+        }
+      }
+    }
+
+    // 2. Force Mode (Manual Click on DIFFERENT message)
+    if (force) {
+      console.log(`[VOICE] Force playing new message: ${msgId}`);
+      // Stop everything immediately
+      stopCurrentSpeech();
+      isSpeakingRef.current = false;
+
+      // Clear queue
+      speechQueueRef.current = [];
+
+      // Add new task
+      speechQueueRef.current.push({ text, language, msgId, attachments });
+
+      // Start processing immediately
+      processSpeechQueue();
+      return;
+    }
+
+    // 3. Normal Enqueue (Auto-play flow)
+    speechQueueRef.current.push({ text, language, msgId, attachments });
+    if (!isSpeakingRef.current) {
+      processSpeechQueue();
+    }
+  };
+
+  const fallbackSpeak = (text, lang) => {
+    console.log(`[VOICE] Using browser fallback for: ${lang}`);
+    if (!window.speechSynthesis) {
+      console.error('[VOICE] SpeechSynthesis not supported in this browser.');
+      return;
+    }
+
+    // Cancel any existing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+
+    // Find a better voice if possible
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+      console.log(`[VOICE] Browser fallback using voice: ${matchedVoice.name}`);
+    }
+
+    utterance.onstart = () => console.log('[VOICE] Browser speech started.');
+    utterance.onend = () => console.log('[VOICE] Browser speech ended.');
+    utterance.onerror = (e) => console.error('[VOICE] Browser speech error:', e);
+
+    window.speechSynthesis.speak(utterance);
   };
 
 
@@ -268,22 +1340,30 @@ const Chat = () => {
         const user = JSON.parse(localStorage.getItem('user'));
         const userId = user?.id || user?._id;
         if (userId) {
-          const res = await axios.post(apis.getUserAgents, { userId });
-          const agents = res.data?.agents || [];
-          // Add default AISA agent if not present
-          const processedAgents = [{ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' }, ...agents];
-          setUserAgents(processedAgents);
-
-          // Find agent if already chatting with one (placeholder for now)
-          // For now, default to AISA
+          try {
+            const token = getUserData()?.token || localStorage.getItem("token");
+            const res = await axios.post(apis.getUserAgents, { userId }, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const agents = res.data?.agents || [];
+            // Add default AISA agent if not present
+            const processedAgents = [{ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' }, ...agents];
+            setUserAgents(processedAgents);
+          } catch (agentErr) {
+            // Silently use defaults if fetch fails (no console warning)
+            setUserAgents([{ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' }]);
+          }
+        } else {
+          // No user logged in, use default
+          setUserAgents([{ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' }]);
         }
       } catch (err) {
-        console.error("Error fetching user agents:", err);
+        // Silently handle errors
         setUserAgents([{ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' }]);
       }
     };
     loadSessions();
-  }, [messages]);
+  }, [messages, setSessions]);
 
   const isNavigatingRef = useRef(false);
 
@@ -298,20 +1378,45 @@ const Chat = () => {
 
       if (sessionId && sessionId !== 'new') {
         setCurrentSessionId(sessionId);
+        console.log(`[DEBUG] Initializing chat for session: ${sessionId}`);
         const history = await chatStorageService.getHistory(sessionId);
-        setMessages(history);
+        console.log(`[DEBUG] Received history:`, history);
+        if (history && history.length > 0) {
+          console.log(`[DEBUG] First message role: ${history[0].role}, content preview: ${history[0].content?.substring(0, 20)}`);
+        }
+        setMessages(history || []);
       } else {
         setCurrentSessionId('new');
         setMessages([]);
       }
 
-      setShowHistory(false);
+      if (window.innerWidth < 1024) setShowHistory(false);
     };
     initChat();
   }, [sessionId]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const chatContainerRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      // Tighter threshold (50px) - if user scrolls up slightly, auto-scroll stops
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+      shouldAutoScrollRef.current = isNearBottom;
+    }
+  };
+
+  const scrollToBottom = (force = false, behavior = 'auto') => {
+    if ((force || shouldAutoScrollRef.current) && chatContainerRef.current) {
+      const { scrollHeight, clientHeight } = chatContainerRef.current;
+      const maxScrollTop = scrollHeight - clientHeight;
+      if (behavior === 'smooth') {
+        chatContainerRef.current.scrollTo({ top: maxScrollTop, behavior: 'smooth' });
+      } else {
+        chatContainerRef.current.scrollTop = maxScrollTop;
+      }
+    }
   };
 
   useEffect(() => {
@@ -319,12 +1424,36 @@ const Chat = () => {
   }, [messages, isLoading]);
 
   const handleNewChat = async () => {
-    const newId = await chatStorageService.createSession();
-    navigate(`/dashboard/chat/${newId}`);
-    setShowHistory(false);
+    navigate('/dashboard/chat/new');
+    if (window.innerWidth < 1024) setShowHistory(false);
   };
 
-  const { language: currentLang } = useLanguage();
+  const handleRenameSession = async (sid, newTitle) => {
+    if (!newTitle.trim()) return;
+    const success = await chatStorageService.updateSessionTitle(sid, newTitle);
+    if (success) {
+      setSessions(prev => prev.map(s => s.sessionId === sid ? { ...s, title: newTitle } : s));
+      setEditingSessionId(null);
+      toast.success("Chat renamed");
+    } else {
+      toast.error("Failed to rename chat");
+    }
+  };
+
+  const handleDeleteSession = async (sid, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this chat?")) return;
+
+    await chatStorageService.deleteSession(sid);
+    setSessions(prev => prev.filter(s => s.sessionId !== sid));
+
+    if (currentSessionId === sid) {
+      navigate('/dashboard/chat');
+    }
+    toast.success("Chat deleted");
+  };
+
+  const { language: currentLang, t } = useLanguage();
 
   const handleDriveClick = () => {
     setIsAttachMenuOpen(false);
@@ -343,12 +1472,6 @@ const Chat = () => {
     }
   };
 
-  const handleStop = () => {
-    stopTypingRef.current = true;
-    setIsLoading(false);
-    setTypingMessageId(null);
-  };
-
   const isSendingRef = useRef(false);
 
   const handleSendMessage = async (e, overrideContent) => {
@@ -357,22 +1480,100 @@ const Chat = () => {
     // Prevent duplicate sends (from voice + form race condition)
     if (isSendingRef.current) return;
 
+    if (isAudioConvertMode && !inputValue.trim() && selectedFiles.length === 0) {
+      toast.error('Please enter text or upload a file to convert to audio');
+      return;
+    }
+
+    if (isDocumentConvert && selectedFiles.length === 0) {
+      toast.error('Please upload a PDF or DOCX file to convert');
+      return;
+    }
+
+    // Special case for Audio Convert Mode: Handle files directly if present
+    if (isAudioConvertMode && selectedFiles.length > 0) {
+      const fileToConvert = selectedFiles[0]; // Take the first one for simplicity
+
+      // Simulate click on the hidden doc-voice-upload to reuse its logic
+      // But we need to pass the file. Let's instead call a manual conversion function.
+      manualFileToAudioConversion(fileToConvert);
+      setSelectedFiles([]);
+      setFilePreviews([]);
+      return;
+    }
+
+    // Special case for Audio Convert Mode: Handle text conversion
+    if (isAudioConvertMode && inputValue.trim()) {
+      manualTextToAudioConversion(inputValue);
+      setInputValue('');
+      return;
+    }
+
     // Use overrideContent if provided (for instant voice sending), otherwise fallback to state
     const contentToSend = typeof overrideContent === 'string' ? overrideContent : inputValue.trim();
 
     if ((!contentToSend && filePreviews.length === 0) || isLoading) return;
 
     isSendingRef.current = true;
-    stopTypingRef.current = false;
+    setInputValue(''); // Clear immediately to prevent stale reads
+    transcriptRef.current = '';
 
     let activeSessionId = currentSessionId;
     let isFirstMessage = false;
 
     // Stop listening if send is clicked (or auto-sent)
     if (isListening && recognitionRef.current) {
+      isManualStopRef.current = true; // Guard against recursive onend
       recognitionRef.current.stop();
       setIsListening(false);
     }
+
+    // Handle Image Generation Mode
+    if (isImageGeneration) {
+      handleGenerateImage(contentToSend); // Pass content directly if needed, or handleGenerateImage uses ref/state
+      isSendingRef.current = false; // Reset sending ref since handleGenerateImage might handle it differently or we want to allow next send
+      return;
+    }
+
+    // Handle Voice Reader Mode - Just read, no AI response
+    if (isVoiceMode) {
+      try {
+        // 1. Add User Message to UI
+        const userMsgId = Date.now().toString();
+        const newUserMsg = {
+          id: userMsgId,
+          role: 'user',
+          content: contentToSend,
+          timestamp: new Date(),
+          attachments: filePreviews.map(fp => ({
+            url: fp.url,
+            name: fp.name,
+            type: fp.type
+          }))
+        };
+        setMessages(prev => [...prev, newUserMsg]);
+
+        // 2. Clear inputs
+        setInputValue('');
+        handleRemoveFile();
+        if (inputRef.current) inputRef.current.style.height = 'auto';
+
+        // 3. Trigger voice reading directly (no AI response)
+        setTimeout(() => {
+          console.log('[Voice Mode] Reading content with attachments:', newUserMsg.attachments);
+          speakResponse(contentToSend, 'en-US', userMsgId, newUserMsg.attachments);
+        }, 300);
+
+        isSendingRef.current = false;
+        return; // STOP - Don't call AI API
+      } catch (err) {
+        console.error('[Voice Mode Error]:', err);
+        toast.error('Failed to read content');
+        isSendingRef.current = false;
+        return;
+      }
+    }
+
 
     try {
       if (activeSessionId === 'new') {
@@ -383,7 +1584,7 @@ const Chat = () => {
       const userMsg = {
         id: Date.now().toString(),
         role: 'user',
-        content: contentToSend || (filePreviews.length > 0 ? "Analyze these files" : ""),
+        content: contentToSend || (filePreviews.length > 0 ? (isDocumentConvert ? "Convert this document" : "Analyze these files") : ""),
         timestamp: Date.now(),
         attachments: filePreviews.map(p => ({
           url: p.url,
@@ -400,42 +1601,135 @@ const Chat = () => {
 
       const updatedMessages = [...messages, userMsg];
       setMessages(updatedMessages);
+      scrollToBottom(true, 'smooth'); // Force smooth scroll for user message
       setInputValue('');
+
+      // Capture deep search state before resetting
+      const deepSearchActive = isDeepSearch;
+      if (isDeepSearch) setIsDeepSearch(false);
+      const documentConvertActive = isDocumentConvert;
+      if (isDocumentConvert) setIsDocumentConvert(false);
+
+      // Detect mode for UI indicator
+      const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH : (documentConvertActive ? MODES.FILE_CONVERSION : detectMode(contentToSend, userMsg.attachments));
+      setCurrentMode(detectedMode);
+
+      // Update user message with the detected mode
+      userMsg.mode = detectedMode;
+
+      // Determine loading intent for UI feedback
+      const lowerContent = (userMsg.content || "").toLowerCase();
+      if (
+        (lowerContent.includes('image') || lowerContent.includes('photo') || lowerContent.includes('pic') || lowerContent.includes('draw')) &&
+        (lowerContent.includes('generate') || lowerContent.includes('create') || lowerContent.includes('make') || lowerContent.includes('show'))
+      ) {
+        setLoadingText("Generating Image... 🎨");
+      } else if (lowerContent.includes('video')) {
+        setLoadingText("Generating Video... 🎥");
+      } else if (documentConvertActive) {
+        setLoadingText("Converting Document... 🔄");
+      } else {
+        setLoadingText("Thinking...");
+      }
+
       handleRemoveFile(); // Clear file after sending
       setIsLoading(true);
 
+      try {
+        const title = isFirstMessage ? (userMsg.content ? userMsg.content.slice(0, 30) : 'File Attachment') + '...' : undefined;
+        await chatStorageService.saveMessage(activeSessionId, userMsg, title);
 
-      const title = isFirstMessage ? (userMsg.content ? userMsg.content.slice(0, 30) : 'File Attachment') + '...' : undefined;
-      await chatStorageService.saveMessage(activeSessionId, userMsg, title);
+        if (isFirstMessage) {
+          isNavigatingRef.current = true;
+          setCurrentSessionId(activeSessionId);
+          navigate(`/dashboard/chat/${activeSessionId}`, { replace: true });
+        }
 
-      if (isFirstMessage) {
-        isNavigatingRef.current = true;
-        setCurrentSessionId(activeSessionId);
-        navigate(`/dashboard/chat/${activeSessionId}`, { replace: true });
-      }
+        // Send to AI for response
+        const caps = getAgentCapabilities(activeAgent.agentName, activeAgent.category);
 
-      // Send to AI for response
-      const caps = getAgentCapabilities(activeAgent.agentName, activeAgent.category);
-      const hasAttachments = filePreviews.length > 0;
-      let SYSTEM_INSTRUCTION = '';
+        // Create abort controller for this request
+        abortControllerRef.current = new AbortController();
 
-      if (hasAttachments) {
-        SYSTEM_INSTRUCTION = `
-You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by ${t('brandName')}.
-CRITICAL MODE: DOCUMENT/IMAGE ANALYSIS.
-You have received ${filePreviews.length} file(s) from the user.
+        // ---------------------------------------------------------
+        //  CONSTRUCT SYSTEM INSTRUCTION BASED ON PROFILE SETTINGS
+        // ---------------------------------------------------------
+        const pGeneral = personalizations?.general || {};
+        const pStyle = personalizations?.personalization || {};
+        const pParental = personalizations?.parentalControls || {};
 
-YOUR TASK:
-1. Analyze the attached file(s) deeply and professionally.
-2. Answer the user's specific question: "${userMsg.content || 'Analyze this file'}" regarding the file.
-3. If the user asks "What is this?", summarize the document/image.
+        let PERSONA_INSTRUCTION = "";
 
-STRICT RULES:
-- DO NOT output any "Quick Links", "Categories", or "Menu" lists.
-- DO NOT say "Welcome to AISA".
-- DO NOT use generic greetings.
-- GO STRAIGHT TO THE ANALYSIS.
-- Respond in the SAME key language as the user (English or Hindi).
+        // 1. STYLE & FONT (Font is UI only, but we can hint at TONE)
+        if (pStyle.fontStyle && pStyle.fontStyle !== 'Default') {
+          // No direct AI instruction needed for font family, but we can adjust tone if needed
+        }
+
+        // 2. CHARACTERISTICS
+        if (pStyle.enthusiasm) PERSONA_INSTRUCTION += `- Enthusiasm Level: ${pStyle.enthusiasm}\n`;
+        if (pStyle.formality) PERSONA_INSTRUCTION += `- Formality Level: ${pStyle.formality}\n`;
+        if (pStyle.creativity) PERSONA_INSTRUCTION += `- Creativity Level: ${pStyle.creativity}\n`;
+
+        // 3. FORMATTING
+        if (pStyle.structuredResponses) PERSONA_INSTRUCTION += "- FORMAT: Use clear Headers, Sections, and structured layouts.\n";
+        if (pStyle.bulletPoints) PERSONA_INSTRUCTION += "- FORMAT: Prioritize Bullet Points and Lists over paragraphs.\n";
+
+        // 4. EMOJI USAGE
+        if (pStyle.emojiUsage) {
+          if (pStyle.emojiUsage === 'None') PERSONA_INSTRUCTION += "- EMOJIS: Do NOT use any emojis or icons.\n";
+          else if (pStyle.emojiUsage === 'Minimal') PERSONA_INSTRUCTION += "- EMOJIS: Use very few emojis, only where absolutely necessary.\n";
+          else if (pStyle.emojiUsage === 'Moderate') PERSONA_INSTRUCTION += "- EMOJIS: Use a moderate amount of relevant emojis.\n";
+          else if (pStyle.emojiUsage === 'Expressive') PERSONA_INSTRUCTION += "- EMOJIS: Use emojis frequently to be engaging and expressive.\n";
+        }
+
+        // 5. CUSTOM INSTRUCTIONS override
+        if (pStyle.customInstructions) {
+          PERSONA_INSTRUCTION += `\n### USER CUSTOM INSTRUCTIONS (HIGHEST PRIORITY):\n${pStyle.customInstructions}\n`;
+        }
+
+        // 6. PARENTAL / SAFETY
+        if (pParental.contentFilter) {
+          PERSONA_INSTRUCTION += `\n### SAFETY MODE: STRICT\n- Absolutely NO mature, violent, or explicit content.\n- If user asks for such, politley decline.\n`;
+        }
+        if (pParental.ageCategory === 'Child') {
+          PERSONA_INSTRUCTION += `- SIMPLIFY language for a Child.\n- Be encouraging and safe.\n`;
+        }
+
+        // 7. LANGUAGE
+        // We already have language detection, but let's reinforce if set strictly
+        if (pGeneral.language && pGeneral.language !== 'Auto-Detect') {
+          PERSONA_INSTRUCTION += `\n### REQUIRED LANGUAGE:\n- Respond ONLY in ${pGeneral.language}.\n`;
+        }
+
+        // 8. TEXT SIZE / ACCESSIBILITY (Frontend only mostly, but hint AI)
+        if (pStyle.fontSize === 'Large' || pStyle.fontSize === 'Extra Large' || pGeneral.highContrast) {
+          PERSONA_INSTRUCTION += `- FORMAT: Use shorter sentences and very clear structure for readability.\n`;
+        }
+
+        const SYSTEM_INSTRUCTION = `
+You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by A-Series.
+${activeAgent.category ? `Your specialization is in ${activeAgent.category}.` : ''}
+
+${PERSONA_INSTRUCTION}
+
+### CRITICAL LANGUAGE RULE:
+**ALWAYS respond in the SAME LANGUAGE as the user's message.** (Unless overridden by settings)
+- If user writes in HINDI (Devanagari or Romanized), respond in HINDI.
+- If user writes in ENGLISH, respond in ENGLISH.
+- If user mixes languages, prioritize the dominant language.
+
+### RESPONSE BEHAVIOR:
+- Answer the user's question directly without greeting messages
+- Do NOT say "Hello... welcome to AISA" or similar greetings
+- Focus ONLY on providing the answer to what user asked
+- Be helpful, clear, and concise
+
+### STREAMING BEHAVIOR:
+- Generate responses in smooth, continuous stream
+- Use short paragraphs for readability
+- If interrupted, stop immediately without completing sentence
+- Do NOT add summaries or closing lines after interruption
+- Resume ONLY if user explicitly asks again
 
 ### MULTI-FILE ANALYSIS MANDATE (STRICT 1:1 RULE):
 You have received exactly ${filePreviews.length} file(s).
@@ -448,7 +1742,7 @@ CRITICAL RULES:
 4.  **DELIMITER MANDATORY**: Use the delimiter below to separate EACH file's answer.
 
 REQUIRED OUTPUT FORMAT:
-[Brief or no greeting]
+[Optional brief greeting]
 
 ---SPLIT_RESPONSE---
 **Analysis of: {Filename 1}**
@@ -467,117 +1761,125 @@ REQUIRED OUTPUT FORMAT:
 4.  **Summary**: Include a "One-line summary" or "Simple definition" at the start or end where appropriate.
 5.  **Emojis**: Use relevant emojis.
 
-${caps.canUploadDocs ? `DOCUMENT ANALYSIS CAPABILITIES:
-- You can process and extract text from PDF, Word (Docx), and Excel files provided as attachments.` : ''}
-
-${activeAgent.instructions ? `SPECIFIC AGENT INSTRUCTIONS:
-${activeAgent.instructions}` : ''}
-`;
-      } else {
-        SYSTEM_INSTRUCTION = `
-You are ${activeAgent.agentName || 'AISA'}, an advanced AI assistant powered by ${t('brandName')}.
-${activeAgent.category ? `Your specialization is in ${activeAgent.category}.` : ''}
-
-### FIRST MESSAGE / GREETING LOGIC (CRITICAL):
-Determine if the user's first message is a simple greeting or a specific question.
-
-**Scenario 1: Simple Greeting / Unclear Intent**
-(e.g., "Hello", "Hi", "Aisa", "Start", ".")
-1. **Welcome**: "Hello... welcome to ${activeAgent.agentName || 'AISA'}" (Translate to user's language).
-2. **Intro**: Briefly describe yourself as a specialized AI agent in the ${activeAgent.category || 'General'} category on ${t('brandName')}.
-3. **Guide**: You MUST present the "Quick Links" below to help them explore categories:
-   - * [Business OS](/dashboard/marketplace?category=Business%20OS)
-   - * [Data & Intelligence](/dashboard/marketplace?category=Data%20%26%20Intelligence)
-   - * [Sales & Marketing](/dashboard/marketplace?category=Sales%20%26%20Marketing)
-   - * [HR & Finance](/dashboard/marketplace?category=HR%20%26%20Finance)
-   - * [Design & Creative](/dashboard/marketplace?category=Design%20%26%20Creative)
-   - * [Medical & Health AI](/dashboard/marketplace?category=Medical%20%26%20Health%20AI)
-   - * [View All Agents](/dashboard/marketplace)
-
-**Scenario 2: Specific Question / Clear Intent**
-(e.g., "Hello, what is a computer?", "Analyze my file", "How to grow business?")
-1. **Acknowledge**: Start with a brief "Hello... welcome to ${activeAgent.agentName || 'AISA'}. I'd be happy to help with that."
-2. **Direct Answer**: Answer the user's question directly.
-3. **STRICT RULE**: DO NOT show the "Quick Links" list or describe categories. Focus ONLY on the answer.
-
-### CRITICAL LANGUAGE RULE:
-**ALWAYS respond in the SAME LANGUAGE as the user's message.**
-- If user writes in HINDI (Devanagari or Romanized), respond in HINDI.
-- If user writes in ENGLISH, respond in ENGLISH.
-- If user mixes languages, prioritize the dominant language.
-
-### RESPONSE FORMATTING RULES (STRICT):
-1.  **Structure**: ALWAYS use **Bold Headings** and **Bullet Points**. Avoid long paragraphs.
-2.  **Point-wise Answers**: Break down complex topics into simple points.
-3.  **Highlights**: Bold key terms and important concepts.
-4.  **Summary**: Include a "One-line summary" or "Simple definition" at the start or end where appropriate.
-5.  **Emojis**: Use relevant emojis.
+### FINANCIAL & INVOICE ANALYSIS RULES (MANDATORY):
+When summarizing or extracting data from Invoices, Receipts, or Financial Documents:
+1. **CRITICAL**: You MUST **bold** ALL monetary amounts (e.g., **INR 1,41,954.00**, **$500.00**).
+2. **CRITICAL**: You MUST **bold** ALL Entity/Person Names (e.g., **PRAHALAD AHUJA HUF**, **Amazon Inc**).
+3. **CRITICAL**: You MUST **bold** ALL Dates, Invoice Numbers, and distinct identifiers (GSTIN/PAN).
+4. **Format**: Present extracted data in a clean **Bullet List** or **Table** for immediate readability.
 
 ${caps.canUploadImages ? `IMAGE ANALYSIS CAPABILITIES:
-- You have the ability to see and analyze images provided by the user.
-- If the user asks for an image, use Pollinations API: ![Image](https://image.pollinations.ai/prompt/{URL_ENCODED_DESCRIPTION}?nologo=true)` : ''}
+- You have the ability to see and analyze images provided by the user.` : ''}
 
 ${caps.canUploadDocs ? `DOCUMENT ANALYSIS CAPABILITIES:
 - You can process and extract text from PDF, Word (Docx), and Excel files provided as attachments.` : ''}
 
 ${activeAgent.instructions ? `SPECIFIC AGENT INSTRUCTIONS:
 ${activeAgent.instructions}` : ''}
+
+${deepSearchActive ? `### DEEP SEARCH MODE ENABLED (CRITICAL):
+- The user has requested an EXHAUSTIVE DEEP SEARCH.
+- Your response MUST be extremely long, detailed, and comprehensive.
+- Provide in-depth analysis, historical context, current trends, and future implications where applicable.
+- YOU MUST perform extensive web searching to gather every relevant detail.
+- Do NOT be brief. Expand on every point. Use multiple sections and subsections.
+- Clearly structure your findings with professional formatting and cite sources if possible.` : ''}
+
+${documentConvertActive ? `### DOCUMENT CONVERSION MODE ENABLED (CRITICAL):
+- The user wants to convert the uploaded document.
+- Identify the source file format (PDF/DOCX) and the requested target format.
+- IF the user does NOT specify a target format:
+  - If source is PDF, suggest converting to DOCX.
+  - If source is DOCX, suggest converting to PDF.
+- YOU MUST provide the conversion parameters in the following JSON format:
+\`\`\`json
+{
+  "action": "file_conversion",
+  "source_format": "pdf",
+  "target_format": "docx",
+  "file_name": "original_filename.pdf"
+}
+\`\`\`
+- Keep the response text brief, explaining what you are doing.` : ''}
 `;
-      }
+        // Check for greeting to send the specific welcome message
+        const lowerInput = (contentToSend || "").toLowerCase().trim();
+        const isGreeting = ['hi', 'hello', 'hey', 'namaste', 'नमस्ते', 'greetings', 'hi aisa', 'hello aisa'].includes(lowerInput);
 
-      let responsesToProcess = [];
+        let aiResponseData;
 
-      if (isCompareMode) {
-        // Parallel Fetch from ALL models
-        const models = TOOL_PRICING.chat.models;
-        const promises = models.map(m =>
-          generateChatResponse(messages, userMsg.content, SYSTEM_INSTRUCTION, userMsg.attachments, currentLang, m.id)
-            .then(reply => ({ modelName: m.name, reply, success: true }))
-            .catch(err => ({ modelName: m.name, reply: `Failed: ${err.message}`, success: false }))
-        );
+        if (isGreeting) {
+          // Respond with the welcome message for greetings
+          aiResponseData = {
+            reply: WELCOME_MESSAGE,
+            language: currentLang
+          };
+        } else {
+          // Default AI message sending
+          aiResponseData = await generateChatResponse(
+            messages,
+            userMsg.content,
+            SYSTEM_INSTRUCTION + getSystemPromptExtensions(),
+            userMsg.attachments,
+            currentLang,
+            abortControllerRef.current.signal,
+            detectedMode
+          );
+        }
 
-        const results = await Promise.all(promises);
+        if (aiResponseData && aiResponseData.error === "LIMIT_REACHED") {
+          setIsLimitReached(true);
+          setIsLoading(false);
+          isSendingRef.current = false;
+          return;
+        }
 
-        // Format them to be processed by the display logic
-        responsesToProcess = results.map(r => `### 🤖 ${r.modelName}\n${r.reply}`);
-      } else {
-        // Single Model Fetch
-        const aiResponseText = await generateChatResponse(messages, userMsg.content, SYSTEM_INSTRUCTION, userMsg.attachments, currentLang, toolModels.chat);
-        responsesToProcess = [aiResponseText];
-      }
+        // Handle response - could be string (old format) or object (new format with conversion)
+        let aiResponseText = '';
+        let conversionData = null;
+        let aiVideoUrl = null;
+        let aiImageUrl = null;
 
-      if (stopTypingRef.current) {
-        setIsLoading(false);
-        return;
-      }
+        if (typeof aiResponseData === 'string') {
+          aiResponseText = aiResponseData;
+        } else if (aiResponseData && typeof aiResponseData === 'object') {
+          aiResponseText = aiResponseData.reply || "No response generated. (Object received without reply)";
+          conversionData = aiResponseData.conversion || null;
+          // Extract media URLs if present
+          aiVideoUrl = aiResponseData.videoUrl || null;
+          aiImageUrl = aiResponseData.imageUrl || null;
+        } else {
+          aiResponseText = "Sorry, I encountered an issue while generating a response. Please try again.";
+        }
 
-      setIsLoading(false); // Stop main loader
+        if (aiResponseText === "dbDemoModeMessage") {
+          aiResponseText = t('dbDemoModeMessage');
+        }
 
-      // Process all responses (Compare Mode produces multiple)
-      for (const rawResponse of responsesToProcess) {
-
-        // Check for multiple file analysis headers to split into separate cards (Logic reused)
+        // Check for multiple file analysis headers to split into separate cards
         const delimiter = '---SPLIT_RESPONSE---';
         let responseParts = [];
 
-        if (rawResponse && rawResponse.includes(delimiter)) {
-          const rawParts = rawResponse.split(delimiter).filter(p => p && p.trim().length > 0);
-          responseParts = rawParts.length > 0 ? rawParts.map(part => part.trim()) : [rawResponse];
+        if (aiResponseText && aiResponseText.includes(delimiter)) {
+          const rawParts = aiResponseText.split(delimiter).filter(p => p && p.trim().length > 0);
+          responseParts = rawParts.length > 0 ? rawParts.map(part => part.trim()) : [aiResponseText];
         } else {
-          responseParts = [rawResponse || "No response generated."];
+          responseParts = [aiResponseText || "No response generated."];
         }
 
+        // Process response parts and add to messages
         for (let i = 0; i < responseParts.length; i++) {
           const partContent = responseParts[i];
           if (!partContent) continue;
-          if (stopTypingRef.current) break;
 
-          const msgId = (Date.now() + Math.random()).toString();
+          const msgId = (Date.now() + 1 + i).toString();
           const modelMsg = {
             id: msgId,
             role: 'model',
             content: '', // Start empty for typewriter effect
-            timestamp: Date.now(),
+            timestamp: Date.now() + i * 100,
+            ...(i === 0 && aiVideoUrl && { videoUrl: aiVideoUrl }),
+            ...(i === 0 && aiImageUrl && { imageUrl: aiImageUrl }),
           };
 
           // Add the empty message structure to UI
@@ -588,49 +1890,76 @@ ${activeAgent.instructions}` : ''}
           const words = partContent.split(' ');
           let displayedContent = '';
 
-          // Faster typing in compare mode
-          const delay = isCompareMode ? 5 : (words.length > 200 ? 10 : (words.length > 50 ? 20 : 35));
+          // Decide speed based on length (shorter = slower, longer = faster)
+          const delay = words.length > 200 ? 10 : (words.length > 50 ? 20 : 35);
 
           for (let j = 0; j < words.length; j++) {
+            // Check if generation was stopped by user
+            if (!isSendingRef.current) break;
+
             displayedContent += (j === 0 ? '' : ' ') + words[j];
 
-            if (stopTypingRef.current) {
-              setTypingMessageId(null);
-              await chatStorageService.saveMessage(activeSessionId, { ...modelMsg, content: displayedContent });
-              break;
-            }
-
+            // Update UI with the current chunk
             setMessages((prev) =>
               prev.map(m => m.id === msgId ? { ...m, content: displayedContent } : m)
             );
 
+            // Wait before next word
             await new Promise(resolve => setTimeout(resolve, delay));
           }
-          setTypingMessageId(null);
-          await chatStorageService.saveMessage(activeSessionId, { ...modelMsg, content: displayedContent });
+
+          if (!isSendingRef.current) {
+            setTypingMessageId(null);
+            return; // Exit function if stopped
+          }
+
+          setTypingMessageId(null); // Clear typing status
+
+          // Add conversion data and media if available
+          const finalModelMsg = { ...modelMsg, content: partContent };
+          if (i === 0) {
+            if (conversionData) finalModelMsg.conversion = conversionData;
+            // Note: Media URLs are already added to modelMsg before typing starts now
+          }
+
+          // After typing is complete, save the full message to history
+          await chatStorageService.saveMessage(activeSessionId, finalModelMsg);
+
+          // CRITICAL: Update the state with the final message including conversion data
+          setMessages((prev) =>
+            prev.map(m => m.id === msgId ? finalModelMsg : m)
+          );
+          scrollToBottom();
+
+          // Speak the AI response if user used voice input
+          if (i === 0 && voiceUsedRef.current) {
+            const detectedLang = aiResponseData?.language || currentLang;
+            speakResponse(partContent, detectedLang);
+            voiceUsedRef.current = false; // Reset flag
+          }
         }
+      } catch (innerError) {
+        console.error("Storage/API Error:", innerError);
+        // Even if saving failed, we still have the local state
+      }
+    } catch (error) {
+      // Handle abort errors silently (user stopped generation)
+      if (error.name === 'AbortError' || error.name === 'CanceledError') {
+        console.log('Generation stopped by user');
+        // Keep partial response, don't show error
+        return;
       }
 
-    } catch (error) {
       console.error("Chat Error:", error);
       toast.error(`Error: ${error.message || "Failed to send message"}`);
     } finally {
       setIsLoading(false);
       isSendingRef.current = false;
+      abortControllerRef.current = null; // Clean up abort controller
     }
   };
 
-  const handleDeleteSession = async (e, id) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this chat history?')) {
-      await chatStorageService.deleteSession(id);
-      const data = await chatStorageService.getSessions();
-      setSessions(data);
-      if (currentSessionId === id) {
-        navigate('/dashboard/chat/new');
-      }
-    }
-  };
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -686,6 +2015,19 @@ ${activeAgent.instructions}` : ''}
 
   const handleDownload = async (url, filename) => {
     try {
+      // For external URLs (like Pollinations), direct download via fetch will fail due to CORS.
+      // We check if it's a relative path, same origin, or data/blob URL.
+      const isExternal = url.startsWith('http') && !url.includes(window.location.host) && !url.startsWith('https://res.cloudinary.com');
+
+      if (isExternal) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+        return;
+      }
+
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -731,192 +2073,9 @@ ${activeAgent.instructions}` : ''}
       toast.success("Describe your changes and hit send!");
     } else {
       toast.success(`${action.replace('-', ' ')} processing...`);
+      setLoadingText(`Processing ${action.replace('-', ' ')}... 🖼️`);
       setTimeout(() => handleSendMessage(), 100);
     }
-  };
-  const inputRef = useRef(null);
-  const manualStopRef = useRef(false);
-  const isListeningRef = useRef(false);
-
-  // Timer for voice recording (Max 5 minutes)
-  useEffect(() => {
-    if (isListening) {
-      setListeningTime(0);
-      isListeningRef.current = true;
-      manualStopRef.current = false;
-      timerRef.current = setInterval(() => {
-        setListeningTime(prev => {
-          // Unlimited recording time
-          return prev + 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setListeningTime(0);
-      isListeningRef.current = false;
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isListening]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const textRef = useRef(inputValue);
-
-  useEffect(() => {
-    textRef.current = inputValue;
-  }, [inputValue]);
-
-  const handleVoiceInput = () => {
-    if (isListening) {
-      manualStopRef.current = true;
-      isListeningRef.current = false;
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
-    startSpeechRecognition();
-  };
-
-  const startSpeechRecognition = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      toast.error("Voice input not supported in this browser.");
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-
-    const langMap = {
-      'English': 'en-IN',
-      'Hindi': 'hi-IN',
-      'Urdu': 'ur-PK',
-      'Tamil': 'ta-IN',
-      'Telugu': 'te-IN',
-      'Kannada': 'kn-IN',
-      'Malayalam': 'ml-IN',
-      'Bengali': 'bn-IN',
-      'Marathi': 'mr-IN',
-      'Mandarin Chinese': 'zh-CN',
-      'Spanish': 'es-ES',
-      'French': 'fr-FR',
-      'German': 'de-DE',
-      'Japanese': 'ja-JP',
-      'Portuguese': 'pt-BR',
-      'Arabic': 'ar-SA',
-      'Korean': 'ko-KR',
-      'Italian': 'it-IT',
-      'Russian': 'ru-RU',
-      'Turkish': 'tr-TR',
-      'Dutch': 'nl-NL',
-      'Swedish': 'sv-SE',
-      'Norwegian': 'no-NO',
-      'Danish': 'da-DK',
-      'Finnish': 'fi-FI',
-      'Afrikaans': 'af-ZA',
-      'Zulu': 'zu-ZA',
-      'Xhosa': 'xh-ZA'
-    };
-
-    recognition.lang = langMap[currentLang] || 'en-IN';
-    recognition.interimResults = true;
-    recognition.continuous = false; // Better for cross-device stability and prevents duplication
-    recognition.maxAlternatives = 1;
-
-    // Capture current input to append to using Ref to avoid stale closures
-    let sessionBaseText = textRef.current;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      isListeningRef.current = true;
-      manualStopRef.current = false;
-      inputRef.current?.focus();
-      if (listeningTime === 0) {
-        toast.success(`Microphone On: Speaking in ${currentLang}`);
-      }
-    };
-
-    recognition.onend = () => {
-      // Auto-restart logic for silence/timeout
-      if (!manualStopRef.current && isListeningRef.current) {
-        setTimeout(() => {
-          if (isListeningRef.current) startSpeechRecognition();
-        }, 50);
-      } else {
-        setIsListening(false);
-        isListeningRef.current = false;
-      }
-    };
-
-    recognition.onresult = (event) => {
-      let speechToText = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        speechToText += event.results[i][0].transcript;
-      }
-
-      if (!speechToText) return;
-
-      const lowerTranscript = speechToText.toLowerCase().trim();
-
-      // Extensive triggers for auto-send
-      const triggers = [
-        'send it', 'send message', 'bhej do', 'yes send it', 'message bhej do',
-        'isey bhej do', 'ok send it', 'ok send', 'send bhej do', 'theek hai bhej do',
-        'send now', 'please send', 'ji bhejo', 'kar do', 'ok bhej do', 'okay send it'
-      ];
-
-      const matchedTrigger = triggers.find(t => lowerTranscript.endsWith(t) || lowerTranscript === t);
-
-      if (matchedTrigger) {
-        // Stop listening immediately
-        manualStopRef.current = true;
-        isListeningRef.current = false;
-        recognition.stop();
-        setIsListening(false);
-
-        // Remove the trigger phrase (and any trailing punctuation)
-        const cleanupRegex = new RegExp(`${matchedTrigger}[\\s.!?]*$`, 'gi');
-        let transcriptWithoutTrigger = speechToText.replace(cleanupRegex, '').trim();
-
-        let finalText = (sessionBaseText + (sessionBaseText ? ' ' : '') + transcriptWithoutTrigger).trim();
-
-        toast.success('Voice Command: Sending...');
-
-        // Send IMMEDIATELY then clear everything
-        handleSendMessage(null, finalText);
-
-        // Clear input after send
-        setInputValue('');
-        textRef.current = '';
-      } else {
-        // Just update the input box as the user speaks
-        setInputValue(sessionBaseText + (sessionBaseText ? ' ' : '') + speechToText);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'not-allowed') {
-        toast.error("Microphone access denied.");
-        setIsListening(false);
-        isListeningRef.current = false;
-        manualStopRef.current = true;
-      } else if (event.error === 'no-speech') {
-        // Ignore no-speech errors, just letting it restart via onend
-        return;
-      }
-      console.error("Speech Error:", event.error);
-    };
-
-    recognition.start();
   };
 
   const handleDragOver = (e) => {
@@ -948,8 +2107,91 @@ ${activeAgent.instructions}` : ''}
   const [activeMessageId, setActiveMessageId] = useState(null);
   const [feedbackDetails, setFeedbackDetails] = useState("");
   const [pdfLoadingId, setPdfLoadingId] = useState(null);
+  const [loadingText, setLoadingText] = useState("Thinking..."); // New state for loading status text
+  const [messageFeedback, setMessageFeedback] = useState({}); // { [msgId]: { type: 'up' | 'down', categories: [], details: '' } }
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const toggleFeedback = (msgId, feedbackData) => {
+    setMessageFeedback(prev => {
+      // If it's the same type and no extra data (categories), toggle it off
+      if (prev[msgId]?.type === feedbackData.type && (!feedbackData.categories || feedbackData.categories.length === 0)) {
+        const { [msgId]: _, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [msgId]: feedbackData
+      };
+    });
+  };
 
   const handlePdfAction = async (action, msg) => {
+    // If this message has a converted file, use it directly instead of rendering the chat bubble
+    if (msg.conversion && msg.conversion.file && msg.conversion.mimeType === 'application/pdf') {
+      const shareToastId = toast.loading(`${action === 'share' ? 'Sharing' : 'Preparing'} PDF...`);
+      try {
+        const byteCharacters = atob(msg.conversion.file);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const filename = msg.conversion.fileName || 'converted.pdf';
+
+        if (action === 'download') {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          toast.success("Converted PDF Downloaded", { id: shareToastId });
+        } else if (action === 'open') {
+          window.open(url, '_blank');
+          toast.dismiss(shareToastId);
+        } else if (action === 'share') {
+          const file = new window.File([blob], filename, { type: 'application/pdf' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'AISA Document',
+                text: 'Check out this document generated by AISA AI.'
+              });
+              toast.success("Shared successfully!", { id: shareToastId });
+            } catch (shareErr) {
+              if (shareErr.name !== 'AbortError') {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                toast.success("Sharing not supported, downloaded instead", { id: shareToastId });
+              } else {
+                toast.dismiss(shareToastId);
+              }
+            }
+          } else {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast.success("Native share not supported, downloaded instead", { id: shareToastId });
+          }
+        }
+        return; // Exit after handling conversion file
+      } catch (err) {
+        toast.error("Failed to process PDF", { id: shareToastId });
+        console.error("Error handling conversion file PDF action:", err);
+      }
+    }
+
+    const processToastId = toast.loading(`${action === 'share' ? 'Sharing' : 'Generating'} PDF Document...`);
     setPdfLoadingId(msg.id);
     try {
       const element = document.getElementById(`msg-text-${msg.id}`);
@@ -964,117 +2206,36 @@ ${activeAgent.instructions}` : ''}
         canvas = await html2canvas(element, {
           scale: 2,
           useCORS: true,
-          logging: false,
+          logging: true, // Enable logging for debugging
           backgroundColor: '#ffffff',
           onclone: (clonedDoc) => {
             const clonedEl = clonedDoc.getElementById(`msg-text-${msg.id}`);
             if (clonedEl) {
-              const wrapper = clonedDoc.createElement('div');
-              wrapper.style.padding = '60px 70px'; // Professional wide margins
-              wrapper.style.backgroundColor = '#ffffff';
-              wrapper.style.width = '850px'; // Standard documentation width
-              wrapper.style.fontFamily = "'Inter', 'Segoe UI', Arial, sans-serif";
-
-              // No distracting headers/footers on every page, just clean documentation style
+              clonedEl.style.padding = '40px';
               clonedEl.style.color = '#000000';
-              clonedEl.style.fontSize = '14px';
-              clonedEl.style.lineHeight = '1.7';
-              clonedEl.style.whiteSpace = 'normal';
+              clonedEl.style.backgroundColor = '#ffffff';
+              clonedEl.style.width = '700px';
 
-              clonedEl.parentNode.insertBefore(wrapper, clonedEl);
-              wrapper.appendChild(clonedEl);
-
-              // Refine all elements for Official Document look
-              const allElements = clonedEl.querySelectorAll('*');
-
-              const emojiRegex = /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F191}-\u{1F251}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F171}\u{1F17E}-\u{1F17F}\u{1F18E}\u{3030}\u{2B50}\u{2B55}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{3297}\u{3299}\u{303D}\u{00A9}\u{00AE}\u{2122}]/gu;
-
-              allElements.forEach(el => {
-                el.style.color = '#111827';
-                el.style.margin = '0';
-                el.style.padding = '0';
-
-                // Remove emojis from text content
-                if (el.childNodes.length > 0) {
-                  el.childNodes.forEach(node => {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                      node.textContent = node.textContent.replace(emojiRegex, '');
-                    }
-                  });
-                }
-
-                if (el.tagName === 'P') {
-                  el.style.marginBottom = '8px'; // Reduced gap
-                }
-                if (el.tagName === 'UL' || el.tagName === 'OL') {
-                  el.style.paddingLeft = '25px';
-                  el.style.marginBottom = '12px'; // Reduced gap
-                }
-                if (el.tagName === 'LI') {
-                  el.style.marginBottom = '4px'; // Reduced gap
-                  el.style.display = 'list-item';
-                }
-
-                // Headers styling matching reference
-                if (el.tagName === 'H1') {
-                  el.style.fontSize = '24px'; // Slightly smaller h1
-                  el.style.fontWeight = '800';
-                  el.style.marginTop = '0';
-                  el.style.marginBottom = '16px';
-                  el.style.color = '#000000';
-                }
-                if (el.tagName === 'H2') {
-                  el.style.fontSize = '18px'; // Slightly smaller h2
-                  el.style.fontWeight = '700';
-                  el.style.marginTop = '20px'; // Reduced gap
-                  el.style.marginBottom = '10px';
-                  el.style.borderBottom = '1px solid #e5e7eb';
-                  el.style.paddingBottom = '4px';
-                }
-                if (el.tagName === 'H3') {
-                  el.style.fontSize = '15px';
-                  el.style.fontWeight = '700';
-                  el.style.marginTop = '15px'; // Reduced gap
-                  el.style.marginBottom = '8px';
-                }
-
-                // Table Styling matching reference
-                if (el.tagName === 'TABLE') {
-                  el.style.width = '100%';
-                  el.style.borderCollapse = 'collapse';
-                  el.style.marginTop = '12px';
-                  el.style.marginBottom = '12px';
-                }
-                if (el.tagName === 'TH') {
-                  el.style.backgroundColor = '#f9fafb';
-                  el.style.border = '1px solid #e5e7eb';
-                  el.style.padding = '8px';
-                  el.style.textAlign = 'left';
-                  el.style.fontWeight = '700';
-                  el.style.fontSize = '13px';
-                }
-                if (el.tagName === 'TD') {
-                  el.style.border = '1px solid #e5e7eb';
-                  el.style.padding = '6px 8px';
-                  el.style.fontSize = '12px';
-                }
-
-                if (el.tagName === 'STRONG' || el.tagName === 'B') {
-                  el.style.fontWeight = '700';
-                }
-
-                if (el.tagName === 'HR') {
-                  el.style.border = 'none';
-                  el.style.borderTop = '1px solid #e5e7eb';
-                  el.style.margin = '20px 0';
-                }
+              // Ensure all text is black for clarity in PDF
+              const all = clonedEl.querySelectorAll('*');
+              Array.from(all).forEach(el => {
+                el.style.color = '#000000';
+                if (el.tagName === 'A') el.style.color = '#0000ff';
               });
             }
           }
         });
       } catch (genError) {
-        console.error("html2canvas error:", genError);
-        throw new Error("Failed to render PDF content.");
+        console.error("PDF html2canvas error:", genError);
+        toast.error(`Canvas Error: ${genError.message}`, { id: processToastId });
+        setPdfLoadingId(null);
+        return;
+      }
+
+      if (!canvas) {
+        toast.error("Failed to capture content", { id: processToastId });
+        setPdfLoadingId(null);
+        return;
       }
 
       const imgData = canvas.toDataURL('image/png');
@@ -1106,35 +2267,39 @@ ${activeAgent.instructions}` : ''}
 
       if (action === 'download') {
         pdf.save(filename);
-        toast.success("PDF Downloaded");
+        toast.success("PDF Downloaded", { id: processToastId });
       } else if (action === 'open') {
         const blobUrl = pdf.output('bloburl');
         window.open(blobUrl, '_blank');
+        toast.dismiss(processToastId);
       } else if (action === 'share') {
         const blob = pdf.output('blob');
-        const file = new File([blob], filename, { type: 'application/pdf' });
+        const file = new window.File([blob], filename, { type: 'application/pdf' });
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
               files: [file],
               title: 'AI Response',
-              text: 'Here is the response from A-Series™ AI.'
+              text: 'Here is the response from A-Series AI.'
             });
+            toast.success("Shared successfully!", { id: processToastId });
           } catch (shareErr) {
             if (shareErr.name !== 'AbortError') {
               pdf.save(filename);
-              toast("Sharing failed, downloaded instead");
+              toast.success("Sharing failed, downloaded instead", { id: processToastId });
+            } else {
+              toast.dismiss(processToastId);
             }
           }
         } else {
           pdf.save(filename);
-          toast("Sharing not supported, downloaded instead.");
+          toast.success("Native share not supported, downloaded instead.", { id: processToastId });
         }
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to generate PDF");
+      toast.error("Failed to generate PDF", { id: processToastId });
     } finally {
       setPdfLoadingId(null);
     }
@@ -1148,43 +2313,31 @@ ${activeAgent.instructions}` : ''}
     }
   }, [inputValue]);
 
-  const handleThumbsUp = (msgId) => {
-    setLikedMessages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(msgId)) {
-        newSet.delete(msgId); // Toggle off
-      } else {
-        newSet.add(msgId);
-        setDislikedMessages(d => {
-          const dNew = new Set(d);
-          dNew.delete(msgId); // Remove dislike if liking
-          return dNew;
-        });
-        toast.success("Thanks for the feedback!");
-      }
-      return newSet;
-    });
-  };
-
   const handleThumbsDown = (msgId) => {
-    setDislikedMessages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(msgId)) {
-        newSet.delete(msgId); // Toggle off
-      } else {
-        newSet.add(msgId);
-        setLikedMessages(l => {
-          const lNew = new Set(l);
-          lNew.delete(msgId); // Remove like if disliking
-          return lNew;
-        });
-        setFeedbackOpen(true);
-      }
-      return newSet;
-    });
+    setFeedbackMsgId(msgId);
+    setFeedbackOpen(true);
+    setFeedbackCategory([]);
+    setFeedbackDetails("");
   };
 
-
+  const handleThumbsUp = async (msgId) => {
+    try {
+      toggleFeedback(msgId, { type: 'up' });
+      await axios.post(apis.feedback, {
+        sessionId: sessionId || 'unknown',
+        messageId: msgId,
+        type: 'thumbs_up'
+      });
+      toast.success("Thanks for the positive feedback!", {
+        icon: '👍',
+      });
+    } catch (error) {
+      console.error("Feedback error:", error);
+      toast.error("Failed to submit feedback");
+      // Revert local state on error
+      toggleFeedback(msgId, { type: 'up' });
+    }
+  };
 
   const handleShare = async (content) => {
     if (navigator.share) {
@@ -1203,19 +2356,32 @@ ${activeAgent.instructions}` : ''}
   };
 
   const submitFeedback = async () => {
+    if (isSubmittingFeedback) return;
     try {
+      setIsSubmittingFeedback(true);
+      const msgId = feedbackMsgId;
+      const feedbackData = {
+        type: 'down',
+        categories: [...feedbackCategory],
+        details: feedbackDetails
+      };
+
       await axios.post(apis.feedback, {
         sessionId: sessionId || 'unknown',
-        messageId: feedbackMsgId,
+        messageId: msgId,
         type: 'thumbs_down',
-        categories: feedbackCategory,
-        details: feedbackDetails
+        categories: feedbackData.categories,
+        details: feedbackData.details
       });
+
+      toggleFeedback(msgId, feedbackData);
       toast.success("Feedback submitted. Thank you!");
       setFeedbackOpen(false);
     } catch (error) {
       console.error("Feedback error:", error);
       toast.error("Failed to submit feedback");
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -1303,7 +2469,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
       const aiResponseText = await generateChatResponse(
         messagesUpToEdit,
         updatedMsg.content,
-        SYSTEM_INSTRUCTION,
+        SYSTEM_INSTRUCTION + getSystemPromptExtensions(),
         updatedMsg.attachment,
         currentLang
       );
@@ -1362,6 +2528,56 @@ For "Remix" requests with an attachment, analyze the attached image, then create
     setEditContent("");
   };
 
+  const handleUndo = async () => {
+    if (messages.length <= 1 || isLoading) return;
+
+    // Last message might be AI, second to last is User
+    const lastMsg = messages[messages.length - 1];
+    const secondLastMsg = messages[messages.length - 2];
+
+    const idsToDelete = [];
+    let contentToRestore = "";
+
+    if (lastMsg.role === 'model' && secondLastMsg.role === 'user') {
+      idsToDelete.push(lastMsg.id, secondLastMsg.id);
+      contentToRestore = secondLastMsg.content || secondLastMsg.text || "";
+    } else if (lastMsg.role === 'user') {
+      idsToDelete.push(lastMsg.id);
+      contentToRestore = lastMsg.content || lastMsg.text || "";
+    } else {
+      idsToDelete.push(lastMsg.id);
+    }
+
+    // Restore content to input field
+    if (contentToRestore) {
+      setInputValue(contentToRestore);
+      // Small delay to ensure state update before focusing
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Set cursor at the end
+          inputRef.current.selectionStart = contentToRestore.length;
+          inputRef.current.selectionEnd = contentToRestore.length;
+        }
+      }, 50);
+    }
+
+    // Optimistic Update
+    setMessages(prev => prev.filter(m => !idsToDelete.includes(m.id)));
+
+    // Delete from storage
+    try {
+      for (const id of idsToDelete) {
+        if (id) {
+          await chatStorageService.deleteMessage(currentSessionId, id);
+        }
+      }
+      toast.success("Message restored to input", { icon: '↩️' });
+    } catch (error) {
+      console.error("Undo error:", error);
+    }
+  };
+
   const [viewingDoc, setViewingDoc] = useState(null);
   const docContainerRef = useRef(null);
 
@@ -1389,7 +2605,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             className: "docx-viewer"
           }).catch(err => {
             console.error("Docx Preview Error:", err);
-            docContainerRef.current.innerHTML = `<div class="text-center p-10 text-subtext">${t('chatPage.previewNotAvailable')}<br/>${t('chatPage.pleaseDownloadToView')}</div>`;
+            docContainerRef.current.innerHTML = '<div class="text-center p-10 text-subtext">Preview not available.<br/>Please download to view.</div>';
           });
         });
     }
@@ -1410,7 +2626,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         })
         .catch(err => {
           console.error("Excel Preview Error:", err);
-          setExcelHTML(`<div class="text-center p-10 text-red-500">${t('chatPage.failedToLoadExcel')}</div>`);
+          setExcelHTML('<div class="text-center p-10 text-red-500">Failed to load Excel preview.</div>');
         });
     }
   }, [viewingDoc]);
@@ -1418,7 +2634,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
   // Process Text/Code documents
   useEffect(() => {
     // Check if handled by other specific viewers
-    const isSpecial = viewingDoc?.name.match(/\.(docx|doc|xls|xlsx|csv|pdf|mp4|webm|ogg|mov|mp3|wav|m4a|jpg|jpeg|png|gif|webp|bmp|svg)$/i) || viewingDoc?.url.startsWith('data:image/');
+    const isSpecial = viewingDoc?.type === 'image' || viewingDoc?.name?.match(/\.(docx|doc|xls|xlsx|csv|pdf|mp4|webm|ogg|mov|mp3|wav|m4a|jpg|jpeg|png|gif|webp|bmp|svg)$/i) || viewingDoc?.url?.startsWith('data:image/');
 
     if (viewingDoc && !isSpecial) {
       setTextPreview(null);
@@ -1439,7 +2655,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
   }, [viewingDoc]);
 
   return (
-    <div className="flex h-full w-full bg-secondary relative overflow-hidden">
+    <div className="flex w-full bg-secondary relative overflow-hidden aisa-scalable-text overscroll-none h-full focus:outline-none">
 
       {/* Document Viewer Modal */}
       <AnimatePresence>
@@ -1454,7 +2670,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card w-full max-w-6xl h-full max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border"
+              className="bg-card w-full max-w-4xl h-full max-h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between p-4 border-b border-border bg-secondary">
@@ -1475,14 +2691,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   <button
                     onClick={() => handleDownload(viewingDoc.url, viewingDoc.name)}
                     className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors text-subtext"
-                    title={t('chatPage.download')}
+                    title="Download"
                   >
                     <Download className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setViewingDoc(null)}
                     className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors text-subtext"
-                    title={t('chatPage.close')}
+                    title="Close"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -1492,10 +2708,9 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               {/* Viewer Content */}
               <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative flex items-center justify-center overflow-hidden">
                 {viewingDoc.type === 'image' || viewingDoc.name.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i) || viewingDoc.url.startsWith('data:image/') ? (
-                  <img
+                  <ImageViewer
                     src={viewingDoc.url}
                     alt="Preview"
-                    className="max-w-full max-h-full object-contain p-2"
                   />
                 ) : viewingDoc.name.match(/\.(docx|doc)$/i) ? (
                   <div
@@ -1511,7 +2726,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   <iframe
                     src={viewingDoc.url}
                     className="w-full h-full border-0"
-                    title={t('chatPage.documentViewer')}
+                    title="Document Viewer"
                   />
                 ) : viewingDoc.name.match(/\.(mp4|webm|ogg|mov)$/i) || viewingDoc.type.startsWith('video/') ? (
                   <video controls className="max-w-full max-h-full rounded-lg shadow-lg" src={viewingDoc.url}>
@@ -1526,7 +2741,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     </div>
                     <div className="text-center">
                       <h3 className="font-bold text-lg mb-1">{viewingDoc.name}</h3>
-                      <p className="text-xs text-subtext">{t('chatPage.audioFilePlayer')}</p>
+                      <p className="text-xs text-subtext">Audio File Player</p>
                     </div>
                     <audio controls className="w-full min-w-[300px]" src={viewingDoc.url}>
                       Your browser does not support the audio element.
@@ -1537,7 +2752,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3e3e42] shrink-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-[#cccccc] uppercase tracking-wider">
-                          {viewingDoc.name.match(/\.(rar|zip|exe|dll|bin|iso|7z)$/i) ? t('chatPage.binaryContent') : t('chatPage.codeReader')}
+                          {viewingDoc.name.match(/\.(rar|zip|exe|dll|bin|iso|7z)$/i) ? 'BINARY CONTENT' : 'CODE READER'}
                         </span>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-[#0e639c] text-white font-mono shadow-sm">
@@ -1566,7 +2781,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             onSave={(newFile) => {
               processFile(newFile);
               setIsEditingImage(false);
-              toast.success(t('chatPage.imageUpdated'));
+              toast.success("Image updated!");
             }}
           />
         )}
@@ -1581,92 +2796,148 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         pricing={TOOL_PRICING}
       />
 
-      {/* Backdrop for Mobile History Sidebar */}
+
+
+      {/* Chat History Sidebar */}
       <AnimatePresence>
         {showHistory && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-            onClick={() => setShowHistory(false)}
-          />
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: window.innerWidth < 1024 ? '100%' : 300, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className={`
+              fixed lg:relative inset-y-0 left-0 z-[60] lg:z-10
+              h-full bg-secondary/95 dark:bg-[#121212]/95 border-r border-border
+              flex flex-col backdrop-blur-3xl shadow-2xl lg:shadow-none overflow-hidden
+            `}
+          >
+            {/* Sidebar Header */}
+            <div className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 bg-secondary/50">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <History className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="font-bold text-sm text-maintext">History</h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    navigate('/dashboard/chat');
+                    if (window.innerWidth < 1024) setShowHistory(false);
+                  }}
+                  className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  title="New Chat"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="lg:hidden p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Sessions List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+              {sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-3">
+                    <MessageCircle className="w-6 h-6 text-subtext/40" />
+                  </div>
+                  <p className="text-xs font-medium text-subtext leading-relaxed">
+                    No conversations yet.<br />Start chatting with Aaisa!
+                  </p>
+                </div>
+              ) : (
+                sessions.map((s) => (
+                  <div key={s.sessionId} className="group relative">
+                    {editingSessionId === s.sessionId ? (
+                      <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl border border-primary/20 m-1">
+                        <input
+                          autoFocus
+                          className="flex-1 bg-transparent text-sm font-bold text-maintext focus:outline-none min-w-0"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameSession(s.sessionId, editingTitle);
+                            if (e.key === 'Escape') setEditingSessionId(null);
+                          }}
+                        />
+                        <button onClick={() => handleRenameSession(s.sessionId, editingTitle)} className="p-1 text-green-500 hover:bg-green-500/10 rounded-md">
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setEditingSessionId(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded-md">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            navigate(`/dashboard/chat/${s.sessionId}`);
+                            if (window.innerWidth < 1024) setShowHistory(false);
+                          }}
+                          className={`
+                            w-full text-left p-3 rounded-xl transition-all flex items-start gap-3
+                            ${currentSessionId === s.sessionId
+                              ? 'bg-primary/10 border border-primary/20 shadow-sm'
+                              : 'hover:bg-surface-hover border border-transparent'
+                            }
+                          `}
+                        >
+                          <div className={`
+                            shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors
+                            ${currentSessionId === s.sessionId ? 'bg-primary text-white' : 'bg-secondary text-subtext group-hover:text-primary group-hover:bg-primary/10'}
+                          `}>
+                            <MessageSquare className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 pr-8">
+                            <p className={`text-sm font-bold truncate leading-none mb-1.5 ${currentSessionId === s.sessionId ? 'text-primary' : 'text-maintext'}`}>
+                              {s.title || "Untitled Chat"}
+                            </p>
+                            <p className="text-[10px] text-subtext font-medium flex items-center gap-1.5">
+                              <CalendarIcon className="w-3 h-3" />
+                              {new Date(s.lastModified).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </button>
+
+                        {/* Session Actions */}
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSessionId(s.sessionId);
+                              setEditingTitle(s.title || "");
+                            }}
+                            className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors border border-transparent hover:border-primary/20"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteSession(s.sessionId, e)}
+                            className="p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      <div
-        className={`
-          flex flex-col flex-shrink-0 bg-surface border-r border-border
-          transition-all duration-300 ease-in-out
-          
-          /* Mobile: Absolute overlay */
-          absolute inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] sm:w-72
-          ${showHistory ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
-
-          /* Desktop: Relative flow, animate width instead of transform */
-          lg:relative lg:inset-auto lg:shadow-none lg:translate-x-0
-          ${showHistory ? 'lg:w-72' : 'lg:w-0 lg:border-none lg:overflow-hidden'}
-        `}
-      >
-        <div className="p-3">
-          <div className="flex justify-between items-center mb-3 lg:hidden">
-            <span className="font-bold text-lg text-maintext">{t('chatPage.history')}</span>
-            <button
-              onClick={() => setShowHistory(false)}
-              className="p-2 hover:bg-secondary rounded-full text-subtext transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <button
-            onClick={handleNewChat}
-            className="w-full bg-primary hover:opacity-90 text-white font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/20 text-sm"
-          >
-            <Plus className="w-4 h-4" /> {t('chatPage.newChat')}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 space-y-1">
-          <h3 className="px-4 py-2 text-xs font-semibold text-subtext uppercase tracking-wider">
-            {t('chatPage.recent')}
-          </h3>
-
-          {sessions.map((session) => (
-            <div key={session.sessionId} className="group relative px-2">
-              <button
-                onClick={() => navigate(`/dashboard/chat/${session.sessionId}`)}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors truncate
-                  ${currentSessionId === session.sessionId
-                    ? 'bg-card text-primary shadow-sm border border-border'
-                    : 'text-subtext hover:bg-card hover:text-maintext'
-                  }
-                `}
-              >
-                <div className="font-medium truncate pr-6">{session.title}</div>
-                <div className="text-[10px] text-subtext/70">
-                  {new Date(session.lastModified).toLocaleDateString()}
-                </div>
-              </button>
-              <button
-                onClick={(e) => handleDeleteSession(e, session.sessionId)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-subtext hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                title={t('chatPage.deleteChat')}
-              >
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
-            </div>
-          ))}
-
-          {sessions.length === 0 && (
-            <div className="px-4 text-xs text-subtext italic">{t('chatPage.noRecentChats')}</div>
-          )}
-        </div>
-      </div>
-
       {/* Main Area */}
       <div
-        className="flex-1 flex flex-col relative bg-secondary w-full min-w-0"
+        className="flex-1 flex flex-col relative bg-gradient-to-br from-secondary via-background to-secondary/50 w-full min-w-0"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -1674,71 +2945,64 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         {isDragging && (
           <div className="absolute inset-0 z-50 bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none">
             <Cloud className="w-16 h-16 text-primary mb-4 animate-bounce" />
-            <h3 className="text-2xl font-bold text-primary">{t('chatPage.dropToUpload')}</h3>
+            <h3 className="text-2xl font-bold text-primary">Drop to Upload</h3>
           </div>
         )}
 
         {/* Header */}
         <div className="h-12 md:h-14 border-b border-border flex items-center justify-between px-3 md:px-4 bg-secondary z-10 shrink-0 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-
+          <div className="flex items-center gap-1 min-w-0">
             <button
-              className="p-2 -ml-2 text-subtext hover:text-maintext shrink-0"
+              onClick={() => setTglState(prev => ({ ...prev, sidebarOpen: true }))}
+              className="lg:hidden p-2 -ml-2 text-subtext hover:text-maintext rounded-lg hover:bg-surface/50 transition-colors"
+            >
+              <MenuIcon className="w-6 h-6" />
+            </button>
+            <button
               onClick={() => setShowHistory(!showHistory)}
+              className={`p-2 rounded-lg transition-all ${showHistory ? 'bg-primary/10 text-primary' : 'text-subtext hover:text-primary hover:bg-primary/10'}`}
+              title="Chat History"
             >
               <History className="w-5 h-5" />
             </button>
-
-            <div className="flex items-center gap-2 text-subtext min-w-0">
-              <span className="text-sm hidden md:inline shrink-0">{t('chatPage.chatWith')}</span>
-              <div className="flex items-center gap-2 text-maintext bg-surface px-3 py-1.5 rounded-lg border border-border truncate max-w-[140px] sm:max-w-xs">
-                <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                  <img
-                    src={activeAgent.avatar || (activeAgent.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : '/AGENTS_IMG/AIBOT.png')}
-                    alt=""
-                    className="w-4 h-4 rounded-sm object-cover"
-                    onError={(e) => { e.target.src = '/AGENTS_IMG/AISA.png' }}
-                  />
-                </div>
-                <span className="text-sm font-medium truncate">
-                  {(activeAgent.agentName || activeAgent.name) === 'AISA' ? t('aisaName') : (activeAgent.agentName || activeAgent.name)} <sup>TM</sup>
-                </span>
-              </div>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {/* Model Selector Button */}
-
-
-            {/* Compare Mode Toggle */}
-
-            <div className="hidden lg:block">
-              <UserDropdown />
+          {/* Mode Indicator & Actions */}
+          <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300"
+              style={{
+                backgroundColor: `${getModeColor(isDeepSearch ? 'DEEP_SEARCH' : currentMode)}15`,
+                color: getModeColor(isDeepSearch ? 'DEEP_SEARCH' : currentMode)
+              }}
+            >
+              <span>{getModeIcon(isDeepSearch ? 'DEEP_SEARCH' : currentMode)}</span>
+              <span className="hidden sm:inline">{getModeName(isDeepSearch ? 'DEEP_SEARCH' : currentMode)}</span>
             </div>
           </div>
         </div>
 
+
+
+        {/* <button className="flex items-center gap-2 text-subtext hover:text-maintext text-sm">
+              <Monitor className="w-4 h-4" />
+              <span className="hidden sm:inline">Device</span>
+            </button> */}
+
+
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-5 space-y-2.5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-70 px-4">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary/5 rounded-full flex items-center justify-center mb-6">
-                <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
-              </div>
-              <h2 className="text-xl font-medium text-maintext mb-2">
-                {t('chatPage.howCanIHelp')}
-              </h2>
-              <p className="text-subtext text-sm sm:text-base">
-                {t('chatPage.startConversation')}
-              </p>
-            </div>
-          ) : (
+        <div
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          className="relative flex-1 overflow-y-auto p-1 sm:p-2 md:p-3 pb-48 md:pb-56 space-y-2.5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent aisa-scalable-text"
+        >
+          {messages.length > 0 && (
             <>
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`group relative flex items-start gap-2 md:gap-3 max-w-4xl mx-auto cursor-pointer ${msg.role === 'user' ? 'flex-row-reverse' : ''
+                  className={`group relative flex items-start gap-2 md:gap-3 w-full max-w-5xl mx-auto cursor-pointer ${msg.role === 'user' ? 'flex-row-reverse' : ''
                     }`}
                   onClick={() => setActiveMessageId(activeMessageId === msg.id ? null : msg.id)}
                 >
@@ -1746,36 +3010,43 @@ For "Remix" requests with an attachment, analyze the attached image, then create
 
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user'
-                      ? 'bg-primary'
-                      : 'bg-surface border border-border'
+                      ? 'bg-primary/80 backdrop-blur-md shadow-sm'
+                      : 'bg-surface border border-border shadow-sm'
                       }`}
                   >
                     {msg.role === 'user' ? (
                       <User className="w-4 h-4 text-white" />
                     ) : (
-                      <Bot className="w-4 h-4 text-primary" />
+                      <img src="/AGENTS_IMG/AISA.png" alt="AISA" className="w-5 h-5 object-contain" />
                     )}
                   </div>
 
                   <div
                     className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'
-                      } max-w-[85%] sm:max-w-[80%]`}
+                      } max-w-[85%] sm:max-w-[80%] md:max-w-[75%]`}
                   >
                     <div
-                      className={`group/bubble relative px-4 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words shadow-sm w-fit max-w-full transition-all duration-300 ${msg.role === 'user'
-                        ? 'bg-primary text-white rounded-tr-none'
-                        : `bg-surface border border-border text-maintext rounded-tl-none ${msg.id === typingMessageId ? 'ai-typing-glow ai-typing-shimmer outline outline-offset-1 outline-primary/20' : ''}`
+                      className={`group/bubble relative px-3 py-2.5 sm:px-5 sm:py-4 rounded-2xl sm:rounded-[1.5rem] leading-relaxed whitespace-pre-wrap break-words shadow-sm w-fit max-w-full transition-all duration-300 min-h-[40px] hover:scale-[1.002] ${msg.role === 'user'
+                        ? 'bg-primary/80 backdrop-blur-md border border-white/20 text-white rounded-tr-sm shadow-lg shadow-primary/20 text-sm sm:text-base'
+                        : `bg-surface border border-border/40 text-maintext rounded-tl-sm shadow-sm hover:shadow-md text-sm sm:text-base ${msg.id === typingMessageId ? 'ai-typing-glow ai-typing-shimmer outline outline-offset-1 outline-primary/20' : ''}`
                         }`}
                     >
 
+                      {msg.isProcessing && (
+                        <div className="flex items-center gap-3 mb-3 p-3 bg-primary/5 rounded-xl border border-primary/10 animate-pulse">
+                          <Loader size="sm" />
+                          <span className="text-xs font-semibold text-primary uppercase tracking-tighter">Preparing Audio...</span>
+                        </div>
+                      )}
+
                       {/* Attachment Display */}
-                      {(msg.attachments || msg.attachment) && (
+                      {((msg.attachments && msg.attachments.length > 0) || msg.attachment) && (
                         <div className="flex flex-col gap-3 mb-3 mt-1">
                           {(msg.attachments || (msg.attachment ? [msg.attachment] : [])).map((att, idx) => (
                             <div key={idx} className="w-full">
                               {att.type === 'image' ? (
                                 <div
-                                  className="relative group/image overflow-hidden rounded-xl border border-white/20 shadow-lg transition-all hover:scale-[1.01] cursor-pointer max-w-full sm:max-w-[320px]"
+                                  className="relative group/image overflow-hidden rounded-xl border border-white/20 shadow-lg transition-all hover:scale-[1.01] cursor-pointer max-w-[320px]"
                                   onClick={() => setViewingDoc(att)}
                                 >
                                   <img
@@ -1789,13 +3060,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       handleDownload(att.url, att.name);
                                     }}
                                     className="absolute top-2 right-2 p-2 bg-black/40 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-all hover:bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center"
-                                    title={t('chatPage.download')}
+                                    title="Download"
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
                                 </div>
                               ) : (
-                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${msg.role === 'user' ? 'bg-white/10 border-white/20 hover:bg-white/20' : 'bg-secondary/30 border-border hover:bg-secondary/50'}`}>
+                                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors backdrop-blur-md ${msg.role === 'user' ? 'bg-transparent border-white/20 hover:bg-white/10 shadow-none' : 'bg-secondary/30 border-border hover:bg-secondary/50'}`}>
                                   <div
                                     className="flex-1 flex items-center gap-3 min-w-0 cursor-pointer p-0.5 rounded-lg"
                                     onClick={() => setViewingDoc(att)}
@@ -1815,8 +3086,8 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                         if (name.match(/\.(xls|xlsx|csv)$/)) return <FileSpreadsheet className={`${baseClass} text-emerald-600`} />;
                                         if (name.match(/\.(ppt|pptx)$/)) return <Presentation className={`${baseClass} text-orange-600`} />;
                                         if (name.endsWith('.pdf')) return <FileText className={`${baseClass} text-red-600`} />;
-                                        if (name.match(/\.(doc|docx)$/)) return <File className={`${baseClass} text-blue-600`} />;
-                                        return <File className={`${baseClass} text-primary`} />;
+                                        if (name.match(/\.(doc|docx)$/)) return <FileIcon className={`${baseClass} text-blue-600`} />;
+                                        return <FileIcon className={`${baseClass} text-primary`} />;
                                       })()}
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -1824,11 +3095,11 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       <p className="text-[10px] opacity-70 uppercase tracking-tight font-medium">
                                         {(() => {
                                           const name = (att.name || '').toLowerCase();
-                                          if (name.endsWith('.pdf')) return t('chatPage.pdfPreview');
-                                          if (name.match(/\.(doc|docx)$/)) return t('chatPage.wordPreview');
-                                          if (name.match(/\.(xls|xlsx|csv)$/)) return t('chatPage.excel');
-                                          if (name.match(/\.(ppt|pptx)$/)) return t('chatPage.slides');
-                                          return t('chatPage.document');
+                                          if (name.endsWith('.pdf')) return 'PDF • Preview';
+                                          if (name.match(/\.(doc|docx)$/)) return 'WORD • Preview';
+                                          if (name.match(/\.(xls|xlsx|csv)$/)) return 'EXCEL';
+                                          if (name.match(/\.(ppt|pptx)$/)) return 'SLIDES';
+                                          return 'DOCUMENT';
                                         })()}
                                       </p>
                                     </div>
@@ -1839,7 +3110,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       handleDownload(att.url, att.name);
                                     }}
                                     className={`p-2 rounded-lg transition-colors shrink-0 ${msg.role === 'user' ? 'hover:bg-white/20 text-white' : 'hover:bg-primary/10 text-primary'}`}
-                                    title={t('chatPage.download')}
+                                    title="Download"
                                   >
                                     <Download className="w-4 h-4" />
                                   </button>
@@ -1849,6 +3120,11 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                           ))}
                         </div>
                       )}
+
+
+
+
+
 
                       {editingMessageId === msg.id ? (
                         <div className="flex flex-col gap-3 min-w-[200px] w-full">
@@ -1871,19 +3147,25 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                               onClick={cancelEdit}
                               className="text-white/80 hover:text-white text-sm font-medium transition-colors"
                             >
-                              {t('chatPage.cancel')}
+                              Cancel
                             </button>
                             <button
                               onClick={() => saveEdit(msg)}
                               className="bg-white text-primary px-6 py-2 rounded-full text-sm font-bold hover:bg-white/90 transition-colors shadow-sm"
                             >
-                              {t('chatPage.update')}
+                              Update
                             </button>
                           </div>
                         </div>
                       ) : (
                         msg.content && (
-                          <div id={`msg-text-${msg.id}`} className={`max-w-full break-words text-sm md:text-base leading-relaxed whitespace-normal ${msg.role === 'user' ? 'text-white' : 'text-maintext'}`}>
+                          <div id={`msg-text-${msg.id}`} className={`max-w-full break-words leading-relaxed whitespace-normal ${msg.role === 'user' ? 'text-white' : 'text-maintext'}`}>
+                            {msg.role === 'user' && msg.mode === MODES.DEEP_SEARCH && (
+                              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 bg-white/20 rounded-lg w-fit">
+                                <Search size={10} className="text-white" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-white">Deep Search</span>
+                              </div>
+                            )}
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
@@ -1906,14 +3188,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     </a>
                                   );
                                 },
-                                p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed">{children}</p>,
-                                ul: ({ children }) => <ul className="list-disc pl-5 mb-3 last:mb-0 space-y-1.5 marker:text-subtext">{children}</ul>,
-                                ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 last:mb-0 space-y-1.5 marker:text-subtext">{children}</ol>,
-                                li: ({ children }) => <li className="mb-1 last:mb-0">{children}</li>,
-                                h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 block">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-sm font-bold mb-1.5 mt-2 block">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-xs font-bold mb-1 mt-1.5 block">{children}</h3>,
-                                strong: ({ children }) => <strong className="font-bold text-primary">{children}</strong>,
+                                p: ({ children }) => <p className={`mb-1.5 last:mb-0 ${msg.role === 'user' ? 'm-0 leading-normal' : 'leading-relaxed'}`}>{children}</p>,
+                                ul: ({ children }) => <ul className="list-disc pl-5 mb-3 last:mb-0 space-y-1.5 marker:text-primary transition-all">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 last:mb-0 space-y-1.5 marker:text-primary transition-all">{children}</ol>,
+                                li: ({ children }) => <li className="mb-1 last:mb-0 transition-colors">{children}</li>,
+                                h1: ({ children }) => <h1 className="font-bold mb-2 mt-3 block text-[1.4em] text-primary tracking-tight">{children}</h1>,
+                                h2: ({ children }) => <h2 className="font-bold mb-1.5 mt-2 block text-[1.2em] text-primary tracking-tight">{children}</h2>,
+                                h3: ({ children }) => <h3 className="font-bold mb-1 mt-1.5 block text-[1.1em] text-primary tracking-tight">{children}</h3>,
+                                strong: ({ children }) => <strong className="font-bold text-primary/90">{children}</strong>,
                                 code: ({ node, inline, className, children, ...props }) => {
                                   const match = /language-(\w+)/.exec(className || '');
                                   const lang = match ? match[1] : '';
@@ -1926,16 +3208,16 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                           <button
                                             onClick={() => {
                                               navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                                              toast.success(t('chatPage.codeCopied'));
+                                              toast.success("Code copied!");
                                             }}
                                             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
                                           >
                                             <Copy className="w-3.5 h-3.5" />
-                                            {t('chatPage.copyCode')}
+                                            Copy code
                                           </button>
                                         </div>
                                         <div className="p-4 overflow-x-auto custom-scrollbar bg-[#1e1e1e]">
-                                          <code className={`${className} font-mono text-sm leading-relaxed text-[#d4d4d4] block min-w-full`} {...props}>
+                                          <code className={`${className} font-mono text-[0.9em] leading-relaxed text-[#d4d4d4] block min-w-full`} {...props}>
                                             {children}
                                           </code>
                                         </div>
@@ -1943,102 +3225,213 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     );
                                   }
                                   return (
-                                    <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-sm font-mono text-primary font-bold mx-0.5" {...props}>
+                                    <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono text-primary font-bold mx-0.5" {...props}>
                                       {children}
                                     </code>
                                   );
                                 },
-                                img: ({ node, ...props }) => (
-                                  <div className="relative group/generated mt-4 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all hover:scale-[1.01] bg-surface/50 backdrop-blur-sm">
-                                    <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-0 group-hover/generated:opacity-100 transition-opacity">
-                                      <div className="flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('chatPage.aiGenerated')}</span>
-                                      </div>
-                                    </div>
-                                    <img
-                                      {...props}
-                                      className="w-full max-w-full h-auto rounded-xl bg-black/5"
-                                      loading="lazy"
-                                      onError={(e) => {
-                                        e.target.src = 'https://placehold.co/600x400?text=Image+Generating...';
-                                      }}
-                                    />
-                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/generated:opacity-100 transition-opacity pointer-events-none" />
-                                    <button
-                                      onClick={() => handleDownload(props.src, 'aisa-generated.png')}
-                                      className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-0 group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-90 group-hover/generated:scale-100"
-                                      title={t('chatPage.downloadHighRes')}
+                                img: ({ node, ...props }) => {
+                                  // Check if this image is actually a video thumbnail or if we have a video URL in the message
+                                  // For now, we assume this renderer handles static images from markdown.
+                                  // Actual Dynamic Video/Image rendering is handled by the msg properties check below.
+                                  return (
+                                    <div
+                                      className="relative group/generated mt-4 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all hover:scale-[1.01] bg-surface/50 backdrop-blur-sm cursor-zoom-in max-w-md"
+                                      onClick={() => setViewingDoc({ url: props.src, type: 'image', name: 'Generated Image' })}
                                     >
-                                      <div className="flex items-center gap-2 px-1">
-                                        <Download className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase">{t('chatPage.download')}</span>
+                                      <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-2">
+                                          <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
+                                        </div>
                                       </div>
-                                    </button>
-                                  </div>
-                                )
+                                      <img
+                                        {...props}
+                                        className="w-full max-w-full h-auto rounded-xl bg-black/5"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          e.target.src = 'https://placehold.co/600x400?text=Image+Generating...';
+                                        }}
+                                      />
+                                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/generated:opacity-100 transition-opacity pointer-events-none" />
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation(); // Prevent opening modal when clicking download
+                                          handleDownload(props.src, 'aisa-generated.png');
+                                        }}
+                                        className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-100 sm:scale-90 sm:group-hover/generated:scale-100"
+                                        title="Download High-Res"
+                                      >
+                                        <div className="flex items-center gap-2 px-1">
+                                          <Download className="w-4 h-4" />
+                                          <span className="text-[10px] font-bold uppercase">Download</span>
+                                        </div>
+                                      </button>
+                                    </div>
+                                  )
+                                },
                               }}
                             >
-                              {msg.content}
+                              {msg.content || msg.text || ""}
                             </ReactMarkdown>
+
+                            {/* Dynamic Video Rendering */}
+                            {msg.videoUrl && (
+                              <div className="relative group/generated mt-4 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all hover:scale-[1.01] bg-surface/50 backdrop-blur-sm">
+                                <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity pointer-events-none">
+                                  <div className="flex items-center gap-2">
+                                    <Video className="w-4 h-4 text-primary animate-pulse" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Video</span>
+                                  </div>
+                                </div>
+
+                                <video
+                                  src={msg.videoUrl}
+                                  controls
+                                  autoPlay
+                                  loop
+                                  className="w-full max-w-full h-auto rounded-xl bg-black/5"
+                                />
+
+                                <div className="absolute bottom-3 right-14 pointer-events-auto">
+                                  {/* Additional controls if needed */}
+                                </div>
+
+                                <button
+                                  onClick={() => handleDownload(msg.videoUrl, 'aisa-generated-video.mp4')}
+                                  className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-100 sm:scale-90 sm:group-hover/generated:scale-100 z-20"
+                                  title="Download Video"
+                                >
+                                  <div className="flex items-center gap-2 px-1">
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-[10px] font-bold uppercase">Download</span>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Dynamic Image Rendering */}
+                            {msg.imageUrl && (
+                              <div
+                                className="relative group/generated mt-4 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all hover:scale-[1.01] bg-surface/50 backdrop-blur-sm cursor-zoom-in max-w-md"
+                                onClick={() => setViewingDoc({ url: msg.imageUrl, type: 'image', name: 'Generated Image' })}
+                              >
+                                <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
+                                  </div>
+                                </div>
+                                <img
+                                  src={msg.imageUrl}
+                                  className="w-full h-auto rounded-xl bg-black/5 min-h-[100px]"
+                                  alt="AISA Generated"
+                                  onError={(e) => {
+                                    console.error("Image failed to load:", msg.imageUrl);
+                                    e.target.style.display = 'none';
+                                    const parent = e.target.parentElement;
+                                    if (parent) {
+                                      const errDiv = document.createElement('div');
+                                      errDiv.className = 'p-10 text-center text-xs text-subtext bg-surface/30 rounded-xl';
+                                      errDiv.innerText = 'Image expired or failed to load. Please try regenerating.';
+                                      parent.appendChild(errDiv);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent opening modal handling
+                                    handleDownload(msg.imageUrl, 'aisa-generated.png');
+                                  }}
+                                  className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-100 sm:scale-90 sm:group-hover/generated:scale-100"
+                                  title="Download High-Res"
+                                >
+                                  <div className="flex items-center gap-2 px-1">
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-[10px] font-bold uppercase">Download</span>
+                                  </div>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )
                       )}
 
-                      {/* AI Feedback Actions */}
-                      {msg.role !== 'user' && (
-                        <div className="mt-1 pt-2 border-t border-transparent">
-                          {(() => {
-                            // Detect if the AI response contains Hindi (Devanagari script)
-                            const isHindiContent = /[\u0900-\u097F]/.test(msg.content);
-                            const prompts = isHindiContent ? FEEDBACK_PROMPTS.hi : FEEDBACK_PROMPTS.en;
-                            const promptIndex = (msg.id.toString().charCodeAt(msg.id.toString().length - 1) || 0) % prompts.length;
-                            return (
-                              <p className="text-sm text-maintext mb-2 flex items-center gap-1">
-                                {prompts[promptIndex]}
-                                <span className="text-base">😊</span>
+                      {/* File Conversion Download Button */}
+                      {msg.conversion && msg.conversion.file && (
+                        <div className="mt-4 pt-3 border-t border-border/40 space-y-3">
+                          {/* Integrated Audio Player for Voice Conversations */}
+                          {msg.conversion.mimeType.startsWith('audio/') && (
+                            <div className="bg-primary/5 rounded-xl p-2 border border-primary/10 mb-2">
+                              <audio
+                                controls
+                                className="w-full h-10 accent-primary rounded-lg"
+                                src={msg.conversion.blobUrl || `data:${msg.conversion.mimeType};base64,${msg.conversion.file}`}
+                              >
+                                Your browser does not support the audio element.
+                              </audio>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between px-1 py-1">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-maintext truncate">{msg.conversion.fileName}</p>
+                              <p className="text-[10px] text-subtext font-bold uppercase tracking-widest flex items-center gap-2">
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md border border-primary/20">
+                                  {msg.conversion.fileSize || "Ready"}
+                                </span>
+                                {msg.conversion.charCount && (
+                                  <span className="px-1.5 py-0.5 bg-secondary/30 text-subtext rounded-md border border-border/50">
+                                    {msg.conversion.charCount} CHARS
+                                  </span>
+                                )}
+                                {msg.conversion.mimeType.includes('audio') ? 'AUDIO • MP3' : msg.conversion.mimeType.includes('pdf') ? 'PDF • DOCUMENT' : 'WORD • DOCUMENT'}
                               </p>
-                            );
-                          })()}
-                          <div className="flex items-center gap-4">
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <button
-                              onClick={() => handleCopyMessage(msg.content)}
-                              className="text-subtext hover:text-maintext transition-colors"
-                              title={t('chatPage.copy')}
+                              onClick={() => {
+                                const downloadToast = toast.loading("Starting download...");
+                                try {
+                                  // Create download link
+                                  const byteCharacters = atob(msg.conversion.file);
+                                  const byteNumbers = new Array(byteCharacters.length);
+                                  for (let i = 0; i < byteCharacters.length; i++) {
+                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                  }
+                                  const byteArray = new Uint8Array(byteNumbers);
+                                  const blob = new Blob([byteArray], { type: msg.conversion.mimeType });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = msg.conversion.fileName;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    toast.dismiss(downloadToast);
+                                    toast.success("Download complete!");
+                                  }, 500);
+                                } catch (err) {
+                                  toast.dismiss(downloadToast);
+                                  toast.error("Download failed");
+                                }
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl transition-all hover:bg-primary/90 shadow-sm font-bold text-sm active:scale-95"
                             >
-                              <Copy className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleThumbsUp(msg.id)}
-                              className={`transition-colors ${likedMessages.has(msg.id) ? 'text-blue-500' : 'text-subtext hover:text-primary'}`}
-                              title={t('chatPage.helpful')}
-                            >
-                              <ThumbsUp className={`w-4 h-4 ${likedMessages.has(msg.id) ? 'fill-current' : ''}`} />
-                            </button>
-                            <button
-                              onClick={() => handleThumbsDown(msg.id)}
-                              className={`transition-colors ${dislikedMessages.has(msg.id) ? 'text-red-500' : 'text-subtext hover:text-red-500'}`}
-                              title={t('chatPage.notHelpful')}
-                            >
-                              <ThumbsDown className={`w-4 h-4 ${dislikedMessages.has(msg.id) ? 'fill-current' : ''}`} />
-                            </button>
-                            <button
-                              onClick={() => handleShare(msg.content)}
-                              className="text-subtext hover:text-primary transition-colors"
-                              title={t('chatPage.shareText')}
-                            >
-                              <Share className="w-4 h-4" />
+                              <Download className="w-4 h-4" />
+                              Download {msg.conversion.mimeType.includes('audio') ? 'Audio' : msg.conversion.mimeType.includes('pdf') ? 'PDF' : 'Document'}
                             </button>
 
-                            {/* PDF Menu */}
-                            <Menu as="div" className="relative inline-block text-left">
-                              <Menu.Button className="text-subtext hover:text-red-500 transition-colors flex items-center" disabled={pdfLoadingId === msg.id}>
-                                {pdfLoadingId === msg.id ? (
-                                  <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
-                                ) : (
-                                  <FileText className="w-4 h-4" />
-                                )}
+                            <Menu as="div" className="relative">
+                              <Menu.Button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-surface border border-border text-maintext rounded-xl transition-all hover:bg-hover font-bold text-sm shadow-sm active:scale-95 whitespace-nowrap">
+                                <Share className="w-4 h-4" />
+                                Share
                               </Menu.Button>
+
                               <Transition
                                 as={Fragment}
                                 enter="transition ease-out duration-100"
@@ -2048,38 +3441,54 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 leaveFrom="transform opacity-100 scale-100"
                                 leaveTo="transform opacity-0 scale-95"
                               >
-                                <Menu.Items className="absolute bottom-full left-0 mb-2 w-36 origin-bottom-left divide-y divide-border rounded-xl bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden">
+                                <Menu.Items className="absolute bottom-full right-0 mb-2 w-56 origin-bottom-right divide-y divide-border rounded-xl bg-surface shadow-2xl border border-border focus:outline-none z-[100] overflow-hidden">
+                                  <div className="px-1 py-1">
+
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button
+                                          onClick={() => {
+                                            const text = `I've converted "${msg.conversion.fileName}" into voice audio using AISA! ${window.location.href}`;
+                                            const url = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+                                              ? `whatsapp://send?text=${encodeURIComponent(text)}`
+                                              : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                                            window.open(url, '_blank');
+                                          }}
+                                          className={`${active ? 'bg-green-500 text-white' : 'text-maintext'} group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors`}
+                                        >
+                                          <MessageCircle className="h-4 w-4" />
+                                          WhatsApp
+                                        </button>
+                                      )}
+                                    </Menu.Item>
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button
+                                          onClick={() => {
+                                            const text = `AISA Audio Conversion: ${msg.conversion.fileName}`;
+                                            const url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+                                            window.open(url, '_blank');
+                                          }}
+                                          className={`${active ? 'bg-sky-500 text-white' : 'text-maintext'} group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors`}
+                                        >
+                                          <Send className="h-4 w-4" />
+                                          Telegram
+                                        </button>
+                                      )}
+                                    </Menu.Item>
+                                  </div>
                                   <div className="px-1 py-1">
                                     <Menu.Item>
                                       {({ active }) => (
                                         <button
-                                          onClick={() => handlePdfAction('open', msg)}
-                                          className={`${active ? 'bg-primary text-white' : 'text-maintext'
-                                            } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(window.location.href);
+                                            toast.success("Link copied!");
+                                          }}
+                                          className={`${active ? 'bg-primary text-white' : 'text-maintext'} group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors`}
                                         >
-                                          {t('chatPage.openPdf')}
-                                        </button>
-                                      )}
-                                    </Menu.Item>
-                                    <Menu.Item>
-                                      {({ active }) => (
-                                        <button
-                                          onClick={() => handlePdfAction('download', msg)}
-                                          className={`${active ? 'bg-primary text-white' : 'text-maintext'
-                                            } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
-                                        >
-                                          {t('chatPage.download')}
-                                        </button>
-                                      )}
-                                    </Menu.Item>
-                                    <Menu.Item>
-                                      {({ active }) => (
-                                        <button
-                                          onClick={() => handlePdfAction('share', msg)}
-                                          className={`${active ? 'bg-primary text-white' : 'text-maintext'
-                                            } group flex w-full items-center rounded-md px-2 py-2 text-xs font-medium`}
-                                        >
-                                          {t('chatPage.sharePdf')}
+                                          <Copy className="h-4 w-4" />
+                                          Copy Link
                                         </button>
                                       )}
                                     </Menu.Item>
@@ -2087,6 +3496,145 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 </Menu.Items>
                               </Transition>
                             </Menu>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Feedback Actions */}
+                      {msg.role !== 'user' && !msg.conversion && (
+                        <div className="mt-4 pt-3 border-t border-border/40 w-full block">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                            {(() => {
+                              // Detect if the AI response contains Hindi (Devanagari script)
+                              const isHindiContent = /[\u0900-\u097F]/.test(msg.content);
+                              const prompts = isHindiContent ? FEEDBACK_PROMPTS.hi : FEEDBACK_PROMPTS.en;
+                              const promptIndex = (msg.id.toString().charCodeAt(msg.id.toString().length - 1) || 0) % prompts.length;
+                              return (
+                                <p className="text-xs text-subtext font-medium flex items-center gap-1.5 shrink-0 m-0">
+                                  {prompts[promptIndex]}
+                                  <span className="text-sm">😊</span>
+                                </p>
+                              );
+                            })()}
+                            <div className="flex flex-col items-end gap-2 self-end sm:self-auto">
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => {
+                                    // Pass message ID to speakResponse for tracking
+                                    const isHindi = /[\u0900-\u097F]/.test(msg.content);
+                                    speakResponse(msg.content, isHindi ? 'Hindi' : 'English', msg.id, msg.attachments || [], true);
+                                  }}
+                                  className={`transition-colors p-1.5 rounded-lg ${speakingMessageId === msg.id
+                                    ? 'text-primary bg-primary/10'
+                                    : 'text-subtext hover:text-primary hover:bg-surface-hover'
+                                    }`}
+                                  title={speakingMessageId === msg.id && !isPaused ? "Pause" : "Speak"}
+                                >
+                                  {speakingMessageId === msg.id && !isPaused ? (
+                                    <Pause className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Volume2 className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleCopyMessage(msg.content)}
+                                  className="text-subtext hover:text-maintext transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
+                                  title="Copy"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleThumbsUp(msg.id)}
+                                  className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'up'
+                                    ? 'text-blue-500 bg-blue-500/10'
+                                    : 'text-subtext hover:text-primary hover:bg-surface-hover'
+                                    }`}
+                                  title="Helpful"
+                                >
+                                  <ThumbsUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleThumbsDown(msg.id)}
+                                  className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'down'
+                                    ? 'text-red-500 bg-red-500/10'
+                                    : 'text-subtext hover:text-red-500 hover:bg-surface-hover'
+                                    }`}
+                                  title="Not Helpful"
+                                >
+                                  <ThumbsDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleShare(msg.content)}
+                                  className="text-subtext hover:text-primary transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
+                                  title="Share Text"
+                                >
+                                  <Share className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* PDF Menu */}
+                                <Menu as="div" className="relative inline-block text-left">
+                                  <Menu.Button className="text-subtext hover:text-red-500 transition-colors flex items-center" disabled={pdfLoadingId === msg.id}>
+                                    {pdfLoadingId === msg.id ? (
+                                      <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+                                    ) : (
+                                      <FileText className="w-4 h-4" />
+                                    )}
+                                  </Menu.Button>
+                                  <Transition
+                                    as={Fragment}
+                                    enter="transition ease-out duration-100"
+                                    enterFrom="transform opacity-0 scale-95"
+                                    enterTo="transform opacity-100 scale-100"
+                                    leave="transition ease-in duration-75"
+                                    leaveFrom="transform opacity-100 scale-100"
+                                    leaveTo="transform opacity-0 scale-95"
+                                  >
+                                    <Menu.Items className="absolute bottom-full right-0 sm:left-0 mb-2 w-44 origin-bottom-right sm:origin-bottom-left divide-y divide-border rounded-xl bg-card shadow-2xl ring-1 ring-black ring-opacity-10 focus:outline-none z-50 overflow-hidden backdrop-blur-xl border border-border/50">
+                                      <div className="px-1.5 py-1.5">
+                                        <Menu.Item>
+                                          {({ active }) => (
+                                            <button
+                                              onClick={() => handlePdfAction('open', msg)}
+                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                            >
+                                              <Eye className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                              Open PDF
+                                            </button>
+                                          )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                          {({ active }) => (
+                                            <button
+                                              onClick={() => handlePdfAction('download', msg)}
+                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                            >
+                                              <Download className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                              Download PDF
+                                            </button>
+                                          )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                          {({ active }) => (
+                                            <button
+                                              onClick={() => handlePdfAction('share', msg)}
+                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                            >
+                                              <Share className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                              Share PDF
+                                            </button>
+                                          )}
+                                        </Menu.Item>
+                                      </div>
+                                    </Menu.Items>
+                                  </Transition>
+                                </Menu>
+                              </div>
+
+
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2100,65 +3648,82 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   </div>
 
                   {/* Hover Actions - User Only (AI has footer) */}
-                  {msg.role === 'user' && (
-                    <div className={`flex items-center gap-1 transition-opacity duration-200 self-start mt-2 mr-0 flex-row-reverse ${activeMessageId === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      <button
-                        onClick={() => handleCopyMessage(msg.content || msg.text)}
-                        className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                        title={t('chatPage.copy')}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                      {!msg.attachment && (
+                  {
+                    msg.role === 'user' && (
+                      <div className={`flex items-center gap-1 transition-opacity duration-200 self-start mt-2 mr-0 flex-row-reverse ${activeMessageId === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+
                         <button
-                          onClick={() => startEditing(msg)}
+                          onClick={() => handleCopyMessage(msg.content || msg.text)}
                           className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                          title={t('chatPage.edit')}
+                          title="Copy"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Copy className="w-4 h-4" />
                         </button>
-                      )}
-                      {msg.attachment && (
+                        {!msg.attachment && (
+                          <button
+                            onClick={() => startEditing(msg)}
+                            className="p-1.5 text-blue-500 hover:text-primary hover:bg-surface rounded-full transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {msg.attachment && (
+                          <button
+                            onClick={() => handleRenameFile(msg)}
+                            className="p-1.5 text-blue-500 hover:text-primary hover:bg-surface rounded-full transition-colors"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {/* Only show Undo for the most recent user message if it's the last or second to last message in the whole chat */}
+                        {msg.id === messages.findLast(m => m.role === 'user')?.id && (
+                          <button
+                            onClick={handleUndo}
+                            className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
+                            title="Undo"
+                          >
+                            <Undo2 className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleRenameFile(msg)}
-                          className="p-1.5 text-subtext hover:text-primary hover:bg-surface rounded-full transition-colors"
-                          title={t('chatPage.rename')}
+                          onClick={() => handleMessageDelete(msg.id)}
+                          className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Delete"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleMessageDelete(msg.id)}
-                        className="p-1.5 text-subtext hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                        title={t('chatPage.delete')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                      </div>
+                    )
+                  }
                 </div>
               ))}
 
               {isLoading && (
                 <div className="flex items-start gap-4 max-w-4xl mx-auto">
                   <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                    <Loader />
+                    <img src="/AGENTS_IMG/AISA.png" alt="AISA" className="w-5 h-5 object-contain" />
 
                   </div>
-                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-surface border border-border flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 bg-subtext/50 rounded-full animate-bounce"
-                      style={{ animationDelay: '0ms' }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-subtext/50 rounded-full animate-bounce"
-                      style={{ animationDelay: '150ms' }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-subtext/50 rounded-full animate-bounce"
-                      style={{ animationDelay: '300ms' }}
-                    ></span>
+                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-surface border border-border flex items-center gap-3">
+                    <span className="text-sm font-medium text-subtext animate-pulse">
+                      {loadingText}
+                    </span>
+                    <div className="flex gap-1">
+                      <span
+                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                        style={{ animationDelay: '0ms' }}
+                      ></span>
+                      <span
+                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                        style={{ animationDelay: '150ms' }}
+                      ></span>
+                      <span
+                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                        style={{ animationDelay: '300ms' }}
+                      ></span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2168,9 +3733,81 @@ For "Remix" requests with an attachment, analyze the attached image, then create
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Welcome Screen - Absolute Overlay */}
+        {messages.length === 0 && (
+          <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-center px-4 pt-20 pb-40 overflow-y-auto no-scrollbar pointer-events-auto">
+            <div className="flex flex-col items-center justify-center my-auto w-full max-w-4xl">
+              <div className="mb-6 select-none shrink-0">
+                <img
+                  src="/AGENTS_IMG/AISA.png"
+                  alt="AISA Icon"
+                  className="w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl pointer-events-none"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                />
+              </div>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-maintext tracking-tight w-full leading-relaxed drop-shadow-sm px-4 shrink-0">
+                {t('chatPage.welcomeMessage')}
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 w-full max-w-lg px-6 animate-in hover:none shrink-0">
+                {[
+                  {
+                    icon: <ImageIcon className="w-5 h-5 text-purple-500" />,
+                    title: "Generate Image",
+                    desc: "Create visuals from text",
+                    action: () => {
+                      if (inputRef.current) {
+                        inputRef.current.value = "Generate an image of ";
+                        inputRef.current.focus();
+                      }
+                    }
+                  },
+                  {
+                    icon: <Search className="w-5 h-5 text-blue-500" />,
+                    title: "Deep Search",
+                    desc: "Research complex topics",
+                    action: () => {
+                      setIsDeepSearch(true);
+                      if (inputRef.current) inputRef.current.focus();
+                      toast.success("Deep Search Mode Enabled");
+                    }
+                  },
+                  {
+                    icon: <FileText className="w-5 h-5 text-orange-500" />,
+                    title: "Analyze Document",
+                    desc: "Chat with PDFs & Docs",
+                    action: () => uploadInputRef.current?.click()
+                  },
+                  {
+                    icon: <Mic className="w-5 h-5 text-green-500" />,
+                    title: "Voice Chat",
+                    desc: "Talk to AISA naturally",
+                    action: () => handleVoiceInput()
+                  }
+                ].map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.action}
+                    className="flex items-center gap-4 p-4 bg-surface/50 hover:bg-surface border border-border/50 hover:border-primary/30 rounded-2xl text-left transition-all duration-200 group active:scale-95 shadow-sm hover:shadow-md backdrop-blur-sm"
+                  >
+                    <div className="p-2.5 bg-background rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-maintext text-sm">{item.title}</h3>
+                      <p className="text-xs text-subtext font-medium">{item.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
-        <div className="p-2 md:p-4 shrink-0 bg-secondary border-t border-border sm:border-t-0">
-          <div className="max-w-4xl mx-auto relative">
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 md:p-4 bg-transparent z-20">
+          <div className="max-w-5xl mx-auto relative px-1 sm:px-2">
 
             {/* File Preview Area */}
             {filePreviews.length > 0 && (
@@ -2178,16 +3815,16 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 {filePreviews.map((preview) => (
                   <div
                     key={preview.id}
-                    className="relative shrink-0 w-60 sm:w-64 md:w-72 bg-surface/95 dark:bg-zinc-900/95 border border-border/50 rounded-2xl p-2.5 flex items-center gap-3 shadow-xl backdrop-blur-xl animate-in slide-in-from-bottom-2 duration-300 ring-1 ring-black/5"
+                    className="relative shrink-0 w-64 md:w-72 bg-surface/95 dark:bg-zinc-900/95 border border-border/50 rounded-2xl p-2.5 flex items-center gap-3 shadow-xl backdrop-blur-xl animate-in slide-in-from-bottom-2 duration-300 ring-1 ring-black/5"
                   >
                     <div className="relative group shrink-0">
                       {preview.type.startsWith('image/') ? (
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border border-border/50 bg-black/5">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-border/50 bg-black/5">
                           <img src={preview.url} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shadow-sm">
-                          <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shadow-sm">
+                          <FileText className="w-7 h-7 text-primary" />
                         </div>
                       )}
 
@@ -2195,8 +3832,8 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         <button
                           type="button"
                           onClick={() => handleRemoveFile(preview.id)}
-                          className="p-1 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-surface"
-                          title={t('chatPage.removeFile')}
+                          className="p-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center border-2 border-surface"
+                          title="Remove file"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -2219,7 +3856,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               </div>
             )}
 
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-1.5 sm:gap-2">
+            <form onSubmit={handleSendMessage} className="relative w-full max-w-5xl mx-auto flex items-center gap-1 bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/10 rounded-2xl p-0.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.15)] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:border-primary/20 backdrop-blur-3xl px-1 z-50">
               <input
                 id="file-upload"
                 type="file"
@@ -2235,6 +3872,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 onChange={handleFileSelect}
                 multiple
                 className="hidden"
+              />
+              <input
+                id="doc-voice-upload"
+                type="file"
+                onChange={handleDocToVoiceSelect}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.txt"
               />
               <input
                 id="photos-upload"
@@ -2254,271 +3898,455 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 capture="environment"
               />
 
+              {/* Left Actions Group */}
+              <div className="flex items-center gap-0.5 pl-0.5 shrink-0">
+                <AnimatePresence>
+                  {isAttachMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      ref={menuRef}
+                      className="absolute bottom-full left-0 mb-4 w-60 bg-surface/95 dark:bg-[#1a1a1a]/95 border border-border/50 rounded-2xl shadow-2xl overflow-hidden z-30 backdrop-blur-xl ring-1 ring-black/5"
+                    >
+                      <div className="p-1.5 space-y-0.5">
+                        {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canCamera && (
+                          <label
+                            htmlFor="camera-upload"
+                            onClick={() => setTimeout(() => setIsAttachMenuOpen(false), 500)}
+                            className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-primary/10 rounded-xl transition-all group cursor-pointer"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/20 transition-colors shrink-0">
+                              <Camera className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
+                            </div>
+                            <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">Camera & Scan</span>
+                          </label>
+                        )}
+                        <label
+                          htmlFor="file-upload"
+                          onClick={() => setIsAttachMenuOpen(false)}
+                          className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-primary/10 rounded-xl transition-all group cursor-pointer"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/20 transition-colors shrink-0">
+                            <Paperclip className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
+                          </div>
+                          <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">Upload files</span>
+                        </label>
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button
+                  type="button"
+                  ref={attachBtnRef}
+                  onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${isAttachMenuOpen ? 'bg-primary text-white rotate-45' : 'bg-secondary hover:bg-primary/10 text-subtext hover:text-primary'}`}
+                  title="Add to chat"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    ref={toolsBtnRef}
+                    onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${isToolsMenuOpen || isImageGeneration || isDeepSearch || isAudioConvertMode || isDocumentConvert ? 'bg-primary/10 text-primary scale-110' : 'bg-transparent text-subtext hover:text-primary hover:bg-secondary'}`}
+                    title="AI Capabilities"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </button>
+                  <AnimatePresence>
+                    {isToolsMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        ref={toolsMenuRef}
+                        className="absolute bottom-full left-0 mb-4 w-72 bg-surface/95 dark:bg-[#1a1a1a]/95 border border-border/50 rounded-2xl shadow-2xl overflow-hidden z-30 backdrop-blur-xl ring-1 ring-black/5"
+                      >
+                        <div className="p-3 bg-secondary/30 border-b border-border/50 mb-1">
+                          <h3 className="text-xs font-bold text-subtext uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles className="w-3 h-3 text-primary" /> AI Magic Tools
+                          </h3>
+                        </div>
+                        <div className="p-1.5 space-y-0.5">
+                          <button
+                            onClick={() => {
+                              setIsToolsMenuOpen(false);
+                              setIsImageGeneration(!isImageGeneration);
+                              setIsDeepSearch(false);
+                              setIsAudioConvertMode(false);
+                              setIsDocumentConvert(false);
+                              if (!isImageGeneration) toast.success("Image Generation Mode Enabled");
+                            }}
+                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isImageGeneration ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
+                          >
+                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isImageGeneration ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
+                              <ImageIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-sm font-bold text-maintext block">Generate Image</span>
+                              <span className="text-[10px] text-subtext">Create beautiful visuals from text</span>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsToolsMenuOpen(false);
+                              setIsDeepSearch(!isDeepSearch);
+                              setIsImageGeneration(false);
+                              setIsAudioConvertMode(false);
+                              setIsDocumentConvert(false);
+                              if (!isDeepSearch) toast.success("Deep Search Mode Enabled");
+                            }}
+                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isDeepSearch ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
+                          >
+                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isDeepSearch ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
+                              <Search className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-sm font-bold text-maintext block">Deep Search</span>
+                              <span className="text-[10px] text-subtext">Advanced web research & analysis</span>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsToolsMenuOpen(false);
+                              setIsAudioConvertMode(!isAudioConvertMode);
+                              setIsDeepSearch(false);
+                              setIsImageGeneration(false);
+                              setIsDocumentConvert(false);
+                              if (!isAudioConvertMode) toast.success("Convert to Audio Mode Active");
+                            }}
+                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isAudioConvertMode ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
+                          >
+                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isAudioConvertMode ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
+                              <Headphones className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-sm font-bold text-maintext block">Convert to Audio</span>
+                              <span className="text-[10px] text-subtext">Turn documents into speech</span>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsToolsMenuOpen(false);
+                              setIsDocumentConvert(!isDocumentConvert);
+                              setIsDeepSearch(false);
+                              setIsImageGeneration(false);
+                              setIsAudioConvertMode(false);
+                              if (!isDocumentConvert) toast.success("Document Converter Mode Active");
+                            }}
+                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isDocumentConvert ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
+                          >
+                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isDocumentConvert ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-sm font-bold text-maintext block">Convert Documents</span>
+                              <span className="text-[10px] text-subtext">PDF ↔ Word conversion</span>
+                            </div>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Input Area */}
+              <div className="relative flex-1 min-w-0 py-1 px-1">
+                <AnimatePresence>
+                  {(isDeepSearch || isImageGeneration || isVoiceMode || isAudioConvertMode || isDocumentConvert) && (
+                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 overflow-x-auto no-scrollbar pointer-events-auto w-full">
+                      {isDeepSearch && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold border border-primary/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <Search size={12} strokeWidth={3} /> <span className="hidden sm:inline">Deep Search</span>
+                          <button onClick={() => setIsDeepSearch(false)} className="ml-1 hover:text-primary/80"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                      {isImageGeneration && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-pink-500/10 text-pink-600 rounded-full text-xs font-bold border border-pink-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <ImageIcon size={12} strokeWidth={3} /> <span className="hidden sm:inline">Image Gen</span>
+                          <button onClick={() => setIsImageGeneration(false)} className="ml-1 hover:text-pink-800"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                      {isVoiceMode && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-blue-500/10 text-blue-600 rounded-full text-xs font-bold border border-blue-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <Volume2 size={12} strokeWidth={3} /> <span className="hidden sm:inline">Voice Mode</span>
+                          <button onClick={() => setIsVoiceMode(false)} className="ml-1 hover:text-blue-800"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                      {isAudioConvertMode && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-indigo-500/10 text-indigo-600 rounded-full text-xs font-bold border border-indigo-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <Headphones size={12} strokeWidth={3} /> <span className="hidden sm:inline">Audio Convert</span>
+                          <button onClick={() => setIsAudioConvertMode(false)} className="ml-1 hover:text-indigo-800"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                      {isDocumentConvert && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-bold border border-emerald-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <FileText size={12} strokeWidth={3} /> <span className="hidden sm:inline">Doc Convert</span>
+                          <button onClick={() => setIsDocumentConvert(false)} className="ml-1 hover:text-emerald-800"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+                </AnimatePresence>
 
 
-              <button
-                type="button"
-                ref={attachBtnRef}
-                onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
-                className={`p-2.5 sm:p-3 md:p-4 rounded-full border border-primary bg-primary text-white transition-all duration-300 shadow-lg shadow-primary/20 shrink-0 flex items-center justify-center hover:opacity-90
-                  ${isAttachMenuOpen ? 'rotate-45' : ''}`}
-                title={t('chatPage.addToChat')}
-              >
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
 
-              {/* Mobile Model Selector (Input Bar) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedToolType('chat');
-                  setIsModelSelectorOpen(true);
-                }}
-                className="sm:hidden mx-0.5 p-2.5 rounded-full border border-border bg-surface text-maintext hover:bg-secondary transition-colors flex items-center justify-center shrink-0"
-                title={t('chatPage.selectModel')}
-              >
-                <Sparkles className="w-5 h-5 text-primary" />
-              </button>
-
-
-
-              <div className="relative flex-1 min-w-0">
                 <textarea
                   ref={inputRef}
                   value={inputValue}
+                  disabled={isLoading || isLimitReached}
                   onChange={(e) => {
                     setInputValue(e.target.value);
                     e.target.style.height = 'auto';
                     e.target.style.height = `${e.target.scrollHeight}px`;
                   }}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (inputValue.trim() || selectedFiles.length > 0) {
+                        handleSendMessage(e);
+                      }
+                    }
+                  }}
                   onPaste={handlePaste}
-                  placeholder={t('chatPage.inputPlaceholder')}
+                  placeholder={isLimitReached ? "Chat limit reached. Sign in to continue." : (isAudioConvertMode ? "Enter text to convert..." : isDocumentConvert ? "Upload file & ask to convert..." : "Ask AISA...")}
                   rows={1}
-                  className={`w-full bg-surface border border-border rounded-[24px] md:rounded-[28px] py-3 md:py-4 pl-3 sm:pl-4 md:pl-6 text-sm md:text-lg text-maintext placeholder-subtext focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all resize-none overflow-y-auto custom-scrollbar ${inputValue.trim() ? 'pr-10 sm:pr-12 md:pr-24' : 'pr-20 sm:pr-24 md:pr-40'}`}
-                  style={{ minHeight: '44px', maxHeight: '200px', lineHeight: '1.5' }}
+                  className={`w-full bg-transparent border-0 focus:ring-0 outline-none focus:outline-none p-0 text-maintext text-left placeholder-subtext/50 resize-none overflow-y-auto custom-scrollbar leading-relaxed aisa-scalable-text flex items-center ${isLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
+                  style={{ minHeight: '24px', maxHeight: '150px', lineHeight: '24px' }}
                 />
-                <div className="absolute right-2 bottom-2 flex items-center gap-0 sm:gap-1 z-10">
-                  {isListening && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 rounded-full border border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors group"
-                      onClick={handleVoiceInput}
-                    >
-                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight">{t('chatPage.recording')}</span>
-                    </motion.div>
-                  )}
-                  {!isListening && (
-                    <>
-                      {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVideo && !inputValue.trim() && (
-                        <button
-                          type="button"
-                          onClick={() => setIsLiveMode(true)}
-                          className="p-2 sm:p-2.5 rounded-full text-primary hover:bg-primary/10 hover:border-primary/20 transition-all flex items-center justify-center border border-transparent"
-                          title={t('chatPage.liveVideoCall')}
-                        >
-                          <Video className="w-5 h-5" />
-                        </button>
-                      )}
+              </div>
 
-                      {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVoice && (
-                        <button
-                          type="button"
-                          onClick={handleVoiceInput}
-                          className={`p-2 sm:p-2.5 rounded-full transition-all flex items-center justify-center border border-transparent ${isListening ? 'bg-primary text-white animate-pulse shadow-md shadow-primary/30' : 'text-primary hover:bg-primary/10 hover:border-primary/20'}`}
-                          title={t('chatPage.voiceInput')}
-                        >
-                          <Mic className="w-5 h-5" />
-                        </button>
-                      )}
-                    </>
-                  )}
+              {/* Right Actions Group */}
+              <div className="flex items-center gap-1 sm:gap-1.5 pr-0.5 shrink-0">
+                {isListening && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 rounded-full border border-red-500/20 mr-2">
+                    <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                    <span className="text-[10px] font-bold text-red-600 uppercase">REC</span>
+                  </div>
+                )}
 
-                  {isLoading || typingMessageId ? (
-                    <button
-                      type="button"
-                      onClick={handleStop}
-                      className="p-2 sm:p-2.5 rounded-full bg-red-500 text-white hover:opacity-90 transition-colors shadow-md flex items-center justify-center animate-pulse"
-                    >
-                      <Square className="w-5 h-5 fill-current" />
-                    </button>
-                  ) : (
+                {!isListening && (
+                  <>
+                    {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVideo && !inputValue.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setIsLiveMode(true)}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-subtext hover:text-primary hover:bg-secondary transition-colors"
+                        title="Live Video Call"
+                      >
+                        <Video className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVoice && (
+                      <button
+                        type="button"
+                        onClick={handleVoiceInput}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white' : 'text-subtext hover:text-primary hover:bg-secondary'}`}
+                        title="Voice Input"
+                      >
+                        <Mic className="w-5 h-5" />
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {isLoading ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (abortControllerRef.current) abortControllerRef.current.abort();
+                      setIsLoading(false);
+                      isSendingRef.current = false;
+                    }}
+                    className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 hover:scale-105 transition-all"
+                  >
+                    <div className="w-3 h-3 bg-white rounded-sm" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+
                     <button
                       type="submit"
-                      disabled={(!inputValue.trim() && filePreviews.length === 0)}
-                      className="p-2 sm:p-2.5 rounded-full bg-primary text-white hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center"
+                      disabled={(!inputValue.trim() && filePreviews.length === 0) || isLoading}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${(!inputValue.trim() && filePreviews.length === 0) ? 'bg-secondary text-subtext/50 shadow-none' : 'bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-primary/30 hover:scale-105 hover:shadow-primary/40'}`}
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-5 h-5 ml-0.5" />
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </form>
           </div>
         </div>
-      </div>
 
-      {/* Centered Attachment Menu - Moved outside relative container for better positioning */}
-      <AnimatePresence>
-        {isAttachMenuOpen && (
-          <div className="absolute bottom-[5.5rem] left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              ref={menuRef}
-              className="w-full max-w-xs bg-surface border border-border/50 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md ring-1 ring-black/5 pointer-events-auto"
+        {/* Live AI Modal */}
+        <AnimatePresence>
+          {isLiveMode && (
+            <LiveAI
+              onClose={() => setIsLiveMode(false)}
+              language={currentLang}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Feedback Modal */}
+        <Transition appear show={feedbackOpen} as={Fragment}>
+          <Dialog as="div" className="relative z-50" onClose={() => setFeedbackOpen(false)}>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
             >
-              <div className="p-1.5 space-y-0.5">
-                {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canCamera && (
-                  <label
-                    htmlFor="camera-upload"
-                    onClick={() => setTimeout(() => setIsAttachMenuOpen(false), 500)}
-                    className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-primary/5 rounded-xl transition-all group cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/10 transition-colors shrink-0">
-                      <Camera className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.cameraScan')}</span>
-                    </div>
-                  </label>
-                )}
+              <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
+            </Transition.Child>
 
-                {(getAgentCapabilities(activeAgent.agentName, activeAgent.category).canUploadFiles || true) && (
-                  <label
-                    htmlFor="file-upload"
-                    onClick={() => setIsAttachMenuOpen(false)}
-                    className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-primary/5 rounded-xl transition-all group cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/10 transition-colors shrink-0">
-                      <Paperclip className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
-                    </div>
-                    <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.uploadFiles')}</span>
-                  </label>
-                )}
-
-                {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canUploadDocs && (
-                  <label
-                    htmlFor="drive-upload"
-                    onClick={() => setIsAttachMenuOpen(false)}
-                    className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-primary/5 rounded-xl transition-all group cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/10 transition-colors shrink-0">
-                      <Cloud className="w-4 h-4 text-subtext group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-maintext group-hover:text-primary transition-colors">{t('chatPage.addFromDrive')}</span>
-                    </div>
-                  </label>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      {/* Live AI Modal */}
-      <AnimatePresence>
-        {isLiveMode && (
-          <LiveAI
-            onClose={() => setIsLiveMode(false)}
-            language={currentLang}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Feedback Modal */}
-      <Transition appear show={feedbackOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setFeedbackOpen(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all border border-border">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-medium leading-6 text-maintext flex justify-between items-center"
-                  >
-                    Share feedback
-                    <button onClick={() => setFeedbackOpen(false)} className="text-subtext hover:text-maintext">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </Dialog.Title>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["Incorrect or incomplete", "Not what I asked for", "Slow or buggy", "Style or tone", "Safety or legal concern", "Other"].map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => toggleFeedbackCategory(cat)}
-                        className={`text-xs px-3 py-2 rounded-full border transition-colors ${feedbackCategory.includes(cat)
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-transparent text-subtext border-border hover:border-maintext'
-                          }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="mt-4">
-                    <textarea
-                      className="w-full bg-black/5 dark:bg-white/5 rounded-xl p-3 text-sm focus:outline-none border border-transparent focus:border-border text-maintext placeholder-subtext resize-none"
-                      rows={3}
-                      placeholder={t('chatPage.shareDetailsOptional')}
-                      value={feedbackDetails}
-                      onChange={(e) => setFeedbackDetails(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="mt-4 text-[10px] text-subtext leading-tight">
-                    Your conversation will be included with your feedback to help improve the AI.
-                  </div>
-
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/75"
-                      onClick={submitFeedback}
+            <div className="fixed inset-0 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center p-4 text-center">
+                <Transition.Child
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
+                >
+                  <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all border border-border">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-lg font-medium leading-6 text-maintext flex justify-between items-center"
                     >
-                      Submit
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+                      Share feedback
+                      <button onClick={() => setFeedbackOpen(false)} className="text-subtext hover:text-maintext">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </Dialog.Title>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {["Incorrect or incomplete", "Not what I asked for", "Slow or buggy", "Style or tone", "Safety or legal concern", "Other"].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => toggleFeedbackCategory(cat)}
+                          className={`text-xs px-3 py-2 rounded-full border transition-colors ${feedbackCategory.includes(cat)
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-transparent text-subtext border-border hover:border-maintext'
+                            }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-4">
+                      <textarea
+                        className="w-full bg-black/5 dark:bg-white/5 rounded-xl p-3 text-sm focus:outline-none border border-transparent focus:border-border text-maintext placeholder-subtext resize-none"
+                        rows={3}
+                        placeholder="Share details (optional)"
+                        value={feedbackDetails}
+                        onChange={(e) => setFeedbackDetails(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="mt-4 text-[10px] text-subtext leading-tight">
+                      Your conversation will be included with your feedback to help improve the AI.
+                    </div>
+
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={isSubmittingFeedback}
+                        className={`inline-flex justify-center items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition-all ${isSubmittingFeedback ? 'opacity-70 cursor-not-allowed' : 'hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]'
+                          }`}
+                        onClick={submitFeedback}
+                      >
+                        {isSubmittingFeedback && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                        {isSubmittingFeedback ? 'Submitting...' : 'Submit'}
+                      </button>
+                    </div>
+                  </Dialog.Panel>
+                </Transition.Child>
+              </div>
             </div>
-          </div>
-        </Dialog>
-      </Transition>
-      <ModelSelector
-        isOpen={isModelSelectorOpen}
-        onClose={() => setIsModelSelectorOpen(false)}
-        toolType={selectedToolType}
-        currentModel={selectedToolType ? toolModels[selectedToolType] : null}
-        onSelectModel={handleModelSelect}
-        pricing={TOOL_PRICING}
-      />
-    </div>
+          </Dialog>
+        </Transition>
+
+        {/* Limit Reached Modal */}
+        <Transition show={isLimitReached} as={Fragment}>
+          <Dialog as="div" className="relative z-[200]" onClose={() => { }}>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-md" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center p-4">
+                <Transition.Child
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
+                >
+                  <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-border p-8 text-center shadow-2xl transition-all">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                    </div>
+
+                    <Dialog.Title as="h3" className="text-2xl font-black text-maintext mb-2 tracking-tight uppercase">
+                      Chat Limit Reached
+                    </Dialog.Title>
+
+                    <p className="text-subtext mb-8 leading-relaxed text-sm">
+                      You've reached the guest limit of 10 sessions and 5 messages per session.
+                      Sign in to unlock **unlimited chat**, image generation, and more!
+                    </p>
+
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => navigate('/login', { state: { from: location.pathname } })}
+                        className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 active:scale-95 uppercase"
+                      >
+                        Sign In Now
+                      </button>
+                      <button
+                        onClick={() => navigate('/signup')}
+                        className="w-full py-4 bg-black/5 dark:bg-white/5 border border-border text-maintext rounded-2xl font-bold text-sm tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95 uppercase"
+                      >
+                        Create Free Account
+                      </button>
+                    </div>
+                  </Dialog.Panel>
+                </Transition.Child>
+              </div>
+            </div>
+          </Dialog>
+        </Transition>
+      </div >
+    </div >
   );
 };
 

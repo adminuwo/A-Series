@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Check, RotateCw, Pen, Eraser, Sliders, Image as ImageIcon, Undo, Redo, ZoomIn, ZoomOut, Crop } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLanguage } from '../context/LanguageContext';
 
 const FILTERS = [
     { name: 'Normal', filter: 'none' },
@@ -16,7 +15,6 @@ const FILTERS = [
 const BRUSH_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#ffffff', '#000000'];
 
 const ImageEditor = ({ file, onClose, onSave }) => {
-    const { t } = useLanguage();
     const [image, setImage] = useState(null);
     const [activeTool, setActiveTool] = useState('draw'); // draw, filter, adjust
 
@@ -241,7 +239,7 @@ const ImageEditor = ({ file, onClose, onSave }) => {
                 </button>
                 <h3 className="text-white font-medium">Image Editor</h3>
                 <button onClick={handleSaveClick} className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2 px-4 shadow-lg shadow-primary/20">
-                    <Check className="w-4 h-4" /> {t('chatPage.update')}
+                    <Check className="w-4 h-4" /> Save
                 </button>
             </div>
 

@@ -4,11 +4,15 @@ import { RecoilRoot } from 'recoil'
 
 import { ThemeProvider } from './context/ThemeContext'
 
+import { PersonalizationProvider } from './context/PersonalizationContext'
+
 function App() {
   return (
     <RecoilRoot>
       <ThemeProvider>
-        <NavigationProvider />
+        <PersonalizationProvider>
+          <NavigationProvider />
+        </PersonalizationProvider>
       </ThemeProvider>
     </RecoilRoot>
   )

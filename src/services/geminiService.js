@@ -1,10 +1,17 @@
 import axios from "axios";
 import { apis } from "../types";
 import { getUserData } from "../userStore/userData";
+import { getDeviceFingerprint } from "../utils/fingerprint";
 
-export const generateChatResponse = async (history, currentMessage, systemInstruction, attachments, language, model = 'gemini') => {
+export const generateChatResponse = async (history, currentMessage, systemInstruction, attachments, language, abortSignal = null, mode = null) => {
     try {
         const token = getUserData()?.token;
+        const headers = {
+            'X-Device-Fingerprint': getDeviceFingerprint()
+        };
+        if (token && token !== 'undefined' && token !== 'null') {
+            headers.Authorization = `Bearer ${token}`;
+        }
 
         // Enhanced system instruction based on user language
         const langInstruction = language ? `You are a helpful AI assistant. Please respond to the user in ${language}. ` : '';
@@ -40,15 +47,19 @@ export const generateChatResponse = async (history, currentMessage, systemInstru
             systemInstruction: combinedSystemInstruction,
             image: images,
             document: documents,
-            model: model
+            language: language || 'English',
+            mode: mode
         };
 
         const result = await axios.post(apis.chatAgent, payload, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+            headers: headers,
+            signal: abortSignal,
+            withCredentials: true
         });
-        return result.data.reply || "I'm sorry, I couldn't generate a response.";
+
+        // Return full response data (includes reply and potentially conversion data)
+        // Return full response data (includes reply, conversion data, and imageUrl)
+        return result.data;
 
     } catch (error) {
         console.error("Gemini API Error:", error);
@@ -56,16 +67,22 @@ export const generateChatResponse = async (history, currentMessage, systemInstru
             // Allow backend detail to override if present, otherwise default
             const detail = error.response?.data?.details || error.response?.data?.error;
             if (detail) return `System Busy (429): ${detail}`;
-            return "The system is currently busy (Quota limit reached). Please wait 60 seconds and try again.";
+            return "The A-Series system is currently busy (Quota limit reached). Please wait 60 seconds and try again.";
+        }
+        if (error.response?.status === 401) {
+            return "Please [Log In](/login) to your AISA™ account to continue chatting.";
+        }
+        if (error.response?.data?.error === "LIMIT_REACHED") {
+            return { error: "LIMIT_REACHED", reason: error.response.data.reason };
         }
         // Return backend error message if available
         if (error.response?.data?.error) {
-            const details = error.response.data.details ? JSON.stringify(error.response.data.details) : '';
-            return `System Message: ${error.response.data.error}\nDetails: ${details}`;
+            const details = error.response.data.details ? ` - ${error.response.data.details}` : '';
+            return `System Message: ${error.response.data.error}${details}`;
         }
         if (error.response?.data?.details) {
             return `System Error: ${error.response.data.details}`;
         }
-        return "Sorry, I am having trouble connecting to the network right now. Please check your connection.";
+        return "Sorry, I am having trouble connecting to the A-Series network right now. Please check your connection.";
     }
 };
