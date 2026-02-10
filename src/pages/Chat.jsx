@@ -2841,7 +2841,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             className={`
               fixed lg:relative inset-y-0 left-0 z-[60] lg:z-10
               h-full bg-secondary/95 dark:bg-[#121212]/95 border-r border-border
-              flex flex-col backdrop-blur-3xl shadow-2xl lg:shadow-none overflow-hidden
+              flex flex-col backdrop-blur-3xl shadow-2xl lg:shadow-none overflow-hidden lg:rounded-r-3xl
             `}
           >
             {/* Sidebar Header */}
