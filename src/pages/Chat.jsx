@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, Fragment } from 'react';
+import React, { useState, useRef, useEffect, Fragment, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon } from 'lucide-react';
@@ -278,6 +278,39 @@ const Chat = () => {
 
   const toolsBtnRef = useRef(null);
   const toolsMenuRef = useRef(null);
+
+  const groupedSessions = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+
+    const groups = {
+      'Today': [],
+      'Yesterday': [],
+      'Previous 7 Days': [],
+      'Older': []
+    };
+
+    if (!Array.isArray(sessions)) return groups;
+
+    sessions.forEach(session => {
+      const date = new Date(session.lastModified || session.createdAt || Date.now());
+      if (date >= today) {
+        groups['Today'].push(session);
+      } else if (date >= yesterday) {
+        groups['Yesterday'].push(session);
+      } else if (date >= lastWeek) {
+        groups['Previous 7 Days'].push(session);
+      } else {
+        groups['Older'].push(session);
+      }
+    });
+
+    return groups;
+  }, [sessions]);
 
   // Close menu on click outside
   useEffect(() => {
@@ -2843,92 +2876,113 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-3 border border-border">
                     <MessageCircle className="w-6 h-6 text-subtext/40" />
                   </div>
                   <p className="text-xs font-medium text-subtext leading-relaxed">
                     No conversations yet.<br />Start chatting with Aaisa!
                   </p>
+                  <button
+                    onClick={() => {
+                      navigate('/dashboard/chat');
+                      if (window.innerWidth < 1024) setShowHistory(false);
+                    }}
+                    className="mt-4 px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all"
+                  >
+                    Start New Chat
+                  </button>
                 </div>
               ) : (
-                sessions.map((s) => (
-                  <div key={s.sessionId} className="group relative">
-                    {editingSessionId === s.sessionId ? (
-                      <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl border border-primary/20 m-1">
-                        <input
-                          autoFocus
-                          className="flex-1 bg-transparent text-sm font-bold text-maintext focus:outline-none min-w-0"
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleRenameSession(s.sessionId, editingTitle);
-                            if (e.key === 'Escape') setEditingSessionId(null);
-                          }}
-                        />
-                        <button onClick={() => handleRenameSession(s.sessionId, editingTitle)} className="p-1 text-green-500 hover:bg-green-500/10 rounded-md">
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setEditingSessionId(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded-md">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            navigate(`/dashboard/chat/${s.sessionId}`);
-                            if (window.innerWidth < 1024) setShowHistory(false);
-                          }}
-                          className={`
-                            w-full text-left p-3 rounded-xl transition-all flex items-start gap-3
-                            ${currentSessionId === s.sessionId
-                              ? 'bg-primary/10 border border-primary/20 shadow-sm'
-                              : 'hover:bg-surface-hover border border-transparent'
-                            }
-                          `}
-                        >
-                          <div className={`
-                            shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                            ${currentSessionId === s.sessionId ? 'bg-primary text-white' : 'bg-secondary text-subtext group-hover:text-primary group-hover:bg-primary/10'}
-                          `}>
-                            <MessageSquare className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1 min-w-0 pr-8">
-                            <p className={`text-sm font-bold truncate leading-none mb-1.5 ${currentSessionId === s.sessionId ? 'text-primary' : 'text-maintext'}`}>
-                              {s.title || "Untitled Chat"}
-                            </p>
-                            <p className="text-[10px] text-subtext font-medium flex items-center gap-1.5">
-                              <CalendarIcon className="w-3 h-3" />
-                              {new Date(s.lastModified).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </button>
+                Object.entries(groupedSessions).map(([group, groupSessions]) => {
+                  if (groupSessions.length === 0) return null;
+                  return (
+                    <div key={group} className="mb-4">
+                      <h4 className="px-3 py-1.5 text-[10px] font-bold text-subtext uppercase tracking-wider sticky top-0 bg-secondary/95 backdrop-blur-sm z-10">
+                        {group}
+                      </h4>
+                      <div className="space-y-1">
+                        {groupSessions.map((s) => (
+                          <div key={s.sessionId} className="group relative">
+                            {editingSessionId === s.sessionId ? (
+                              <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl border border-primary/20 m-1">
+                                <input
+                                  autoFocus
+                                  className="flex-1 bg-transparent text-sm font-bold text-maintext focus:outline-none min-w-0"
+                                  value={editingTitle}
+                                  onChange={(e) => setEditingTitle(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleRenameSession(s.sessionId, editingTitle);
+                                    if (e.key === 'Escape') setEditingSessionId(null);
+                                  }}
+                                />
+                                <button onClick={() => handleRenameSession(s.sessionId, editingTitle)} className="p-1 text-green-500 hover:bg-green-500/10 rounded-md">
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setEditingSessionId(null)} className="p-1 text-red-500 hover:bg-red-500/10 rounded-md">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    navigate(`/dashboard/chat/${s.sessionId}`);
+                                    if (window.innerWidth < 1024) setShowHistory(false);
+                                  }}
+                                  className={`
+                                    w-full text-left p-3 rounded-xl transition-all flex items-start gap-3
+                                    ${currentSessionId === s.sessionId
+                                      ? 'bg-primary/10 border border-primary/20 shadow-sm'
+                                      : 'hover:bg-surface-hover border border-transparent'
+                                    }
+                                  `}
+                                >
+                                  <div className={`
+                                    shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors
+                                    ${currentSessionId === s.sessionId ? 'bg-primary text-white' : 'bg-secondary text-subtext group-hover:text-primary group-hover:bg-primary/10'}
+                                  `}>
+                                    <MessageSquare className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1 min-w-0 pr-8">
+                                    <p className={`text-sm font-bold truncate leading-none mb-1.5 ${currentSessionId === s.sessionId ? 'text-primary' : 'text-maintext'}`}>
+                                      {s.title || "Untitled Chat"}
+                                    </p>
+                                    <p className="text-[10px] text-subtext font-medium flex items-center gap-1.5">
+                                      <CalendarIcon className="w-3 h-3" />
+                                      {new Date(s.lastModified).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                    </p>
+                                  </div>
+                                </button>
 
-                        {/* Session Actions */}
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingSessionId(s.sessionId);
-                              setEditingTitle(s.title || "");
-                            }}
-                            className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors border border-transparent hover:border-primary/20"
-                            title="Rename"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteSession(s.sessionId, e)}
-                            className="p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))
+                                {/* Session Actions */}
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingSessionId(s.sessionId);
+                                      setEditingTitle(s.title || "");
+                                    }}
+                                    className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors border border-transparent hover:border-primary/20"
+                                    title="Rename"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteSession(s.sessionId, e)}
+                                    className="p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </motion.div>
