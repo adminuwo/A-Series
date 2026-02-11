@@ -35,23 +35,23 @@ const SecurityModal = ({ isOpen, onClose }) => {
     const sections = [
         {
             id: 1,
-            title: t('landing.securityGuidelines.section1.title'),
+            title: t('securityGuidelines.section1.title'),
             icon: <Lock className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-4">
-                    <p className="text-subtext text-sm">{t('landing.securityGuidelines.section1.mainText')}</p>
+                    <p className="text-subtext text-sm">{t('securityGuidelines.section1.mainText')}</p>
                     <div className="pl-4 border-l-2 border-primary/20 space-y-3">
                         <div>
-                            <h4 className="font-semibold text-maintext text-sm">{t('landing.securityGuidelines.section1.sub1Title')}</h4>
-                            <p className="text-xs text-subtext">{t('landing.securityGuidelines.section1.sub1Text')}</p>
+                            <h4 className="font-semibold text-maintext text-sm">{t('securityGuidelines.section1.sub1Title')}</h4>
+                            <p className="text-xs text-subtext">{t('securityGuidelines.section1.sub1Text')}</p>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-maintext text-sm">{t('landing.securityGuidelines.section1.sub2Title')}</h4>
-                            <p className="text-xs text-subtext">{t('landing.securityGuidelines.section1.sub2Text')}</p>
+                            <h4 className="font-semibold text-maintext text-sm">{t('securityGuidelines.section1.sub2Title')}</h4>
+                            <p className="text-xs text-subtext">{t('securityGuidelines.section1.sub2Text')}</p>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-maintext text-sm">{t('landing.securityGuidelines.section1.sub3Title')}</h4>
-                            <p className="text-xs text-subtext">{t('landing.securityGuidelines.section1.sub3Text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a></p>
+                            <h4 className="font-semibold text-maintext text-sm">{t('securityGuidelines.section1.sub3Title')}</h4>
+                            <p className="text-xs text-subtext">{t('securityGuidelines.section1.sub3Text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a></p>
                         </div>
                     </div>
                 </div>
@@ -59,19 +59,19 @@ const SecurityModal = ({ isOpen, onClose }) => {
         },
         {
             id: 2,
-            title: t('landing.securityGuidelines.section2.title'),
+            title: t('securityGuidelines.section2.title'),
             icon: <Shield className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
-                    <p className="text-subtext text-sm">{t('landing.securityGuidelines.section2.mainText')}</p>
+                    <p className="text-subtext text-sm">{t('securityGuidelines.section2.mainText')}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-subtext">
                         <div className="p-3 bg-secondary rounded-xl border border-border">
-                            <h4 className="font-bold text-maintext mb-1">{t('landing.securityGuidelines.section2.dataResidencyTitle')}</h4>
-                            <p>{t('landing.securityGuidelines.section2.dataResidencyText')}</p>
+                            <h4 className="font-bold text-maintext mb-1">{t('securityGuidelines.section2.dataResidencyTitle')}</h4>
+                            <p>{t('securityGuidelines.section2.dataResidencyText')}</p>
                         </div>
                         <div className="p-3 bg-secondary rounded-xl border border-border">
-                            <h4 className="font-bold text-maintext mb-1">{t('landing.securityGuidelines.section2.accessControlTitle')}</h4>
-                            <p>{t('landing.securityGuidelines.section2.accessControlText')}</p>
+                            <h4 className="font-bold text-maintext mb-1">{t('securityGuidelines.section2.accessControlTitle')}</h4>
+                            <p>{t('securityGuidelines.section2.accessControlText')}</p>
                         </div>
                     </div>
                 </div>
@@ -79,115 +79,115 @@ const SecurityModal = ({ isOpen, onClose }) => {
         },
         {
             id: 3,
-            title: t('landing.securityGuidelines.section3.title'),
+            title: t('securityGuidelines.section3.title'),
             icon: <AlertTriangle className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
-                    <p className="text-subtext text-sm">{t('landing.securityGuidelines.section3.mainText')}</p>
+                    <p className="text-subtext text-sm">{t('securityGuidelines.section3.mainText')}</p>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {t('landing.securityGuidelines.section3.prohibitedItems').map((item, i) => (
+                        {t('securityGuidelines.section3.prohibitedItems').map((item, i) => (
                             <li key={i} className="flex items-center gap-2 text-xs text-subtext bg-secondary p-2 rounded-lg border border-border">
                                 <div className="w-1 h-1 rounded-full bg-red-500"></div>
                                 {item}
                             </li>
                         ))}
                     </ul>
-                    <p className="text-[11px] text-subtext mt-2 italic">{t('landing.securityGuidelines.section3.violationWarning')}</p>
+                    <p className="text-[11px] text-subtext mt-2 italic">{t('securityGuidelines.section3.violationWarning')}</p>
                 </div>
             )
         },
         {
             id: 4,
-            title: t('landing.securityGuidelines.section4.title'),
+            title: t('securityGuidelines.section4.title'),
             icon: <Scale className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-3">
                     <div className="bg-secondary/50 p-3 rounded-lg border border-border">
-                        <h4 className="font-semibold text-maintext text-xs mb-1">{t('landing.securityGuidelines.section4.sub1Title')}</h4>
-                        <p className="text-[11px] text-subtext">{t('landing.securityGuidelines.section4.sub1Text')}</p>
+                        <h4 className="font-semibold text-maintext text-xs mb-1">{t('securityGuidelines.section4.sub1Title')}</h4>
+                        <p className="text-[11px] text-subtext">{t('securityGuidelines.section4.sub1Text')}</p>
                     </div>
                     <div className="bg-secondary/50 p-3 rounded-lg border border-border">
-                        <h4 className="font-semibold text-maintext text-xs mb-1">{t('landing.securityGuidelines.section4.sub2Title')}</h4>
-                        <p className="text-[11px] text-subtext">{t('landing.securityGuidelines.section4.sub2Text')}</p>
+                        <h4 className="font-semibold text-maintext text-xs mb-1">{t('securityGuidelines.section4.sub2Title')}</h4>
+                        <p className="text-[11px] text-subtext">{t('securityGuidelines.section4.sub2Text')}</p>
                     </div>
                 </div>
             )
         },
         {
             id: 5,
-            title: t('landing.securityGuidelines.section5.title'),
+            title: t('securityGuidelines.section5.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-2 text-sm text-subtext">
-                    <p>{t('landing.securityGuidelines.section5.text1')}</p>
-                    <p>{t('landing.securityGuidelines.section5.text2')}</p>
-                    <p className="font-medium text-blue-500">{t('landing.securityGuidelines.section5.text3')}</p>
+                    <p>{t('securityGuidelines.section5.text1')}</p>
+                    <p>{t('securityGuidelines.section5.text2')}</p>
+                    <p className="font-medium text-blue-500">{t('securityGuidelines.section5.text3')}</p>
                 </div>
             )
         },
         {
             id: 6,
-            title: t('landing.securityGuidelines.section6.title'),
+            title: t('securityGuidelines.section6.title'),
             icon: <Eye className="w-5 h-5 text-primary" />,
             content: (
                 <div className="space-y-2 text-sm text-subtext">
-                    <p>{t('landing.securityGuidelines.section6.text1')}</p>
-                    <p>{t('landing.securityGuidelines.section6.text2')}</p>
+                    <p>{t('securityGuidelines.section6.text1')}</p>
+                    <p>{t('securityGuidelines.section6.text2')}</p>
                 </div>
             )
         },
         {
             id: 7,
-            title: t('landing.securityGuidelines.section7.title'),
+            title: t('securityGuidelines.section7.title'),
             icon: <div className="w-5 h-5 flex items-center justify-center font-bold text-primary text-xs">3P</div>,
-            content: <p className="text-subtext text-sm">{t('landing.securityGuidelines.section7.text')}</p>
+            content: <p className="text-subtext text-sm">{t('securityGuidelines.section7.text')}</p>
         },
         {
             id: 8,
-            title: t('landing.securityGuidelines.section8.title'),
+            title: t('securityGuidelines.section8.title'),
             icon: <div className="w-5 h-5 flex items-center justify-center font-bold text-primary text-xs">©</div>,
             content: <div className="text-subtext text-xs space-y-2">
-                <p><strong>{t('landing.securityGuidelines.section8.license')}</strong></p>
-                <p><strong>{t('landing.securityGuidelines.section8.ownership')}</strong></p>
-                <p><strong>{t('landing.securityGuidelines.section8.transfer')}</strong></p>
+                <p><strong>{t('securityGuidelines.section8.license')}</strong></p>
+                <p><strong>{t('securityGuidelines.section8.ownership')}</strong></p>
+                <p><strong>{t('securityGuidelines.section8.transfer')}</strong></p>
             </div>
         },
         {
             id: 9,
-            title: t('landing.securityGuidelines.section9.title'),
+            title: t('securityGuidelines.section9.title'),
             icon: <AlertTriangle className="w-5 h-5 text-primary" />,
             content: <ul className="list-disc list-inside text-subtext text-xs space-y-1">
-                {t('landing.securityGuidelines.section9.items').map((item, i) => (
+                {t('securityGuidelines.section9.items').map((item, i) => (
                     <li key={i}>{item}</li>
                 ))}
             </ul>
         },
         {
             id: 10,
-            title: t('landing.securityGuidelines.section10.title'),
+            title: t('securityGuidelines.section10.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
-            content: <p className="text-subtext text-sm">{t('landing.securityGuidelines.section10.text')}</p>
+            content: <p className="text-subtext text-sm">{t('securityGuidelines.section10.text')}</p>
         },
         {
             id: 11,
-            title: t('landing.securityGuidelines.section11.title'),
+            title: t('securityGuidelines.section11.title'),
             icon: <FileText className="w-5 h-5 text-primary" />,
-            content: <p className="text-subtext text-sm">{t('landing.securityGuidelines.section11.text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a>.</p>
+            content: <p className="text-subtext text-sm">{t('securityGuidelines.section11.text')} <a href={`mailto:${contactInfo.email}`} className="text-primary hover:underline">{contactInfo.email}</a>.</p>
         },
         {
             id: 12,
-            title: t('landing.securityGuidelines.section12.title'),
+            title: t('securityGuidelines.section12.title'),
             icon: <AlertTriangle className="w-5 h-5 text-blue-500" />,
             content: (
                 <div className="space-y-4">
-                    <p className="text-subtext text-sm">{t('landing.securityGuidelines.section12.mainText')}</p>
+                    <p className="text-subtext text-sm">{t('securityGuidelines.section12.mainText')}</p>
                     <div className="flex flex-wrap gap-4">
                         <button onClick={() => setIsReportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-500/20 border border-blue-500/20 transition-colors text-xs">
-                            <span>📧 {t('landing.securityGuidelines.section12.reportButton')}</span>
-                            <span className="font-semibold">{t('landing.securityGuidelines.section12.reportButtonText')}</span>
+                            <span>📧 {t('securityGuidelines.section12.reportButton')}</span>
+                            <span className="font-semibold">{t('securityGuidelines.section12.reportButtonText')}</span>
                         </button>
                         <a href={`tel:${contactInfo.phone}`} className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-xl hover:bg-primary/10 border border-primary/20 transition-colors text-xs">
-                            <span>📞 {t('landing.securityGuidelines.section12.supportButton')}</span>
+                            <span>📞 {t('securityGuidelines.section12.supportButton')}</span>
                             <span className="font-semibold">{contactInfo.phone}</span>
                         </a>
                     </div>
@@ -223,8 +223,8 @@ const SecurityModal = ({ isOpen, onClose }) => {
                                     <Shield className="w-6 h-6 text-primary" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-maintext tracking-tight">{t('landing.securityGuidelines.pageTitle')}</h2>
-                                    <p className="text-xs text-subtext font-medium uppercase tracking-wider">{t('landing.securityGuidelines.lastUpdated')}</p>
+                                    <h2 className="text-2xl font-black text-maintext tracking-tight">{t('securityGuidelines.pageTitle')}</h2>
+                                    <p className="text-xs text-subtext font-medium uppercase tracking-wider">{t('securityGuidelines.lastUpdated')}</p>
                                 </div>
                             </div>
                             <button
@@ -241,7 +241,7 @@ const SecurityModal = ({ isOpen, onClose }) => {
                                 {/* Intro Banner */}
                                 <div className="bg-secondary p-6 rounded-3xl border border-border hover:border-primary/20 transition-all duration-300">
                                     <p className="text-subtext leading-relaxed text-sm">
-                                        {t('landing.securityGuidelines.intro')}
+                                        {t('securityGuidelines.intro')}
                                     </p>
                                 </div>
 
@@ -268,10 +268,10 @@ const SecurityModal = ({ isOpen, onClose }) => {
                                 {/* Legal Summary Card */}
                                 <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 text-center">
                                     <h3 className="font-bold text-primary mb-2 flex items-center justify-center gap-2">
-                                        {t('landing.securityGuidelines.legalSummaryTitle')}
+                                        {t('securityGuidelines.legalSummaryTitle')}
                                     </h3>
                                     <p className="text-subtext text-xs italic leading-relaxed">
-                                        "{t('landing.securityGuidelines.legalSummaryText')}"
+                                        "{t('securityGuidelines.legalSummaryText')}"
                                     </p>
                                 </div>
                             </div>
@@ -283,7 +283,7 @@ const SecurityModal = ({ isOpen, onClose }) => {
                                 onClick={onClose}
                                 className="px-10 py-4 bg-primary text-white rounded-2xl font-bold hover:opacity-90 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-xl shadow-primary/20"
                             >
-                                {t('landing.policies.gotIt')}
+                                {t('policies.gotIt')}
                             </button>
                         </div>
                     </motion.div>

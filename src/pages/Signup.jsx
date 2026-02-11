@@ -138,7 +138,7 @@ const Signup = () => {
                   onClick={(e) => { e.preventDefault(); setPolicyOpen('terms'); }}
                   className="text-primary hover:underline font-medium"
                 >
-                  {t('landing.policies.terms.title')}
+                  {t('policies.terms.title')}
                 </button>
                 {t('auth.agreeToTerms').split('{terms}')[1]?.split('{privacy}')[0] || ' and '}
                 <button
@@ -146,7 +146,7 @@ const Signup = () => {
                   onClick={(e) => { e.preventDefault(); setPolicyOpen('privacy'); }}
                   className="text-primary hover:underline font-medium"
                 >
-                  {t('landing.policies.privacy.title')}
+                  {t('policies.privacy.title')}
                 </button>
                 {t('auth.agreeToTerms').split('{privacy}')[1] || '.'}
               </label>

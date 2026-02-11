@@ -94,8 +94,8 @@ const DashboardLayout = () => {
           </div>
         )}
 
-        {/* Mobile Header */}
-        {!isFullScreen && (
+        {/* Mobile Header - Hidden on Chat to avoid double headers */}
+        {!isFullScreen && !location.pathname.toLowerCase().includes('/chat') && (
           <div className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-secondary shrink-0 z-50 shadow-sm">
             <div className="flex items-center gap-3">
               <button

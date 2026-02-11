@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Zap, Brain, Rocket, Bell } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { motion } from 'motion/react';
 
 export default function ComingSoon() {
+    const { t } = useLanguage();
     const [dots, setDots] = useState('');
 
     useEffect(() => {

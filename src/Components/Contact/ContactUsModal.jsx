@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, MapPin, Clock, Send, X, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, X, MessageSquare, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { apiService } from '../../services/apiService';
 import { getUserData } from '../../userStore/userData';
@@ -180,6 +180,14 @@ const ContactUsModal = ({ isOpen, onClose }) => {
                                             color: 'bg-green-500/10'
                                         },
                                         {
+                                            icon: <MessageCircle className="w-5 h-5 text-green-500" />,
+                                            title: "WhatsApp",
+                                            value: contactInfo.phone,
+                                            subtitle: "Chat with us directly",
+                                            color: 'bg-green-500/10',
+                                            isWhatsApp: true
+                                        },
+                                        {
                                             icon: <Clock className="w-5 h-5 text-purple-500" />,
                                             title: t('contactUs.supportHoursTitle'),
                                             value: t('contactUs.supportHoursWeekday'),
@@ -187,7 +195,15 @@ const ContactUsModal = ({ isOpen, onClose }) => {
                                             color: 'bg-purple-500/10'
                                         }
                                     ].map((item, i) => (
-                                        <div key={i} className="bg-secondary/50 border border-border rounded-3xl p-5 hover:border-primary/20 transition-all duration-300 group">
+                                        <div
+                                            key={i}
+                                            className={`bg-secondary/50 border border-border rounded-3xl p-5 hover:border-primary/20 transition-all duration-300 group cursor-pointer`}
+                                            onClick={() => {
+                                                if (item.isWhatsApp) {
+                                                    window.open(`https://wa.me/${item.value.replace(/[^0-9]/g, '')}`, '_blank');
+                                                }
+                                            }}
+                                        >
                                             <div className="flex items-center gap-4">
                                                 <div className={`p-3 rounded-2xl ${item.color} group-hover:scale-110 transition-transform`}>
                                                     {item.icon}

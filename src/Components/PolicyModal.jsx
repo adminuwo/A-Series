@@ -9,61 +9,61 @@ const PolicyModal = ({ isOpen, onClose, type, contactInfo = { email: 'admin@uwo2
 
     const content = {
         privacy: {
-            title: t('landing.policies.privacy.title'),
+            title: t('policies.privacy.title'),
             sections: [
                 {
-                    h: t('landing.policies.privacy.compliance.heading'),
-                    p: t('landing.policies.privacy.compliance.content')
+                    h: t('policies.privacy.compliance.heading'),
+                    p: t('policies.privacy.compliance.content')
                 },
                 {
-                    h: t('landing.policies.privacy.zeroTraining.heading'),
-                    p: t('landing.policies.privacy.zeroTraining.content')
+                    h: t('policies.privacy.zeroTraining.heading'),
+                    p: t('policies.privacy.zeroTraining.content')
                 },
                 {
-                    h: t('landing.policies.privacy.rightToForgotten.heading'),
-                    p: t('landing.policies.privacy.rightToForgotten.content')
+                    h: t('policies.privacy.rightToForgotten.heading'),
+                    p: t('policies.privacy.rightToForgotten.content')
                 },
                 {
-                    h: t('landing.policies.privacy.grievance.heading'),
-                    p: `${t('landing.policies.privacy.grievance.content')} ${contactInfo.email}`
+                    h: t('policies.privacy.grievance.heading'),
+                    p: `${t('policies.privacy.grievance.content')} ${contactInfo.email}`
                 }
             ]
         },
         terms: {
-            title: t('landing.policies.terms.title'),
+            title: t('policies.terms.title'),
             sections: [
                 {
-                    h: t('landing.policies.terms.intellectualProperty.heading'),
-                    p: t('landing.policies.terms.intellectualProperty.content')
+                    h: t('policies.terms.intellectualProperty.heading'),
+                    p: t('policies.terms.intellectualProperty.content')
                 },
                 {
-                    h: t('landing.policies.terms.acceptableUse.heading'),
-                    p: t('landing.policies.terms.acceptableUse.content')
+                    h: t('policies.terms.acceptableUse.heading'),
+                    p: t('policies.terms.acceptableUse.content')
                 },
                 {
-                    h: t('landing.policies.terms.aiSafety.heading'),
-                    p: t('landing.policies.terms.aiSafety.content')
+                    h: t('policies.terms.aiSafety.heading'),
+                    p: t('policies.terms.aiSafety.content')
                 },
                 {
-                    h: t('landing.policies.terms.highRisk.heading'),
-                    p: t('landing.policies.terms.highRisk.content')
+                    h: t('policies.terms.highRisk.heading'),
+                    p: t('policies.terms.highRisk.content')
                 }
             ]
         },
         cookie: {
-            title: t('landing.policies.cookie.title'),
+            title: t('policies.cookie.title'),
             sections: [
                 {
-                    h: t('landing.policies.cookie.howWeUse.heading'),
-                    p: t('landing.policies.cookie.howWeUse.content')
+                    h: t('policies.cookie.howWeUse.heading'),
+                    p: t('policies.cookie.howWeUse.content')
                 },
                 {
-                    h: t('landing.policies.cookie.types.heading'),
-                    p: t('landing.policies.cookie.types.content')
+                    h: t('policies.cookie.types.heading'),
+                    p: t('policies.cookie.types.content')
                 },
                 {
-                    h: t('landing.policies.cookie.thirdParty.heading'),
-                    p: t('landing.policies.cookie.thirdParty.content')
+                    h: t('policies.cookie.thirdParty.heading'),
+                    p: t('policies.cookie.thirdParty.content')
                 }
             ]
         }
@@ -100,7 +100,7 @@ const PolicyModal = ({ isOpen, onClose, type, contactInfo = { email: 'admin@uwo2
                         onClick={onClose}
                         className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
                     >
-                        {t('landing.policies.gotIt')}
+                        {t('policies.gotIt')}
                     </button>
                 </div>
             </motion.div>
