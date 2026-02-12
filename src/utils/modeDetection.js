@@ -10,7 +10,10 @@ export const MODES = {
     CODING_HELP: 'CODING_HELP',
     TASK_ASSISTANT: 'TASK_ASSISTANT',
     DEEP_SEARCH: 'DEEP_SEARCH',
-    DOCUMENT_CONVERT: 'DOCUMENT_CONVERT'
+    FILE_CONVERSION: 'FILE_CONVERSION',
+    IMAGE_GEN: 'IMAGE_GEN',
+    VIDEO_GEN: 'VIDEO_GEN',
+    AUDIO_GEN: 'AUDIO_GEN'
 };
 
 const CODING_KEYWORDS = [
@@ -40,7 +43,35 @@ const TASK_KEYWORDS = [
 export function detectMode(message = '', attachments = []) {
     const lowerMessage = message.toLowerCase().trim();
 
+    // Priority 1: Image/Video Generation Intent
+    if (
+        (lowerMessage.includes('image') || lowerMessage.includes('photo') || lowerMessage.includes('pic') || lowerMessage.includes('draw')) &&
+        (lowerMessage.includes('generate') || lowerMessage.includes('create') || lowerMessage.includes('make') || lowerMessage.includes('show'))
+    ) {
+        console.log(`[MODE DETECTION] Detected IMAGE_GEN for: "${message}"`);
+        return MODES.IMAGE_GEN;
+    }
+
+    if (lowerMessage.includes('video') && (lowerMessage.includes('generate') || lowerMessage.includes('create') || lowerMessage.includes('make'))) {
+        return MODES.VIDEO_GEN;
+    }
+
+    // Audio Generation Intent
+    if (
+        (lowerMessage.includes('audio') || lowerMessage.includes('sound') || lowerMessage.includes('music') || lowerMessage.includes('voice') || lowerMessage.includes('song')) &&
+        (lowerMessage.includes('generate') || lowerMessage.includes('create') || lowerMessage.includes('make') || lowerMessage.includes('compose'))
+    ) {
+        return MODES.AUDIO_GEN;
+    }
+
+    // Priority 2: File Analysis
     if (attachments && attachments.length > 0) {
+        // Simple check for conversion intent if files are present
+        if (lowerMessage.includes('convert') || lowerMessage.includes('to pdf') || lowerMessage.includes('to doc') ||
+            lowerMessage.includes('to word') || lowerMessage.includes('pptx to') || lowerMessage.includes('excel to') ||
+            lowerMessage.includes('image to')) {
+            return MODES.FILE_CONVERSION;
+        }
         return MODES.FILE_ANALYSIS;
     }
 
@@ -76,12 +107,15 @@ export function detectMode(message = '', attachments = []) {
 export function getModeName(mode) {
     const names = {
         [MODES.NORMAL_CHAT]: 'Chat',
-        [MODES.FILE_ANALYSIS]: 'File Analysis',
-        [MODES.CONTENT_WRITING]: 'Content Writing',
-        [MODES.CODING_HELP]: 'Coding Help',
-        [MODES.TASK_ASSISTANT]: 'Task Assistant',
+        [MODES.FILE_ANALYSIS]: 'Analysis',
+        [MODES.CONTENT_WRITING]: 'Writing',
+        [MODES.CODING_HELP]: 'Coding',
+        [MODES.TASK_ASSISTANT]: 'Tasks',
         [MODES.DEEP_SEARCH]: 'Deep Search',
-        [MODES.DOCUMENT_CONVERT]: 'Document Convert'
+        [MODES.FILE_CONVERSION]: 'Conversion',
+        [MODES.IMAGE_GEN]: 'Image Gen',
+        [MODES.VIDEO_GEN]: 'Video Gen',
+        [MODES.AUDIO_GEN]: 'Audio Gen'
     };
     return names[mode] || 'Chat';
 }
@@ -89,25 +123,31 @@ export function getModeName(mode) {
 export function getModeIcon(mode) {
     const icons = {
         [MODES.NORMAL_CHAT]: '💬',
-        [MODES.FILE_ANALYSIS]: '📄',
+        [MODES.FILE_ANALYSIS]: '📊',
         [MODES.CONTENT_WRITING]: '✍️',
         [MODES.CODING_HELP]: '💻',
         [MODES.TASK_ASSISTANT]: '📋',
         [MODES.DEEP_SEARCH]: '🔍',
-        [MODES.DOCUMENT_CONVERT]: '🔄'
+        [MODES.FILE_CONVERSION]: '🔄',
+        [MODES.IMAGE_GEN]: '🎨',
+        [MODES.VIDEO_GEN]: '🎬',
+        [MODES.AUDIO_GEN]: '🎵'
     };
     return icons[mode] || '💬';
 }
 
 export function getModeColor(mode) {
     const colors = {
-        [MODES.NORMAL_CHAT]: '#6366f1',
-        [MODES.FILE_ANALYSIS]: '#8b5cf6',
-        [MODES.CONTENT_WRITING]: '#ec4899',
-        [MODES.CODING_HELP]: '#10b981',
-        [MODES.TASK_ASSISTANT]: '#f59e0b',
-        [MODES.DEEP_SEARCH]: '#0ea5e9',
-        [MODES.DOCUMENT_CONVERT]: '#10b981'
+        [MODES.NORMAL_CHAT]: '#6366f1', // Indigo
+        [MODES.FILE_ANALYSIS]: '#8b5cf6', // Violet
+        [MODES.CONTENT_WRITING]: '#f43f5e', // Rose
+        [MODES.CODING_HELP]: '#10b981', // Emerald
+        [MODES.TASK_ASSISTANT]: '#f59e0b', // Amber
+        [MODES.DEEP_SEARCH]: '#0ea5e9', // Sky
+        [MODES.FILE_CONVERSION]: '#ec4899', // Pink
+        [MODES.IMAGE_GEN]: '#f43f5e', // Rose
+        [MODES.VIDEO_GEN]: '#8b5cf6',  // Violet
+        [MODES.AUDIO_GEN]: '#06b6d4'   // Cyan
     };
     return colors[mode] || '#6366f1';
 }

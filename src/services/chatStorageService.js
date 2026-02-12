@@ -191,6 +191,7 @@ export const chatStorageService = {
   },
 
   async updateMessage(sessionId, updatedMsg) {
+    // 1. Update Local IDB
     const historyKey = `chat_history_${sessionId}`;
     const messages = (await idbGet(historyKey)) || [];
     const index = messages.findIndex(m => m.id === updatedMsg.id);
@@ -198,7 +199,31 @@ export const chatStorageService = {
       messages[index] = updatedMsg;
       await idbSet(historyKey, messages);
     }
+
+    // 2. Sync with Backend
+    try {
+      const payload = {};
+      // Only send fields that might have changed and are relevant for backend storage
+      if (updatedMsg.content !== undefined) payload.content = updatedMsg.content;
+      if (updatedMsg.isProcessing !== undefined) payload.isProcessing = updatedMsg.isProcessing;
+      if (updatedMsg.conversion !== undefined) {
+        // Create a copy to avoid mutating the local object
+        const textConversion = { ...updatedMsg.conversion };
+        delete textConversion.blobUrl; // Don't persist temporary blob URLs
+        payload.conversion = textConversion;
+      }
+
+      if (Object.keys(payload).length > 0) {
+        await axios.patch(`${API_BASE_URL}/chat/${sessionId}/message/${updatedMsg.id}`, payload, {
+          headers: getAuthHeaders(),
+          withCredentials: true
+        });
+      }
+    } catch (e) {
+      console.warn("Backend update failed:", e);
+    }
   },
+
 
   async createSession() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);

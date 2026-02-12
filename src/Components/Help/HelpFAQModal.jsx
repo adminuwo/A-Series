@@ -12,7 +12,7 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
     const [issueType, setIssueType] = useState("General Inquiry");
     const [isSending, setIsSending] = useState(false);
     const [sendStatus, setSendStatus] = useState(null);
-    const [supportPhone, setSupportPhone] = useState(null);
+
     const [contactEmail, setContactEmail] = useState("admin@uwo24.com");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = React.useRef(null);
@@ -31,7 +31,7 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
         if (isOpen) {
             import('../../services/apiService').then(({ default: api }) => {
                 api.getPublicSettings().then(settings => {
-                    if (settings?.supportPhone) setSupportPhone(settings.supportPhone);
+
                     if (settings?.contactEmail) setContactEmail(settings.contactEmail);
                 }).catch(err => console.warn("Failed to load support info", err));
             });
@@ -198,11 +198,7 @@ const HelpFAQModal = ({ isOpen, onClose, user }) => {
                                 <p>
                                     {t('faqHelp.emailDirectly')} <a href={`mailto:${contactEmail}`} className="text-primary font-medium hover:underline">{contactEmail}</a>
                                 </p>
-                                {supportPhone && (
-                                    <p>
-                                        {t('faqHelp.customerSupport')} <span className="text-maintext font-bold">{supportPhone}</span>
-                                    </p>
-                                )}
+
                             </div>
                         </div>
                     )}

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, Fragment, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon, Code } from 'lucide-react';
+
 import { renderAsync } from 'docx-preview';
 import * as XLSX from 'xlsx';
 import { Menu, Transition, Dialog } from '@headlessui/react';
@@ -214,6 +215,7 @@ const ImageViewer = ({ src, alt }) => {
 };
 
 const Chat = () => {
+  console.log("Chat Render");
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -225,7 +227,7 @@ const Chat = () => {
   const [sessions, setSessions] = useRecoilState(sessionsData);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showHistory, setShowHistory] = useState(window.innerWidth >= 1024);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const [currentSessionId, setCurrentSessionId] = useState(sessionId || 'new');
   const [tglState, setTglState] = useRecoilState(toggleState);
@@ -238,7 +240,6 @@ const Chat = () => {
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLimitReached, setIsLimitReached] = useState(false);
   const [filePreviews, setFilePreviews] = useState([]);
   const [activeAgent, setActiveAgent] = useState({ agentName: 'AISA', category: 'General' });
   const [userAgents, setUserAgents] = useState([]);
@@ -270,6 +271,7 @@ const Chat = () => {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isAudioConvertMode, setIsAudioConvertMode] = useState(false);
   const [isDocumentConvert, setIsDocumentConvert] = useState(false);
+  const [isCodeWriter, setIsCodeWriter] = useState(false);
   const abortControllerRef = useRef(null);
   const voiceUsedRef = useRef(false); // Track if voice input was used
   const inputRef = useRef(null); // Ref for textarea input
@@ -279,38 +281,6 @@ const Chat = () => {
   const toolsBtnRef = useRef(null);
   const toolsMenuRef = useRef(null);
 
-  const groupedSessions = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const lastWeek = new Date(today);
-    lastWeek.setDate(lastWeek.getDate() - 7);
-
-    const groups = {
-      'Today': [],
-      'Yesterday': [],
-      'Previous 7 Days': [],
-      'Older': []
-    };
-
-    if (!Array.isArray(sessions)) return groups;
-
-    sessions.forEach(session => {
-      const date = new Date(session.lastModified || session.createdAt || Date.now());
-      if (date >= today) {
-        groups['Today'].push(session);
-      } else if (date >= yesterday) {
-        groups['Yesterday'].push(session);
-      } else if (date >= lastWeek) {
-        groups['Previous 7 Days'].push(session);
-      } else {
-        groups['Older'].push(session);
-      }
-    });
-
-    return groups;
-  }, [sessions]);
 
   // Close menu on click outside
   useEffect(() => {
@@ -458,6 +428,13 @@ const Chat = () => {
       const base64Content = reader.result; // Full Data URL for display
       const base64Data = base64Content.split(',')[1]; // Raw base64 for backend
 
+      let activeSessionId = currentSessionId;
+      if (activeSessionId === 'new') {
+        activeSessionId = await chatStorageService.createSession();
+        setCurrentSessionId(activeSessionId);
+        window.history.replaceState(null, '', `/dashboard/chat/${activeSessionId}`);
+      }
+
       // Add User Message
       const userMsgId = Date.now().toString();
       const userMsg = {
@@ -472,17 +449,20 @@ const Chat = () => {
         }]
       };
       setMessages(prev => [...prev, userMsg]);
+      await chatStorageService.saveMessage(activeSessionId, userMsg);
 
       // 2. Add Processing Message from AISA
       const aiMsgId = (Date.now() + 1).toString();
       const processingMsg = {
         id: aiMsgId,
-        role: 'assistant',
+        role: 'model',
         content: `⚡ **EXTRACTING CONTENT...**\nReading text from **${file.name}**...`,
         timestamp: new Date(),
         isProcessing: true
       };
       setMessages(prev => [...prev, processingMsg]);
+      await chatStorageService.saveMessage(activeSessionId, processingMsg);
+
       scrollToBottom();
 
       // Update UI slightly after extraction
@@ -519,20 +499,33 @@ const Chat = () => {
             ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB'
             : (rawBytes / 1024).toFixed(1) + ' KB';
 
-          setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
-            ...msg,
-            isProcessing: false,
-            content: `✅ I have successfully converted **${file.name}** into a full audio voice.`,
-            conversion: {
-              file: mp3Base64,
-              blobUrl: audioUrl,
-              fileName: `${file.name.split('.')[0]}_Audio.mp3`,
-              mimeType: 'audio/mpeg',
-              fileSize: formattedFileSize,
-              rawSize: rawBytes,
-              charCount: charCount
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === aiMsgId) {
+              const updatedMsg = {
+                ...msg,
+                isProcessing: false,
+                content: `✅ I have successfully converted **${file.name}** into a full audio voice.`,
+                conversion: {
+                  file: mp3Base64,
+                  blobUrl: audioUrl,
+                  fileName: `${file.name.split('.')[0]}_Audio.mp3`,
+                  mimeType: 'audio/mpeg',
+                  fileSize: formattedFileSize,
+                  rawSize: rawBytes,
+                  charCount: charCount
+                }
+              };
+
+              // Update in background without blocking the render
+              (async () => {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await chatStorageService.updateMessage(activeSessionId, updatedMsg);
+              })();
+
+              return updatedMsg;
             }
-          } : msg));
+            return msg;
+          }));
 
           toast.success("Conversion complete! 🎶");
           scrollToBottom();
@@ -571,6 +564,13 @@ const Chat = () => {
   const manualFileToAudioConversion = async (file) => {
     if (!file) return;
 
+    let activeSessionId = currentSessionId;
+    if (activeSessionId === 'new') {
+      activeSessionId = await chatStorageService.createSession();
+      setCurrentSessionId(activeSessionId);
+      window.history.replaceState(null, '', `/dashboard/chat/${activeSessionId}`);
+    }
+
     // 1. Show User Message immediately with the file
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -586,16 +586,19 @@ const Chat = () => {
         attachments: [{ url: base64Content, name: file.name, type: file.type }]
       };
       setMessages(prev => [...prev, userMsg]);
+      await chatStorageService.saveMessage(activeSessionId, userMsg);
 
       const aiMsgId = (Date.now() + 1).toString();
       const processingMsg = {
         id: aiMsgId,
-        role: 'assistant',
+        role: 'model',
         content: `⚡ **EXTRACTING CONTENT...**\nReading **${file.name}**...`,
         timestamp: new Date(),
         isProcessing: true
       };
       setMessages(prev => [...prev, processingMsg]);
+      await chatStorageService.saveMessage(activeSessionId, processingMsg);
+
       scrollToBottom();
 
       // Second stage update
@@ -623,20 +626,33 @@ const Chat = () => {
           const charCount = response.headers['x-text-length'] || 0;
           const formattedSize = rawBytes > 1024 * 1024 ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB' : (rawBytes / 1024).toFixed(1) + ' KB';
 
-          setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
-            ...msg,
-            isProcessing: false,
-            content: `✅ Audio conversion complete for **${file.name}**.`,
-            conversion: {
-              file: mp3Base64,
-              blobUrl: audioUrl,
-              fileName: `${file.name.split('.')[0]}_Audio.mp3`,
-              mimeType: 'audio/mpeg',
-              fileSize: formattedSize,
-              rawSize: rawBytes,
-              charCount: charCount
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === aiMsgId) {
+              const updatedMsg = {
+                ...msg,
+                isProcessing: false,
+                content: `✅ Audio conversion complete for **${file.name}**.`,
+                conversion: {
+                  file: mp3Base64,
+                  blobUrl: audioUrl,
+                  fileName: `${file.name.split('.')[0]}_Audio.mp3`,
+                  mimeType: 'audio/mpeg',
+                  fileSize: formattedSize,
+                  rawSize: rawBytes,
+                  charCount: charCount
+                }
+              };
+
+              // Update in background without blocking the render
+              (async () => {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await chatStorageService.updateMessage(activeSessionId, updatedMsg);
+              })();
+
+              return updatedMsg;
             }
-          } : msg));
+            return msg;
+          }));
           toast.success("File converted successfully!");
           scrollToBottom();
         };
@@ -657,6 +673,13 @@ const Chat = () => {
   const manualTextToAudioConversion = async (text) => {
     if (!text || !text.trim()) return;
 
+    let activeSessionId = currentSessionId;
+    if (activeSessionId === 'new') {
+      activeSessionId = await chatStorageService.createSession();
+      setCurrentSessionId(activeSessionId);
+      window.history.replaceState(null, '', `/dashboard/chat/${activeSessionId}`);
+    }
+
     const userMsg = {
       id: Date.now().toString(),
       role: 'user',
@@ -664,15 +687,19 @@ const Chat = () => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
+    await chatStorageService.saveMessage(activeSessionId, userMsg);
 
     const aiMsgId = (Date.now() + 1).toString();
-    setMessages(prev => [...prev, {
+    const processingMsg = {
       id: aiMsgId,
-      role: 'assistant',
+      role: 'model',
       content: `🎧 **Generating voice for your text...**`,
       timestamp: new Date(),
       isProcessing: true
-    }]);
+    };
+    setMessages(prev => [...prev, processingMsg]);
+    await chatStorageService.saveMessage(activeSessionId, processingMsg);
+
     scrollToBottom();
 
     try {
@@ -691,20 +718,33 @@ const Chat = () => {
         const charCount = response.headers['x-text-length'] || 0;
         const formattedSize = rawBytes > 1024 * 1024 ? (rawBytes / (1024 * 1024)).toFixed(1) + ' MB' : (rawBytes / 1024).toFixed(1) + ' KB';
 
-        setMessages(prev => prev.map(msg => msg.id === aiMsgId ? {
-          ...msg,
-          isProcessing: false,
-          content: `✅ Your text has been converted to voice audio.`,
-          conversion: {
-            file: mp3Base64,
-            blobUrl: audioUrl,
-            fileName: `AISA_Voice_${Date.now()}.mp3`,
-            mimeType: 'audio/mpeg',
-            fileSize: formattedSize,
-            rawSize: rawBytes,
-            charCount: charCount
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === aiMsgId) {
+            const updatedMsg = {
+              ...msg,
+              isProcessing: false,
+              content: `✅ Your text has been converted to voice audio.`,
+              conversion: {
+                file: mp3Base64,
+                blobUrl: audioUrl,
+                fileName: `AISA_Voice_${Date.now()}.mp3`,
+                mimeType: 'audio/mpeg',
+                fileSize: formattedSize,
+                rawSize: rawBytes,
+                charCount: charCount
+              }
+            };
+
+            // Update in background without blocking the render
+            (async () => {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              await chatStorageService.updateMessage(activeSessionId, updatedMsg);
+            })();
+
+            return updatedMsg;
           }
-        } : msg));
+          return msg;
+        }));
         toast.success("Text converted successfully!");
         scrollToBottom();
       };
@@ -787,7 +827,7 @@ const Chat = () => {
       const newMessage = {
         id: tempId,
         role: 'assistant',
-        content: `🎬 Generating video from prompt: "${prompt}"\n\nPlease wait, this may take a moment...`, // Use content
+        content: `🎬 Generating high-quality video...\n\nPrompt: "${prompt}"`, // Use content
         timestamp: new Date(),
       };
 
@@ -835,17 +875,44 @@ const Chat = () => {
       const prompt = overridePrompt || inputRef.current.value;
       setIsLoading(true);
 
-      // Show a message that image generation is in progress
-      const tempId = Date.now().toString();
+      let activeSessionId = currentSessionId;
+      let isFirst = false;
+      if (activeSessionId === 'new') {
+        activeSessionId = await chatStorageService.createSession();
+        isFirst = true;
+      }
+
+      // 1. Add User Message to UI
+      const userMsgId = Date.now().toString();
+      const userMsg = {
+        id: userMsgId,
+        role: 'user',
+        content: prompt,
+        mode: MODES.IMAGE_GEN,
+        timestamp: Date.now()
+      };
+
+      setCurrentMode(MODES.IMAGE_GEN);
+
+      // 2. Show a message that image generation is in progress
+      const tempId = (Date.now() + 1).toString();
       const newMessage = {
         id: tempId,
         role: 'assistant',
-        content: `🎨 Generating image from prompt: "${prompt}"\n\nPlease wait, this may take a moment...`, // Use content
-        timestamp: new Date(),
+        content: `🎨 Generating high-quality image...\n\nPrompt: "${prompt}"`,
+        timestamp: Date.now() + 10,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, userMsg, newMessage]);
       if (inputRef.current) inputRef.current.value = '';
+
+      // Save user message to storage
+      await chatStorageService.saveMessage(activeSessionId, userMsg, isFirst ? prompt.slice(0, 30) : undefined);
+
+      if (isFirst) {
+        setCurrentSessionId(activeSessionId);
+        navigate(`/dashboard/chat/${activeSessionId}`, { replace: true });
+      }
 
       try {
         // Use apiService
@@ -856,19 +923,29 @@ const Chat = () => {
           const imageMessage = {
             id: tempId, // Keep same ID
             role: 'assistant',
-            content: `🖼️ Image generated successfully!`, // Use content
+            content: `🖼️ Image generated successfully!`,
             imageUrl: finalUrl,
-            timestamp: new Date(),
+            timestamp: Date.now(),
           };
 
           setMessages(prev => prev.map(msg => msg.id === tempId ? imageMessage : msg));
+
+          // Save to chat history
+          await chatStorageService.saveMessage(activeSessionId, imageMessage);
 
           toast.success('Image generated successfully!');
         }
       } catch (error) {
         console.error("Image Gen Error Details:", error);
         const errorMsg = error.response?.data?.message || error.message || 'Failed to generate image';
-        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: `❌ ${errorMsg}` } : msg)); // Use content
+        const errorModelMsg = {
+          id: tempId,
+          role: 'assistant',
+          content: `❌ ${errorMsg}`,
+          timestamp: Date.now()
+        };
+        setMessages(prev => prev.map(msg => msg.id === tempId ? errorModelMsg : msg));
+        await chatStorageService.saveMessage(activeSessionId, errorModelMsg);
         toast.error(errorMsg);
       }
     } catch (error) {
@@ -1226,6 +1303,13 @@ const Chat = () => {
           resolve();
         };
 
+        // FINAL CHECK: Ensure we haven't been stopped while preparing the audio object
+        if (!currentSpeechResolverRef.current || currentSpeechResolverRef.current !== resolve) {
+          console.log('[VOICE] Aborted playback - cancelled during final prep');
+          resolve();
+          return;
+        }
+
         await audio.play();
 
       } catch (err) {
@@ -1288,9 +1372,19 @@ const Chat = () => {
     }
   };
 
+  // Ensure Speech Stops when Voice Mode is Toggled OFF
+  useEffect(() => {
+    if (!isVoiceMode) {
+      console.log("[VOICE] Voice Mode disabled - stopping all speech");
+      stopCurrentSpeech();
+      speechQueueRef.current = [];
+      isSpeakingRef.current = false;
+      setSpeakingMessageId(null);
+    }
+  }, [isVoiceMode]);
+
   // Voice Output - Speak AI Response
   const speakResponse = async (text, language, msgId, attachments = [], force = false) => {
-    // 1. Handle Toggle on the SAME message (Manual Click)
     // 1. Handle Toggle on the SAME message (Manual Click)
     if (force && speakingMessageId === msgId) {
       const activeAudio = audioRef.current || window.currentAudio;
@@ -1306,6 +1400,15 @@ const Chat = () => {
           setIsPaused(false);
           return;
         }
+      } else {
+        // It's in the speaking state but no audio object yet? (Means it's loading/synthesizing)
+        // If user clicks again while loading, they want to CANCEL.
+        console.log(`[VOICE] Cancelling loading speech for message: ${msgId}`);
+        stopCurrentSpeech();
+        speechQueueRef.current = [];
+        isSpeakingRef.current = false;
+        setSpeakingMessageId(null);
+        return;
       }
     }
 
@@ -1328,6 +1431,12 @@ const Chat = () => {
     }
 
     // 3. Normal Enqueue (Auto-play flow)
+    // Only auto-play if Voice Mode is active OR it was triggered by a voice command
+    if (!force && !isVoiceMode && !voiceUsedRef.current) {
+      console.log('[VOICE] Auto-play skipped - Voice Mode is OFF');
+      return;
+    }
+
     speechQueueRef.current.push({ text, language, msgId, attachments });
     if (!isSpeakingRef.current) {
       processSpeechQueue();
@@ -1561,10 +1670,10 @@ const Chat = () => {
       setIsListening(false);
     }
 
-    // Handle Image Generation Mode
+    // Handle Image Generation (Mode Only - Let Gemini handle keyword intent for Multimode support)
     if (isImageGeneration) {
-      handleGenerateImage(contentToSend); // Pass content directly if needed, or handleGenerateImage uses ref/state
-      isSendingRef.current = false; // Reset sending ref since handleGenerateImage might handle it differently or we want to allow next send
+      handleGenerateImage(contentToSend);
+      isSendingRef.current = false; // Reset to allow next message
       return;
     }
 
@@ -1642,13 +1751,17 @@ const Chat = () => {
       if (isDeepSearch) setIsDeepSearch(false);
       const documentConvertActive = isDocumentConvert;
       if (isDocumentConvert) setIsDocumentConvert(false);
+      const codeWriterActive = isCodeWriter;
+      if (isCodeWriter) setIsCodeWriter(false);
 
       // Detect mode for UI indicator
-      const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH : (documentConvertActive ? MODES.FILE_CONVERSION : detectMode(contentToSend, userMsg.attachments));
+      const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH : (documentConvertActive ? MODES.FILE_CONVERSION : (codeWriterActive ? MODES.CODING_HELP : detectMode(contentToSend, userMsg.attachments)));
+      console.log(`[CHAT] Detected Mode: ${detectedMode} for message: "${contentToSend}"`);
       setCurrentMode(detectedMode);
 
       // Update user message with the detected mode
       userMsg.mode = detectedMode;
+      console.log(`[CHAT] User message mode set to: ${userMsg.mode}`);
 
       // Determine loading intent for UI feedback
       const lowerContent = (userMsg.content || "").toLowerCase();
@@ -1839,6 +1952,15 @@ ${documentConvertActive ? `### UNIVERSAL DOCUMENT CONVERTER ENABLED (CRITICAL):
 }
 \`\`\`
 - Keep the response text brief and professional.` : ''}
+
+${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
+- You are now in professional Code Writer mode.
+- Your primary goal is to write, debug, and explain code for the user.
+- Use best practices for the requested programming language.
+- Provide clean, well-commented code.
+- If there's a bug, explain WHY it occurred and HOW to fix it.
+- Use Markdown code blocks with appropriate language tags (e.g., \`\`\`python, \`\`\`javascript).
+- Provide step-by-step explanations for complex code segments.` : ''}
 `;
         // Check for greeting to send the specific welcome message
         const lowerInput = (contentToSend || "").toLowerCase().trim();
@@ -1866,10 +1988,11 @@ ${documentConvertActive ? `### UNIVERSAL DOCUMENT CONVERTER ENABLED (CRITICAL):
         }
 
         if (aiResponseData && aiResponseData.error === "LIMIT_REACHED") {
-          setIsLimitReached(true);
-          setIsLoading(false);
-          isSendingRef.current = false;
-          return;
+          // Limit logic removed per user request
+          // setIsLimitReached(true);
+          // setIsLoading(false);
+          // isSendingRef.current = false;
+          // return;
         }
 
         // Handle response - could be string (old format) or object (new format with conversion)
@@ -2618,6 +2741,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
 
   const [viewingDoc, setViewingDoc] = useState(null);
   const docContainerRef = useRef(null);
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  const toggleGroupCollapse = (groupName) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
 
   // Close modal on Escape key
   useEffect(() => {
@@ -2691,6 +2822,40 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         });
     }
   }, [viewingDoc]);
+
+  // Group sessions by date
+  const groupedSessionsComputed = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+
+    const groups = {
+      'Today': [],
+      'Yesterday': [],
+      'Previous 7 Days': [],
+      'Older': []
+    };
+
+    if (!Array.isArray(sessions)) return groups;
+
+    sessions.forEach(session => {
+      const date = new Date(session.lastModified || session.createdAt || Date.now());
+      if (date >= today) {
+        groups['Today'].push(session);
+      } else if (date >= yesterday) {
+        groups['Yesterday'].push(session);
+      } else if (date >= lastWeek) {
+        groups['Previous 7 Days'].push(session);
+      } else {
+        groups['Older'].push(session);
+      }
+    });
+
+    return groups;
+  }, [sessions]);
 
   return (
     <div className="flex w-full bg-secondary relative overflow-hidden aisa-scalable-text overscroll-none h-full focus:outline-none">
@@ -2839,80 +3004,83 @@ For "Remix" requests with an attachment, analyze the attached image, then create
       {/* Chat History Sidebar */}
       <AnimatePresence>
         {showHistory && (
-          <>
-            {/* Backdrop for Mobile */}
-            <div
-              className="fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
-              onClick={() => setShowHistory(false)}
-            />
-            <motion.div
-              initial={window.innerWidth < 1024 ? { x: '-100%', opacity: 0 } : { width: 0, opacity: 0 }}
-              animate={window.innerWidth < 1024 ? { x: 0, opacity: 1 } : { width: 300, opacity: 1 }}
-              exit={window.innerWidth < 1024 ? { x: '-100%', opacity: 0 } : { width: 0, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`
-                fixed lg:relative inset-y-0 left-0 z-[60] lg:z-10
-                h-full w-[280px] max-w-[85vw] lg:w-[300px] bg-secondary/95 dark:bg-[#121212]/95 border-r border-border
-                flex flex-col backdrop-blur-3xl shadow-2xl lg:shadow-none overflow-hidden lg:rounded-r-3xl
-              `}
-            >
-              {/* Sidebar Header */}
-              <div className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 bg-secondary/50">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <History className="w-4 h-4 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-sm text-maintext">History</h3>
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: window.innerWidth < 1024 ? '100%' : 300, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className={`
+              fixed lg:relative inset-y-0 left-0 z-[60] lg:z-10
+              h-full bg-secondary/95 dark:bg-[#121212]/95 border-r border-border
+              flex flex-col backdrop-blur-3xl shadow-2xl lg:shadow-none overflow-hidden lg:rounded-r-3xl
+            `}
+          >
+            {/* Sidebar Header */}
+            <div className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 bg-secondary/50">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <History className="w-4 h-4 text-primary" />
                 </div>
-                <div className="flex items-center gap-1">
+                <h3 className="font-bold text-sm text-maintext">History</h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    navigate('/dashboard/chat');
+                    setShowHistory(false);
+                  }}
+                  className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  title="New Chat"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="lg:hidden p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Sessions List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+              {sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-3 border border-border">
+                    <MessageCircle className="w-6 h-6 text-subtext/40" />
+                  </div>
+                  <p className="text-xs font-medium text-subtext leading-relaxed">
+                    No conversations yet.<br />Start chatting with Aaisa!
+                  </p>
                   <button
                     onClick={() => {
                       navigate('/dashboard/chat');
-                      if (window.innerWidth < 1024) setShowHistory(false);
+                      setShowHistory(false);
                     }}
-                    className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="New Chat"
+                    className="mt-4 px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all"
                   >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setShowHistory(false)}
-                    className="lg:hidden p-1.5 text-subtext hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
+                    Start New Chat
                   </button>
                 </div>
-              </div>
+              ) : (
+                Object.entries(groupedSessionsComputed).map(([group, groupSessions]) => {
+                  if (groupSessions.length === 0) return null;
+                  const isCollapsed = collapsedGroups[group];
 
-              {/* Sessions List */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                {sessions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                    <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-3 border border-border">
-                      <MessageCircle className="w-6 h-6 text-subtext/40" />
-                    </div>
-                    <p className="text-xs font-medium text-subtext leading-relaxed">
-                      No conversations yet.<br />Start chatting with Aaisa!
-                    </p>
-                    <button
-                      onClick={() => {
-                        navigate('/dashboard/chat');
-                        if (window.innerWidth < 1024) setShowHistory(false);
-                      }}
-                      className="mt-4 px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all"
-                    >
-                      Start New Chat
-                    </button>
-                  </div>
-                ) : (
-                  Object.entries(groupedSessions).map(([group, groupSessions]) => {
-                    if (groupSessions.length === 0) return null;
-                    return (
-                      <div key={group} className="mb-4">
-                        <h4 className="px-3 py-1.5 text-[10px] font-bold text-subtext uppercase tracking-wider sticky top-0 bg-secondary/95 backdrop-blur-sm z-10">
-                          {group}
-                        </h4>
-                        <div className="space-y-1">
+                  return (
+                    <div key={group} className="mb-4">
+                      <button
+                        onClick={() => toggleGroupCollapse(group)}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold text-subtext uppercase tracking-wider sticky top-0 bg-secondary/95 backdrop-blur-sm z-10 hover:text-primary transition-colors group/header"
+                      >
+                        <span>{group}</span>
+                        <div className={`p-0.5 rounded-md transition-all ${isCollapsed ? '-rotate-90 bg-primary/10 text-primary' : 'rotate-0 text-subtext group-hover/header:bg-primary/5'}`}>
+                          <ChevronDown className="w-3 h-3" />
+                        </div>
+                      </button>
+
+                      {!isCollapsed && (
+                        <div className="space-y-1 mt-1 origin-top animate-in slide-in-from-top-2 duration-200">
                           {groupSessions.map((s) => (
                             <div key={s.sessionId} className="group relative">
                               {editingSessionId === s.sessionId ? (
@@ -2939,7 +3107,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                   <button
                                     onClick={() => {
                                       navigate(`/dashboard/chat/${s.sessionId}`);
-                                      if (window.innerWidth < 1024) setShowHistory(false);
+                                      setShowHistory(false);
                                     }}
                                     className={`
                                     w-full text-left p-3 rounded-xl transition-all flex items-start gap-3
@@ -2992,15 +3160,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                             </div>
                           ))}
                         </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </motion.div>
-          </>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Main Area */}
       <div
@@ -3025,6 +3193,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             >
               <MenuIcon className="w-6 h-6" />
             </button>
+
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={`p-2 rounded-lg transition-colors ${showHistory ? 'text-primary bg-primary/10' : 'text-subtext hover:text-maintext hover:bg-surface/50'}`}
+              title="Chat History"
+            >
+              <History className="w-5 h-5" />
+            </button>
+
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg text-primary truncate">{t('brandName')}</span>
             </div>
@@ -3045,16 +3222,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
           </div>
         </div>
 
-        {/* Floating Chat History Toggle - Positioned below the Menu icon */}
-        <div className="absolute top-14 left-2 z-[40]">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className={`p-2 rounded-xl transition-all shadow-lg backdrop-blur-md border ${showHistory ? 'bg-primary text-white border-primary' : 'bg-surface/80 text-subtext hover:text-primary border-border active:scale-95'}`}
-            title="Chat History"
-          >
-            <History className="w-5 h-5" />
-          </button>
-        </div>
+
 
 
 
@@ -3234,10 +3402,21 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       ) : (
                         msg.content && (
                           <div id={`msg-text-${msg.id}`} className={`max-w-full break-words leading-relaxed whitespace-normal ${msg.role === 'user' ? 'text-white' : 'text-maintext'}`}>
-                            {msg.role === 'user' && msg.mode === MODES.DEEP_SEARCH && (
-                              <div className="flex items-center gap-1.5 mb-2 px-2 py-1 bg-white/20 rounded-lg w-fit">
-                                <Search size={10} className="text-white" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-white">Deep Search</span>
+                            {msg.role === 'user' && msg.mode && msg.mode !== MODES.NORMAL_CHAT && (
+                              <div
+                                className="flex items-center gap-1.5 mb-2 px-2 py-0.5 rounded-full w-fit border border-white/10 shadow-sm backdrop-blur-xl"
+                                style={{
+                                  backgroundColor: `${getModeColor(msg.mode)}22`,
+                                  borderColor: `${getModeColor(msg.mode)}44`
+                                }}
+                              >
+                                <span className="text-[10px] sm:text-xs drop-shadow-sm">{getModeIcon(msg.mode)}</span>
+                                <span
+                                  className="text-[9px] font-black uppercase tracking-[0.1em] drop-shadow-sm"
+                                  style={{ color: 'white' }}
+                                >
+                                  {getModeName(msg.mode)}
+                                </span>
                               </div>
                             )}
                             <ReactMarkdown
@@ -3440,7 +3619,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                               <audio
                                 controls
                                 className="w-full h-10 accent-primary rounded-lg"
-                                src={msg.conversion.blobUrl || `data:${msg.conversion.mimeType};base64,${msg.conversion.file}`}
+                                src={msg.conversion.file ? `data:${msg.conversion.mimeType};base64,${msg.conversion.file}` : msg.conversion.blobUrl}
                               >
                                 Your browser does not support the audio element.
                               </audio>
@@ -3459,7 +3638,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     {msg.conversion.charCount} CHARS
                                   </span>
                                 )}
-                                {msg.conversion.mimeType.includes('audio') ? 'AUDIO • MP3' : msg.conversion.mimeType.includes('pdf') ? 'PDF • DOCUMENT' : 'WORD • DOCUMENT'}
+                                {msg.conversion.mimeType.includes('audio')
+                                  ? 'AUDIO • MP3'
+                                  : msg.conversion.mimeType.includes('pdf')
+                                    ? 'PDF • DOCUMENT'
+                                    : msg.conversion.mimeType.includes('presentation')
+                                      ? 'SLIDES • PPT'
+                                      : msg.conversion.mimeType.includes('spreadsheet')
+                                        ? 'EXCEL • SHEET'
+                                        : 'WORD • DOCUMENT'}
                               </p>
                             </div>
                           </div>
@@ -3497,7 +3684,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl transition-all hover:bg-primary/90 shadow-sm font-bold text-sm active:scale-95"
                             >
                               <Download className="w-4 h-4" />
-                              Download {msg.conversion.mimeType.includes('audio') ? 'Audio' : msg.conversion.mimeType.includes('pdf') ? 'PDF' : 'Document'}
+                              Download {msg.conversion.mimeType.includes('audio')
+                                ? 'Audio'
+                                : msg.conversion.mimeType.includes('pdf')
+                                  ? 'PDF'
+                                  : msg.conversion.mimeType.includes('presentation')
+                                    ? 'PPT'
+                                    : msg.conversion.mimeType.includes('spreadsheet')
+                                      ? 'Excel'
+                                      : 'Document'}
                             </button>
 
                             <Menu as="div" className="relative">
@@ -3808,76 +4003,84 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         </div>
 
         {/* Welcome Screen - Absolute Overlay */}
-        {messages.length === 0 && (
-          <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-center px-4 pt-4 pb-32 sm:pt-20 sm:pb-40 overflow-y-auto no-scrollbar pointer-events-auto">
-            <div className="flex flex-col items-center justify-center my-auto w-full max-w-4xl">
-              <div className="mb-6 select-none shrink-0">
-                <img
-                  src="/AGENTS_IMG/AISA.png"
-                  alt="AISA Icon"
-                  className="w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl pointer-events-none"
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                />
-              </div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-maintext tracking-tight w-full leading-relaxed drop-shadow-sm px-4 shrink-0">
-                {t('chatPage.welcomeMessage')}
-              </h2>
+        {
+          messages.length === 0 && (
+            <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-center px-4 pt-4 pb-32 sm:pt-20 sm:pb-40 overflow-y-auto no-scrollbar pointer-events-auto">
+              <div className="flex flex-col items-center justify-center my-auto w-full max-w-4xl">
+                <div className="mb-6 select-none shrink-0">
+                  <img
+                    src="/AGENTS_IMG/AISA.png"
+                    alt="AISA Icon"
+                    className="w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl pointer-events-none"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                </div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-maintext tracking-tight w-full leading-relaxed drop-shadow-sm px-4 shrink-0">
+                  {t('chatPage.welcomeMessage')}
+                </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 w-full max-w-lg px-6 animate-in hover:none shrink-0">
-                {[
-                  {
-                    icon: <ImageIcon className="w-5 h-5 text-purple-500" />,
-                    title: "Generate Image",
-                    desc: "Create visuals from text",
-                    action: () => {
-                      if (inputRef.current) {
-                        inputRef.current.value = "Generate an image of ";
-                        inputRef.current.focus();
-                      }
-                    }
-                  },
-                  {
-                    icon: <Search className="w-5 h-5 text-blue-500" />,
-                    title: "Deep Search",
-                    desc: "Research complex topics",
-                    action: () => {
-                      setIsDeepSearch(true);
-                      if (inputRef.current) inputRef.current.focus();
-                      toast.success("Deep Search Mode Enabled");
-                    }
-                  },
-                  {
-                    icon: <FileText className="w-5 h-5 text-orange-500" />,
-                    title: "Analyze Document",
-                    desc: "Chat with PDFs & Docs",
-                    action: () => uploadInputRef.current?.click()
-                  },
-                  {
-                    icon: <Mic className="w-5 h-5 text-green-500" />,
-                    title: "Voice Chat",
-                    desc: "Talk to AISA naturally",
-                    action: () => handleVoiceInput()
-                  }
-                ].map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={item.action}
-                    className="flex items-center gap-4 p-4 bg-surface/50 hover:bg-surface border border-border/50 hover:border-primary/30 rounded-2xl text-left transition-all duration-200 group active:scale-95 shadow-sm hover:shadow-md backdrop-blur-sm"
-                  >
-                    <div className="p-2.5 bg-background rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                      {item.icon}
+                <div className="mt-12 w-full max-w-4xl px-4 animate-in slide-in-from-bottom-5 duration-700 shrink-0">
+                  <div className="bg-gradient-to-br from-blue-600/10 via-white/5 to-purple-600/10 backdrop-blur-3xl rounded-[2.5rem] border border-white/20 shadow-xl p-4 sm:p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        {
+                          icon: ImageIcon,
+                          title: "Generate Image",
+                          desc: "Create stunning visuals and artistic illustrations from your text descriptions.",
+                          action: () => {
+                            if (inputRef.current) {
+                              inputRef.current.value = "Generate an image of ";
+                              inputRef.current.focus();
+                            }
+                          }
+                        },
+                        {
+                          icon: Search,
+                          title: "Deep Search",
+                          desc: "Comprehensive web research and data analysis for complex topics.",
+                          action: () => {
+                            setIsDeepSearch(true);
+                            if (inputRef.current) inputRef.current.focus();
+                            toast.success("Deep Search Mode Enabled");
+                          }
+                        },
+                        {
+                          icon: FileText,
+                          title: "Analyze Document",
+                          desc: "Chat with PDFs and documents to extract insights and summaries.",
+                          action: () => uploadInputRef.current?.click()
+                        },
+                        {
+                          icon: Headphones,
+                          title: "Voice Chat",
+                          desc: "Talk to AISA naturally with real-time voice interaction.",
+                          action: () => handleVoiceInput()
+                        }
+                      ].map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={item.action}
+                          className="group bg-white/30 dark:bg-white/5 border border-white/30 dark:border-white/10 p-3 rounded-2xl text-left transition-all duration-300 hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 backdrop-blur-2xl shrink-0"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 text-white ring-1 ring-white/20">
+                              <item.icon className="w-5 h-5" />
+                            </div>
+                            <h4 className="font-bold text-maintext text-sm tracking-tight leading-tight">{item.title}</h4>
+                          </div>
+                          <p className="text-[11px] font-medium text-subtext leading-relaxed px-1 opacity-90">
+                            {item.desc}
+                          </p>
+                        </button>
+                      ))}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-maintext text-sm">{item.title}</h3>
-                      <p className="text-xs text-subtext font-medium">{item.desc}</p>
-                    </div>
-                  </button>
-                ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Input */}
         <div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 md:p-4 bg-transparent z-20">
@@ -4027,119 +4230,159 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   <button
                     type="button"
                     ref={toolsBtnRef}
-                    onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${isToolsMenuOpen || isImageGeneration || isDeepSearch || isAudioConvertMode || isDocumentConvert ? 'bg-primary/10 text-primary scale-110' : 'bg-transparent text-subtext hover:text-primary hover:bg-secondary'}`}
-                    title="AI Capabilities"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsToolsMenuOpen(!isToolsMenuOpen);
+                      console.log("Tools Menu Toggled:", !isToolsMenuOpen);
+                    }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${isToolsMenuOpen || isImageGeneration || isDeepSearch || isAudioConvertMode || isDocumentConvert ? 'bg-primary/20 text-primary scale-110 shadow-lg shadow-primary/30 ring-2 ring-primary/20' : 'bg-transparent text-subtext hover:text-primary hover:bg-secondary'}`}
+                    title="AI Magic Tools"
                   >
                     <Sparkles className="w-5 h-5" />
                   </button>
-                  <AnimatePresence>
-                    {isToolsMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        ref={toolsMenuRef}
-                        className="absolute bottom-full left-0 mb-4 w-72 bg-surface/95 dark:bg-[#1a1a1a]/95 border border-border/50 rounded-2xl shadow-2xl overflow-hidden z-30 backdrop-blur-xl ring-1 ring-black/5"
-                      >
-                        <div className="p-3 bg-secondary/30 border-b border-border/50 mb-1">
-                          <h3 className="text-xs font-bold text-subtext uppercase tracking-wider flex items-center gap-2">
-                            <Sparkles className="w-3 h-3 text-primary" /> AI Magic Tools
-                          </h3>
+
+                </div >
+              </div >
+
+              {/* High-Visibility Tools Menu */}
+              < AnimatePresence >
+                {isToolsMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                    transition={{ duration: 0.3, type: 'spring', damping: 20 }}
+                    ref={toolsMenuRef}
+                    className="absolute bottom-full left-0 mb-4 z-50 pointer-events-none"
+                  >
+                    <div className="w-72 sm:w-80 px-1 pointer-events-auto">
+                      {/* Features Vertical Panel */}
+                      <div className="bg-surface/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-border shadow-2xl p-2 sm:p-4 mb-2 sm:mb-4 ring-1 ring-black/5">
+                        <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                          {[
+                            {
+                              id: 'image',
+                              title: 'Generate Image',
+                              desc: 'Turn text into stunning AI visuals.',
+                              icon: ImageIcon,
+                              color: 'text-fuchsia-500 dark:text-fuchsia-400',
+                              bgColor: 'bg-fuchsia-500/10',
+                              active: isImageGeneration,
+                              onClick: () => {
+                                setIsImageGeneration(!isImageGeneration);
+                                setIsDeepSearch(false);
+                                setIsAudioConvertMode(false);
+                                setIsDocumentConvert(false);
+                                setIsCodeWriter(false);
+                                setIsToolsMenuOpen(false);
+                              }
+                            },
+                            {
+                              id: 'search',
+                              title: 'Deep Search',
+                              desc: 'Advanced research & data analysis.',
+                              icon: Search,
+                              color: 'text-blue-500 dark:text-blue-400',
+                              bgColor: 'bg-blue-500/10',
+                              active: isDeepSearch,
+                              onClick: () => {
+                                setIsDeepSearch(!isDeepSearch);
+                                setIsImageGeneration(false);
+                                setIsAudioConvertMode(false);
+                                setIsDocumentConvert(false);
+                                setIsCodeWriter(false);
+                                setIsToolsMenuOpen(false);
+                              }
+                            },
+                            {
+                              id: 'audio',
+                              title: 'Convert to Audio',
+                              desc: 'Transform docs into natural speech.',
+                              icon: Headphones,
+                              color: 'text-violet-500 dark:text-violet-400',
+                              bgColor: 'bg-violet-500/10',
+                              active: isAudioConvertMode,
+                              onClick: () => {
+                                setIsAudioConvertMode(!isAudioConvertMode);
+                                setIsDeepSearch(false);
+                                setIsImageGeneration(false);
+                                setIsDocumentConvert(false);
+                                setIsCodeWriter(false);
+                                setIsToolsMenuOpen(false);
+                              }
+                            },
+                            {
+                              id: 'convert',
+                              title: 'Universal Document Converter',
+                              desc: 'Bidirectional conversion for PDF, DOCX, PPTX, XLSX, and Images.',
+                              icon: FileText,
+                              color: 'text-amber-500 dark:text-amber-400',
+                              bgColor: 'bg-amber-500/10',
+                              active: isDocumentConvert,
+                              onClick: () => {
+                                setIsDocumentConvert(!isDocumentConvert);
+                                setIsDeepSearch(false);
+                                setIsImageGeneration(false);
+                                setIsAudioConvertMode(false);
+                                setIsCodeWriter(false);
+                                setIsToolsMenuOpen(false);
+                              }
+                            },
+                            {
+                              id: 'code',
+                              title: 'Code Writer',
+                              desc: 'Expert coding & debugging.',
+                              icon: Code,
+                              color: 'text-emerald-500 dark:text-emerald-400',
+                              bgColor: 'bg-emerald-500/10',
+                              active: isCodeWriter,
+                              onClick: () => {
+                                setIsCodeWriter(!isCodeWriter);
+                                setIsDeepSearch(false);
+                                setIsImageGeneration(false);
+                                setIsAudioConvertMode(false);
+                                setIsDocumentConvert(false);
+                                setIsToolsMenuOpen(false);
+                              }
+                            }
+                          ].map((tool) => (
+                            <button
+                              key={tool.id}
+                              onClick={(e) => { e.stopPropagation(); tool.onClick(); }}
+                              className={`
+                              group flex items-center gap-3 sm:gap-4 w-full p-2 sm:p-3 rounded-xl transition-all duration-200 border text-left shrink-0
+                              ${tool.active
+                                  ? 'bg-primary/10 border-primary/30 shadow-sm'
+                                  : 'bg-surface border-border hover:bg-secondary hover:border-primary/20 hover:scale-[1.01]'
+                                }
+                            `}
+                            >
+                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${tool.active ? 'bg-primary text-white shadow-md' : `${tool.bgColor} ${tool.color}`}`}>
+                                <tool.icon size={20} strokeWidth={2.5} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className={`text-sm font-bold tracking-tight ${tool.active ? 'text-primary' : 'text-maintext'}`}>
+                                  {tool.title}
+                                </h4>
+                                <p className="text-xs text-subtext truncate opacity-90">
+                                  {tool.desc}
+                                </p>
+                              </div>
+                            </button>
+
+                          ))}
                         </div>
-                        <div className="p-1.5 space-y-0.5">
-                          <button
-                            onClick={() => {
-                              setIsToolsMenuOpen(false);
-                              setIsImageGeneration(!isImageGeneration);
-                              setIsDeepSearch(false);
-                              setIsAudioConvertMode(false);
-                              setIsDocumentConvert(false);
-                              if (!isImageGeneration) toast.success("Image Generation Mode Enabled");
-                            }}
-                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isImageGeneration ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
-                          >
-                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isImageGeneration ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
-                              <ImageIcon className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1">
-                              <span className="text-sm font-bold text-maintext block">Generate Image</span>
-                              <span className="text-[10px] text-subtext">Create beautiful visuals from text</span>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsToolsMenuOpen(false);
-                              setIsDeepSearch(!isDeepSearch);
-                              setIsImageGeneration(false);
-                              setIsAudioConvertMode(false);
-                              setIsDocumentConvert(false);
-                              if (!isDeepSearch) toast.success("Deep Search Mode Enabled");
-                            }}
-                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isDeepSearch ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
-                          >
-                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isDeepSearch ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
-                              <Search className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1">
-                              <span className="text-sm font-bold text-maintext block">Deep Search</span>
-                              <span className="text-[10px] text-subtext">Advanced web research & analysis</span>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsToolsMenuOpen(false);
-                              setIsAudioConvertMode(!isAudioConvertMode);
-                              setIsDeepSearch(false);
-                              setIsImageGeneration(false);
-                              setIsDocumentConvert(false);
-                              if (!isAudioConvertMode) toast.success("Convert to Audio Mode Active");
-                            }}
-                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isAudioConvertMode ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
-                          >
-                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isAudioConvertMode ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
-                              <Headphones className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1">
-                              <span className="text-sm font-bold text-maintext block">Convert to Audio</span>
-                              <span className="text-[10px] text-subtext">Turn documents into speech</span>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsToolsMenuOpen(false);
-                              setIsDocumentConvert(!isDocumentConvert);
-                              setIsDeepSearch(false);
-                              setIsImageGeneration(false);
-                              setIsAudioConvertMode(false);
-                              if (!isDocumentConvert) toast.success("Document Converter Mode Active");
-                            }}
-                            className={`w-full text-left px-3 py-3 flex items-center gap-3 rounded-xl transition-all group cursor-pointer ${isDocumentConvert ? 'bg-primary/10' : 'hover:bg-primary/5'}`}
-                          >
-                            <div className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isDocumentConvert ? 'bg-primary border-primary text-white' : 'bg-surface border-border group-hover:border-primary/30 group-hover:bg-primary/10'}`}>
-                              <FileText className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1">
-                              <span className="text-sm font-bold text-maintext block">Convert Documents</span>
-                              <span className="text-[10px] text-subtext">Universal Converter (All Formats)</span>
-                            </div>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence >
 
               {/* Input Area */}
-              <div className="relative flex-1 min-w-0 py-1 px-1">
+              < div className="relative flex-1 min-w-0 py-1 px-1" >
                 <AnimatePresence>
-                  {(isDeepSearch || isImageGeneration || isVoiceMode || isAudioConvertMode || isDocumentConvert) && (
-                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 overflow-x-auto no-scrollbar pointer-events-auto w-full">
+                  {(isDeepSearch || isImageGeneration || isVoiceMode || isAudioConvertMode || isDocumentConvert || isCodeWriter) && (
+                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 overflow-x-auto no-scrollbar pointer-events-auto w-full max-w-full">
                       {isDeepSearch && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold border border-primary/20 backdrop-blur-md whitespace-nowrap shrink-0">
                           <Search size={12} strokeWidth={3} /> <span className="hidden sm:inline">Deep Search</span>
@@ -4166,8 +4409,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       )}
                       {isDocumentConvert && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-bold border border-emerald-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
-                          <FileText size={12} strokeWidth={3} /> <span className="hidden sm:inline">Doc Convert</span>
+                          <FileText size={12} strokeWidth={3} /> <span className="hidden sm:inline">Universal Converter</span>
                           <button onClick={() => setIsDocumentConvert(false)} className="ml-1 hover:text-emerald-800"><X size={12} /></button>
+                        </motion.div>
+                      )}
+                      {isCodeWriter && (
+                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-orange-500/10 text-orange-600 rounded-full text-xs font-bold border border-orange-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
+                          <Code size={12} strokeWidth={3} /> <span className="hidden sm:inline">Code Writer</span>
+                          <button onClick={() => setIsCodeWriter(false)} className="ml-1 hover:text-orange-800"><X size={12} /></button>
                         </motion.div>
                       )}
                     </div>
@@ -4179,7 +4428,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                 <textarea
                   ref={inputRef}
                   value={inputValue}
-                  disabled={isLoading || isLimitReached}
+                  disabled={isLoading}
                   onChange={(e) => {
                     setInputValue(e.target.value);
                     e.target.style.height = 'auto';
@@ -4194,15 +4443,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     }
                   }}
                   onPaste={handlePaste}
-                  placeholder={isLimitReached ? "Chat limit reached. Sign in to continue." : (isAudioConvertMode ? "Enter text to convert..." : isDocumentConvert ? "Upload file & ask to convert..." : "Ask AISA...")}
+                  placeholder={isAudioConvertMode ? "Enter text to convert..." : isDocumentConvert ? "Upload file & ask to convert..." : isCodeWriter ? "Ask for any code or paste bugs..." : "Ask AISA..."}
                   rows={1}
-                  className={`w-full bg-transparent border-0 focus:ring-0 outline-none focus:outline-none p-0 text-maintext text-left placeholder-subtext/50 resize-none overflow-y-auto custom-scrollbar leading-relaxed aisa-scalable-text flex items-center ${isLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
+                  className={`w-full bg-transparent border-0 focus:ring-0 outline-none focus:outline-none p-0 text-maintext text-left placeholder-subtext/50 resize-none overflow-y-auto custom-scrollbar leading-relaxed aisa-scalable-text flex items-center`}
                   style={{ minHeight: '24px', maxHeight: '150px', lineHeight: '24px' }}
                 />
-              </div>
+              </div >
 
               {/* Right Actions Group */}
-              <div className="flex items-center gap-1 sm:gap-1.5 pr-0.5 shrink-0">
+              < div className="flex items-center gap-1 sm:gap-1.5 pr-0.5 shrink-0" >
                 {isListening && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 rounded-full border border-red-500/20 mr-2">
                     <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
@@ -4210,73 +4459,77 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                   </div>
                 )}
 
-                {!isListening && (
-                  <>
-                    {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVideo && !inputValue.trim() && (
-                      <button
-                        type="button"
-                        onClick={() => setIsLiveMode(true)}
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-subtext hover:text-primary hover:bg-secondary transition-colors"
-                        title="Live Video Call"
-                      >
-                        <Video className="w-5 h-5" />
-                      </button>
-                    )}
+                {
+                  !isListening && (
+                    <>
+                      {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVideo && !inputValue.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => setIsLiveMode(true)}
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-subtext hover:text-primary hover:bg-secondary transition-colors"
+                          title="Live Video Call"
+                        >
+                          <Video className="w-5 h-5" />
+                        </button>
+                      )}
 
-                    {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVoice && (
-                      <button
-                        type="button"
-                        onClick={handleVoiceInput}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white' : 'text-subtext hover:text-primary hover:bg-secondary'}`}
-                        title="Voice Input"
-                      >
-                        <Mic className="w-5 h-5" />
-                      </button>
-                    )}
-                  </>
-                )}
+                      {getAgentCapabilities(activeAgent.agentName, activeAgent.category).canVoice && (
+                        <button
+                          type="button"
+                          onClick={handleVoiceInput}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white' : 'text-subtext hover:text-primary hover:bg-secondary'}`}
+                          title="Voice Input"
+                        >
+                          <Mic className="w-5 h-5" />
+                        </button>
+                      )}
+                    </>
+                  )
+                }
 
-                {isLoading ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (abortControllerRef.current) abortControllerRef.current.abort();
-                      setIsLoading(false);
-                      isSendingRef.current = false;
-                    }}
-                    className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 hover:scale-105 transition-all"
-                  >
-                    <div className="w-3 h-3 bg-white rounded-sm" />
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-
+                {
+                  isLoading ? (
                     <button
-                      type="submit"
-                      disabled={(!inputValue.trim() && filePreviews.length === 0) || isLoading}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${(!inputValue.trim() && filePreviews.length === 0) ? 'bg-secondary text-subtext/50 shadow-none' : 'bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-primary/30 hover:scale-105 hover:shadow-primary/40'}`}
+                      type="button"
+                      onClick={() => {
+                        if (abortControllerRef.current) abortControllerRef.current.abort();
+                        setIsLoading(false);
+                        isSendingRef.current = false;
+                      }}
+                      className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 hover:scale-105 transition-all"
                     >
-                      <Send className="w-5 h-5 ml-0.5" />
+                      <div className="w-3 h-3 bg-white rounded-sm" />
                     </button>
-                  </div>
-                )}
-              </div>
-            </form>
-          </div>
-        </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+
+                      <button
+                        type="submit"
+                        disabled={(!inputValue.trim() && filePreviews.length === 0) || isLoading}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${(!inputValue.trim() && filePreviews.length === 0) ? 'bg-secondary text-subtext/50 shadow-none' : 'bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-primary/30 hover:scale-105 hover:shadow-primary/40'}`}
+                      >
+                        <Send className="w-5 h-5 ml-0.5" />
+                      </button>
+                    </div>
+                  )
+                }
+              </div >
+            </form >
+          </div >
+        </div >
 
         {/* Live AI Modal */}
-        <AnimatePresence>
+        < AnimatePresence >
           {isLiveMode && (
             <LiveAI
               onClose={() => setIsLiveMode(false)}
               language={currentLang}
             />
           )}
-        </AnimatePresence>
+        </AnimatePresence >
 
         {/* Feedback Modal */}
-        <Transition appear show={feedbackOpen} as={Fragment}>
+        < Transition appear show={feedbackOpen} as={Fragment}>
           <Dialog as="div" className="relative z-50" onClose={() => setFeedbackOpen(false)}>
             <Transition.Child
               as={Fragment}
@@ -4357,68 +4610,8 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               </div>
             </div>
           </Dialog>
-        </Transition>
+        </Transition >
 
-        {/* Limit Reached Modal */}
-        <Transition show={isLimitReached} as={Fragment}>
-          <Dialog as="div" className="relative z-[200]" onClose={() => { }}>
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-md" />
-            </Transition.Child>
-
-            <div className="fixed inset-0 overflow-y-auto">
-              <div className="flex min-h-full items-center justify-center p-4">
-                <Transition.Child
-                  as={Fragment}
-                  enter="ease-out duration-300"
-                  enterFrom="opacity-0 scale-95"
-                  enterTo="opacity-100 scale-100"
-                  leave="ease-in duration-200"
-                  leaveFrom="opacity-100 scale-100"
-                  leaveTo="opacity-0 scale-95"
-                >
-                  <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-border p-8 text-center shadow-2xl transition-all">
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Sparkles className="w-10 h-10 text-primary animate-pulse" />
-                    </div>
-
-                    <Dialog.Title as="h3" className="text-2xl font-black text-maintext mb-2 tracking-tight uppercase">
-                      Chat Limit Reached
-                    </Dialog.Title>
-
-                    <p className="text-subtext mb-8 leading-relaxed text-sm">
-                      You've reached the guest limit of 10 sessions and 5 messages per session.
-                      Sign in to unlock **unlimited chat**, image generation, and more!
-                    </p>
-
-                    <div className="flex flex-col gap-3">
-                      <button
-                        onClick={() => navigate('/login', { state: { from: location.pathname } })}
-                        className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 active:scale-95 uppercase"
-                      >
-                        Sign In Now
-                      </button>
-                      <button
-                        onClick={() => navigate('/signup')}
-                        className="w-full py-4 bg-black/5 dark:bg-white/5 border border-border text-maintext rounded-2xl font-bold text-sm tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95 uppercase"
-                      >
-                        Create Free Account
-                      </button>
-                    </div>
-                  </Dialog.Panel>
-                </Transition.Child>
-              </div>
-            </div>
-          </Dialog>
-        </Transition>
       </div >
     </div >
   );
