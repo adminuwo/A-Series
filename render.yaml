@@ -1,10 +1,8 @@
 services:
-  # A Static Site
-  - type: web
+  - type: static
     name: frontend
-    env: static
     buildCommand: npm run build
-    staticPublishPath: ./dist
+    publishPath: ./dist
     routes:
       - type: rewrite
         source: /*
