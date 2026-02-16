@@ -154,9 +154,22 @@ const MyAgents = () => {
                                 <div className="flex gap-2 mt-auto">
                                     <button
                                         onClick={() => {
-                                            const targetUrl = (!agent?.url || agent.url.trim() === "") ? AppRoute.agentSoon : agent.url;
-                                            setSelectedAgent({ ...agent, url: targetUrl });
-                                            setIsModalOpen(true);
+                                            const name = (agent.agentName || "").toUpperCase().replace(/\s+/g, '');
+                                            // Agents that use the new AISAWorkSpace interface
+                                            const workspaceAgents = ['AISALES', 'AIWRITE', 'AIBIZ', 'AIHIRE', 'AIDESK'];
+
+                                            // Agents that use the generic Chat interface
+                                            const chatAgents = ['AISA'];
+
+                                            if (workspaceAgents.includes(name)) {
+                                                navigate(`${AppRoute.WORKSPACE}/${name}`);
+                                            } else if (chatAgents.includes(name)) {
+                                                navigate(AppRoute.CHAT, { state: { agentType: name, agent: agent } });
+                                            } else {
+                                                const targetUrl = (!agent?.url || agent.url.trim() === "") ? AppRoute.agentSoon : agent.url;
+                                                setSelectedAgent({ ...agent, url: targetUrl });
+                                                setIsModalOpen(true);
+                                            }
                                         }}
                                         className="flex-1 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:shadow-md"
                                     >

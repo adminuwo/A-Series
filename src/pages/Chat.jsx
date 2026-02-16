@@ -28,7 +28,7 @@ import { getUserData, sessionsData, toggleState } from '../userStore/userData';
 import { usePersonalization } from '../context/PersonalizationContext';
 
 
-const WELCOME_MESSAGE = "Hello! I’m AISA™, your Artificial Intelligence Super Assistant.";
+const getWelcomeMessage = (name) => `Hello! I’m ${name || 'AISA'}™, your Artificial Intelligence Super Assistant.`;
 
 const FEEDBACK_PROMPTS = {
   en: [
@@ -241,7 +241,7 @@ const Chat = () => {
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filePreviews, setFilePreviews] = useState([]);
-  const [activeAgent, setActiveAgent] = useState({ agentName: 'AISA', category: 'General' });
+  const [activeAgent, setActiveAgent] = useState({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
   const [userAgents, setUserAgents] = useState([]);
   const [toolModels, setToolModels] = useState({
     chat: 'gemini-flash',
@@ -631,6 +631,7 @@ const Chat = () => {
               const updatedMsg = {
                 ...msg,
                 isProcessing: false,
+                mode: MODES.AUDIO_GEN,
                 content: `✅ Audio conversion complete for **${file.name}**.`,
                 conversion: {
                   file: mp3Base64,
@@ -723,6 +724,7 @@ const Chat = () => {
             const updatedMsg = {
               ...msg,
               isProcessing: false,
+              mode: MODES.AUDIO_GEN,
               content: `✅ Your text has been converted to voice audio.`,
               conversion: {
                 file: mp3Base64,
@@ -845,6 +847,7 @@ const Chat = () => {
             role: 'assistant',
             content: `🎥 Video generated successfully!`, // Use content
             videoUrl: data.videoUrl,
+            mode: MODES.VIDEO_GEN,
             timestamp: new Date(),
           };
 
@@ -925,6 +928,7 @@ const Chat = () => {
             role: 'assistant',
             content: `🖼️ Image generated successfully!`,
             imageUrl: finalUrl,
+            mode: MODES.IMAGE_GEN,
             timestamp: Date.now(),
           };
 
@@ -1474,7 +1478,7 @@ const Chat = () => {
 
   useEffect(() => {
     const loadSessions = async () => {
-      const data = await chatStorageService.getSessions();
+      const data = await chatStorageService.getSessions(activeAgent.agentName);
       setSessions(data);
 
       // Fetch User Subscribed Agents
@@ -1505,12 +1509,28 @@ const Chat = () => {
       }
     };
     loadSessions();
-  }, [messages, setSessions]);
+  }, [messages, setSessions, activeAgent.agentName]);
 
   const isNavigatingRef = useRef(false);
 
   useEffect(() => {
     const initChat = async () => {
+      // Handle agent selection from navigation state
+      if (location.state?.agentType) {
+        const type = location.state.agentType;
+        const agent = location.state.agent || { agentName: type, category: 'Internal' };
+        setActiveAgent({
+          agentName: type,
+          category: agent.category || 'Internal',
+          instructions: agent.instructions || '',
+          avatar: agent.avatar || (type === 'AISA' ? '/AGENTS_IMG/AISA.png' : null)
+        });
+        console.log(`[CHAT] Agent Type set from navigation: ${type}`);
+      } else if (!sessionId || sessionId === 'new') {
+        // Reset to default if new chat and no state
+        setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+      }
+
       // If we just navigated from 'new' to a real ID in handleSendMessage,
       // don't clear the messages we already have in state.
       if (isNavigatingRef.current) {
@@ -1525,6 +1545,16 @@ const Chat = () => {
         console.log(`[DEBUG] Received history:`, history);
         if (history && history.length > 0) {
           console.log(`[DEBUG] First message role: ${history[0].role}, content preview: ${history[0].content?.substring(0, 20)}`);
+
+          // Try to restore active agent from history if possible
+          const lastModelMsg = [...history].reverse().find(m => m.role === 'model' && m.agentName);
+          if (lastModelMsg) {
+            setActiveAgent({
+              agentName: lastModelMsg.agentName,
+              category: lastModelMsg.agentCategory || 'General',
+              avatar: lastModelMsg.agentAvatar || (lastModelMsg.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : null)
+            });
+          }
         }
         setMessages(history || []);
       } else {
@@ -1535,7 +1565,7 @@ const Chat = () => {
       if (window.innerWidth < 1024) setShowHistory(false);
     };
     initChat();
-  }, [sessionId]);
+  }, [sessionId, location.state]);
 
   const chatContainerRef = useRef(null);
   const shouldAutoScrollRef = useRef(true);
@@ -1971,8 +2001,9 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
         if (isGreeting) {
           // Respond with the welcome message for greetings
           aiResponseData = {
-            reply: WELCOME_MESSAGE,
-            language: currentLang
+            reply: getWelcomeMessage(activeAgent.agentName),
+            id: Date.now() + 1,
+            role: 'model',
           };
         } else {
           // Default AI message sending
@@ -1983,7 +2014,8 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
             userMsg.attachments,
             currentLang,
             abortControllerRef.current.signal,
-            detectedMode
+            detectedMode,
+            { agentType: activeAgent.agentName }
           );
         }
 
@@ -2039,6 +2071,10 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
             role: 'model',
             content: '', // Start empty for typewriter effect
             timestamp: Date.now() + i * 100,
+            mode: detectedMode,
+            agentName: activeAgent.agentName,
+            agentCategory: activeAgent.category,
+            agentAvatar: activeAgent.avatar,
             ...(i === 0 && aiVideoUrl && { videoUrl: aiVideoUrl }),
             ...(i === 0 && aiImageUrl && { imageUrl: aiImageUrl }),
           };
@@ -3025,7 +3061,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
-                    navigate('/dashboard/chat');
+                    navigate('/dashboard/chat', { state: { agentType: activeAgent.agentName, agent: activeAgent } });
                     setShowHistory(false);
                   }}
                   className="p-1.5 text-subtext hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
@@ -3203,7 +3239,14 @@ For "Remix" requests with an attachment, analyze the attached image, then create
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-primary truncate">{t('brandName')}</span>
+              <span className="font-bold text-lg text-primary truncate">
+                {activeAgent.agentName === 'AISA' || !activeAgent.agentName ? t('brandName') : activeAgent.agentName}
+              </span>
+              {activeAgent.agentName !== 'AISA' && activeAgent.agentName && (
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">
+                  Powered by A-Series
+                </span>
+              )}
             </div>
           </div>
 
@@ -3259,7 +3302,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     {msg.role === 'user' ? (
                       <User className="w-4 h-4 text-white" />
                     ) : (
-                      <img src="/AGENTS_IMG/AISA.png" alt="AISA" className="w-5 h-5 object-contain" />
+                      <img src={msg.agentAvatar || "/AGENTS_IMG/AISA.png"} alt={msg.agentName || "AI"} className="w-5 h-5 object-contain" />
                     )}
                   </div>
 
@@ -3495,7 +3538,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
                                         <div className="flex items-center gap-2">
                                           <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
+                                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Asset</span>
                                         </div>
                                       </div>
                                       <img
@@ -3534,7 +3577,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity pointer-events-none">
                                   <div className="flex items-center gap-2">
                                     <Video className="w-4 h-4 text-primary animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Video</span>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Video</span>
                                   </div>
                                 </div>
 
@@ -3572,13 +3615,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
                                   <div className="flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Asset</span>
                                   </div>
                                 </div>
                                 <img
                                   src={msg.imageUrl}
                                   className="w-full h-auto rounded-xl bg-black/5 min-h-[100px]"
-                                  alt="AISA Generated"
+                                  alt={`${activeAgent.agentName || 'AISA'} Generated`}
                                   onError={(e) => {
                                     console.error("Image failed to load:", msg.imageUrl);
                                     e.target.style.display = 'none';
@@ -3717,7 +3760,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       {({ active }) => (
                                         <button
                                           onClick={() => {
-                                            const text = `I've converted "${msg.conversion.fileName}" into voice audio using AISA! ${window.location.href}`;
+                                            const text = `I've converted "${msg.conversion.fileName}" into voice audio using ${activeAgent.agentName || 'AISA'}! ${window.location.href}`;
                                             const url = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
                                               ? `whatsapp://send?text=${encodeURIComponent(text)}`
                                               : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
@@ -3734,7 +3777,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       {({ active }) => (
                                         <button
                                           onClick={() => {
-                                            const text = `AISA Audio Conversion: ${msg.conversion.fileName}`;
+                                            const text = `${activeAgent.agentName || 'AISA'} Audio Conversion: ${msg.conversion.fileName}`;
                                             const url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
                                             window.open(url, '_blank');
                                           }}
@@ -3787,119 +3830,155 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                             })()}
                             <div className="flex flex-col items-end gap-2 self-end sm:self-auto">
                               <div className="flex items-center gap-3">
-                                <button
-                                  onClick={() => {
-                                    // Pass message ID to speakResponse for tracking
-                                    const isHindi = /[\u0900-\u097F]/.test(msg.content);
-                                    speakResponse(msg.content, isHindi ? 'Hindi' : 'English', msg.id, msg.attachments || [], true);
-                                  }}
-                                  className={`transition-colors p-1.5 rounded-lg ${speakingMessageId === msg.id
-                                    ? 'text-primary bg-primary/10'
-                                    : 'text-subtext hover:text-primary hover:bg-surface-hover'
-                                    }`}
-                                  title={speakingMessageId === msg.id && !isPaused ? "Pause" : "Speak"}
-                                >
-                                  {speakingMessageId === msg.id && !isPaused ? (
-                                    <Pause className="w-3.5 h-3.5" />
-                                  ) : (
-                                    <Volume2 className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleCopyMessage(msg.content)}
-                                  className="text-subtext hover:text-maintext transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
-                                  title="Copy"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleThumbsUp(msg.id)}
-                                  className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'up'
-                                    ? 'text-blue-500 bg-blue-500/10'
-                                    : 'text-subtext hover:text-primary hover:bg-surface-hover'
-                                    }`}
-                                  title="Helpful"
-                                >
-                                  <ThumbsUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleThumbsDown(msg.id)}
-                                  className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'down'
-                                    ? 'text-red-500 bg-red-500/10'
-                                    : 'text-subtext hover:text-red-500 hover:bg-surface-hover'
-                                    }`}
-                                  title="Not Helpful"
-                                >
-                                  <ThumbsDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleShare(msg.content)}
-                                  className="text-subtext hover:text-primary transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
-                                  title="Share Text"
-                                >
-                                  <Share className="w-3.5 h-3.5" />
-                                </button>
+                                {(() => {
+                                  const vIcons = (() => {
+                                    const mode = msg.mode;
+                                    if (!mode || mode === MODES.NORMAL_CHAT || mode === MODES.DEEP_SEARCH) {
+                                      return ['volume', 'copy', 'thumbsUp', 'thumbsDown', 'share', 'pdf'];
+                                    }
+                                    switch (mode) {
+                                      case MODES.IMAGE_GEN:
+                                      case MODES.VIDEO_GEN:
+                                        return ['thumbsUp', 'thumbsDown'];
+                                      case MODES.AUDIO_GEN:
+                                        return ['volume', 'thumbsUp', 'thumbsDown'];
+                                      case MODES.CODING_HELP:
+                                        return ['copy', 'thumbsUp', 'thumbsDown'];
+                                      case MODES.FILE_CONVERSION:
+                                        return ['pdf', 'thumbsUp', 'thumbsDown'];
+                                      default:
+                                        return ['volume', 'copy', 'thumbsUp', 'thumbsDown', 'share', 'pdf'];
+                                    }
+                                  })();
 
-                                {/* PDF Menu */}
-                                <Menu as="div" className="relative inline-block text-left">
-                                  <Menu.Button className="text-subtext hover:text-red-500 transition-colors flex items-center" disabled={pdfLoadingId === msg.id}>
-                                    {pdfLoadingId === msg.id ? (
-                                      <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
-                                    ) : (
-                                      <FileText className="w-4 h-4" />
-                                    )}
-                                  </Menu.Button>
-                                  <Transition
-                                    as={Fragment}
-                                    enter="transition ease-out duration-100"
-                                    enterFrom="transform opacity-0 scale-95"
-                                    enterTo="transform opacity-100 scale-100"
-                                    leave="transition ease-in duration-75"
-                                    leaveFrom="transform opacity-100 scale-100"
-                                    leaveTo="transform opacity-0 scale-95"
-                                  >
-                                    <Menu.Items className="absolute bottom-full right-0 sm:left-0 mb-2 w-44 origin-bottom-right sm:origin-bottom-left divide-y divide-border rounded-xl bg-card shadow-2xl ring-1 ring-black ring-opacity-10 focus:outline-none z-50 overflow-hidden backdrop-blur-xl border border-border/50">
-                                      <div className="px-1.5 py-1.5">
-                                        <Menu.Item>
-                                          {({ active }) => (
-                                            <button
-                                              onClick={() => handlePdfAction('open', msg)}
-                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
-                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
-                                            >
-                                              <Eye className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
-                                              Open PDF
-                                            </button>
+                                  return (
+                                    <>
+                                      {vIcons.includes('volume') && (
+                                        <button
+                                          onClick={() => {
+                                            const isHindi = /[\u0900-\u097F]/.test(msg.content);
+                                            speakResponse(msg.content, isHindi ? 'Hindi' : 'English', msg.id, msg.attachments || [], true);
+                                          }}
+                                          className={`transition-colors p-1.5 rounded-lg ${speakingMessageId === msg.id
+                                            ? 'text-primary bg-primary/10'
+                                            : 'text-subtext hover:text-primary hover:bg-surface-hover'
+                                            }`}
+                                          title={speakingMessageId === msg.id && !isPaused ? "Pause" : "Speak"}
+                                        >
+                                          {speakingMessageId === msg.id && !isPaused ? (
+                                            <Pause className="w-3.5 h-3.5" />
+                                          ) : (
+                                            <Volume2 className="w-3.5 h-3.5" />
                                           )}
-                                        </Menu.Item>
-                                        <Menu.Item>
-                                          {({ active }) => (
-                                            <button
-                                              onClick={() => handlePdfAction('download', msg)}
-                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
-                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
-                                            >
-                                              <Download className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
-                                              Download PDF
-                                            </button>
-                                          )}
-                                        </Menu.Item>
-                                        <Menu.Item>
-                                          {({ active }) => (
-                                            <button
-                                              onClick={() => handlePdfAction('share', msg)}
-                                              className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
-                                                } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
-                                            >
-                                              <Share className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
-                                              Share PDF
-                                            </button>
-                                          )}
-                                        </Menu.Item>
-                                      </div>
-                                    </Menu.Items>
-                                  </Transition>
-                                </Menu>
+                                        </button>
+                                      )}
+                                      {vIcons.includes('copy') && (
+                                        <button
+                                          onClick={() => handleCopyMessage(msg.content)}
+                                          className="text-subtext hover:text-maintext transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
+                                          title="Copy"
+                                        >
+                                          <Copy className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                      {vIcons.includes('thumbsUp') && (
+                                        <button
+                                          onClick={() => handleThumbsUp(msg.id)}
+                                          className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'up'
+                                            ? 'text-blue-500 bg-blue-500/10'
+                                            : 'text-subtext hover:text-primary hover:bg-surface-hover'
+                                            }`}
+                                          title="Helpful"
+                                        >
+                                          <ThumbsUp className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                      {vIcons.includes('thumbsDown') && (
+                                        <button
+                                          onClick={() => handleThumbsDown(msg.id)}
+                                          className={`transition-colors p-1.5 rounded-lg ${messageFeedback[msg.id]?.type === 'down'
+                                            ? 'text-red-500 bg-red-500/10'
+                                            : 'text-subtext hover:text-red-500 hover:bg-surface-hover'
+                                            }`}
+                                          title="Not Helpful"
+                                        >
+                                          <ThumbsDown className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                      {vIcons.includes('share') && (
+                                        <button
+                                          onClick={() => handleShare(msg.content)}
+                                          className="text-subtext hover:text-primary transition-colors p-1.5 hover:bg-surface-hover rounded-lg"
+                                          title="Share Text"
+                                        >
+                                          <Share className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+
+                                      {vIcons.includes('pdf') && (
+                                        <Menu as="div" className="relative inline-block text-left">
+                                          <Menu.Button className="text-subtext hover:text-red-500 transition-colors flex items-center" disabled={pdfLoadingId === msg.id}>
+                                            {pdfLoadingId === msg.id ? (
+                                              <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+                                            ) : (
+                                              <FileText className="w-4 h-4" />
+                                            )}
+                                          </Menu.Button>
+                                          <Transition
+                                            as={Fragment}
+                                            enter="transition ease-out duration-100"
+                                            enterFrom="transform opacity-0 scale-95"
+                                            enterTo="transform opacity-100 scale-100"
+                                            leave="transition ease-in duration-75"
+                                            leaveFrom="transform opacity-100 scale-100"
+                                            leaveTo="transform opacity-0 scale-95"
+                                          >
+                                            <Menu.Items className="absolute bottom-full right-0 sm:left-0 mb-2 w-44 origin-bottom-right sm:origin-bottom-left divide-y divide-border rounded-xl bg-card shadow-2xl ring-1 ring-black ring-opacity-10 focus:outline-none z-50 overflow-hidden backdrop-blur-xl border border-border/50">
+                                              <div className="px-1.5 py-1.5">
+                                                <Menu.Item>
+                                                  {({ active }) => (
+                                                    <button
+                                                      onClick={() => handlePdfAction('open', msg)}
+                                                      className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                        } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                                    >
+                                                      <Eye className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                                      View PDF
+                                                    </button>
+                                                  )}
+                                                </Menu.Item>
+                                                <Menu.Item>
+                                                  {({ active }) => (
+                                                    <button
+                                                      onClick={() => handlePdfAction('download', msg)}
+                                                      className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                        } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                                    >
+                                                      <Download className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                                      Download PDF
+                                                    </button>
+                                                  )}
+                                                </Menu.Item>
+                                                <Menu.Item>
+                                                  {({ active }) => (
+                                                    <button
+                                                      onClick={() => handlePdfAction('share', msg)}
+                                                      className={`${active ? 'bg-primary text-white shadow-md' : 'text-maintext hover:bg-primary/5'
+                                                        } group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200`}
+                                                    >
+                                                      <Share className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-primary'}`} />
+                                                      Share PDF
+                                                    </button>
+                                                  )}
+                                                </Menu.Item>
+                                              </div>
+                                            </Menu.Items>
+                                          </Transition>
+                                        </Menu>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
 
 
@@ -3914,7 +3993,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         minute: '2-digit',
                       })}
                     </span>
-                  </div>
+                  </div >
 
                   {/* Hover Actions - User Only (AI has footer) */}
                   {
@@ -3966,41 +4045,43 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       </div>
                     )
                   }
-                </div>
+                </div >
               ))}
 
-              {isLoading && (
-                <div className="flex items-start gap-4 max-w-4xl mx-auto">
-                  <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center shrink-0">
-                    <img src="/AGENTS_IMG/AISA.png" alt="AISA" className="w-5 h-5 object-contain" />
+              {
+                isLoading && (
+                  <div className="flex items-start gap-4 max-w-4xl mx-auto">
+                    <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center shrink-0">
+                      <img src="/AGENTS_IMG/AISA.png" alt="AISA" className="w-5 h-5 object-contain" />
 
-                  </div>
-                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-surface border border-border flex items-center gap-3">
-                    <span className="text-sm font-medium text-subtext animate-pulse">
-                      {loadingText}
-                    </span>
-                    <div className="flex gap-1">
-                      <span
-                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
-                        style={{ animationDelay: '0ms' }}
-                      ></span>
-                      <span
-                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
-                        style={{ animationDelay: '150ms' }}
-                      ></span>
-                      <span
-                        className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
-                        style={{ animationDelay: '300ms' }}
-                      ></span>
+                    </div>
+                    <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-surface border border-border flex items-center gap-3">
+                      <span className="text-sm font-medium text-subtext animate-pulse">
+                        {loadingText}
+                      </span>
+                      <div className="flex gap-1">
+                        <span
+                          className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                          style={{ animationDelay: '0ms' }}
+                        ></span>
+                        <span
+                          className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                          style={{ animationDelay: '150ms' }}
+                        ></span>
+                        <span
+                          className="w-1.5 h-1.5 bg-subtext/50 rounded-full animate-bounce"
+                          style={{ animationDelay: '300ms' }}
+                        ></span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )
+              }
             </>
           )}
 
           <div ref={messagesEndRef} />
-        </div>
+        </div >
 
         {/* Welcome Screen - Absolute Overlay */}
         {
@@ -4009,15 +4090,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               <div className="flex flex-col items-center justify-center my-auto w-full max-w-4xl">
                 <div className="mb-6 select-none shrink-0">
                   <img
-                    src="/AGENTS_IMG/AISA.png"
-                    alt="AISA Icon"
+                    src={activeAgent.avatar || "/AGENTS_IMG/AISA.png"}
+                    alt={`${activeAgent.agentName || 'AISA'} Icon`}
                     className="w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl pointer-events-none"
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
                   />
                 </div>
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-maintext tracking-tight w-full leading-relaxed drop-shadow-sm px-4 shrink-0">
-                  {t('chatPage.welcomeMessage')}
+                  {activeAgent.agentName === 'AISA' || !activeAgent.agentName ? t('chatPage.welcomeMessage') : `Hello! I’m ${activeAgent.agentName}, how can I help you today?`}
                 </h2>
 
                 <div className="mt-12 w-full max-w-4xl px-4 animate-in slide-in-from-bottom-5 duration-700 shrink-0">
@@ -4443,7 +4524,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     }
                   }}
                   onPaste={handlePaste}
-                  placeholder={isAudioConvertMode ? "Enter text to convert..." : isDocumentConvert ? "Upload file & ask to convert..." : isCodeWriter ? "Ask for any code or paste bugs..." : "Ask AISA..."}
+                  placeholder={isAudioConvertMode ? "Enter text to convert..." : isDocumentConvert ? "Upload file & ask to convert..." : isCodeWriter ? "Ask for any code or paste bugs..." : `Ask ${activeAgent.agentName === 'AISA' || !activeAgent.agentName ? 'AISA' : activeAgent.agentName}...`}
                   rows={1}
                   className={`w-full bg-transparent border-0 focus:ring-0 outline-none focus:outline-none p-0 text-maintext text-left placeholder-subtext/50 resize-none overflow-y-auto custom-scrollbar leading-relaxed aisa-scalable-text flex items-center`}
                   style={{ minHeight: '24px', maxHeight: '150px', lineHeight: '24px' }}
