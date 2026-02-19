@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, Fragment, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon, Code } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, Monitor, ChevronDown, History, Paperclip, X, FileText, Image as ImageIcon, Cloud, HardDrive, Edit2, Download, Mic, Wand2, Eye, FileSpreadsheet, Presentation, File as FileIcon, MoreVertical, Trash2, Check, Camera, Video, Copy, ThumbsUp, ThumbsDown, Share, Search, Undo2, Menu as MenuIcon, Volume2, Pause, Headphones, MessageCircle, ExternalLink, ZoomIn, ZoomOut, RotateCcw, Minus, MessageSquare, Calendar as CalendarIcon, Code, TrendingUp, ShieldCheck, ShoppingBag, Globe, DollarSign, Target, Database, Brain, Briefcase, Megaphone, Headset, GraduationCap, Bug, MapPin, Zap, Music } from 'lucide-react';
 
 import { renderAsync } from 'docx-preview';
 import * as XLSX from 'xlsx';
@@ -208,10 +208,45 @@ const ImageViewer = ({ src, alt }) => {
           }}
           className="max-w-full max-h-full object-contain pointer-events-none"
           draggable={false}
+          onError={(e) => {
+            e.target.src = 'https://placehold.co/600x400/1e1e1e/FFF?text=Image+Load+Failed';
+            toast.error("Failed to load image preview");
+          }}
         />
       </div>
     </div>
   );
+};
+
+const getToolIcon = (slug) => {
+  switch (slug) {
+    case 'tool-image-gen': return ImageIcon;
+    case 'tool-image-editing-customization': return Edit2;
+    case 'tool-deep-search': return Search;
+    case 'tool-audio-convert': return Headphones;
+    case 'tool-universal-converter': return FileText;
+    case 'tool-code-writer': return Code;
+    case 'tool-video-gen': return Video;
+    case 'tool-fast-video-generator': return Zap;
+    case 'tool-lyria-for-music': return Music;
+    case 'tool-ai-document': return FileText;
+    case 'tool-time-series-forecasting': return TrendingUp;
+    case 'tool-llm-auditor': return ShieldCheck;
+    case 'tool-personalized-shopping': return ShoppingBag;
+    case 'tool-brand-search-optimization': return Globe;
+    case 'tool-fomc-research': return DollarSign;
+    case 'tool-image-scoring': return Target;
+    case 'tool-data-science': return Database;
+    case 'tool-rag-engine': return Brain;
+    case 'tool-financial-advisor': return Briefcase;
+    case 'tool-marketing-agency': return Megaphone;
+    case 'tool-customer-service': return Headset;
+    case 'tool-academic-research': return GraduationCap;
+    case 'tool-bug-assistant': return Bug;
+    case 'tool-travel-concierge': return MapPin;
+    case 'tool-ai-personal-assistant': return CalendarIcon;
+    default: return ImageIcon;
+  }
 };
 
 const Chat = () => {
@@ -272,6 +307,7 @@ const Chat = () => {
   const [isAudioConvertMode, setIsAudioConvertMode] = useState(false);
   const [isDocumentConvert, setIsDocumentConvert] = useState(false);
   const [isCodeWriter, setIsCodeWriter] = useState(false);
+  const [isVideoGeneration, setIsVideoGeneration] = useState(false);
   const abortControllerRef = useRef(null);
   const voiceUsedRef = useRef(false); // Track if voice input was used
   const inputRef = useRef(null); // Ref for textarea input
@@ -314,6 +350,19 @@ const Chat = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isAttachMenuOpen, isToolsMenuOpen]);
+
+  // Handle successful activation redirect
+  useEffect(() => {
+    if (location.state?.activated) {
+      const toolName = location.state.toolName || "new tool";
+      toast.success(`${toolName} is now active! Find it in the AI Magic Tools menu.`, {
+        duration: 5000,
+        icon: '🚀'
+      });
+      // Clear state to prevent toast on re-renders/navs
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const processFile = (file) => {
     if (!file) return;
@@ -762,25 +811,22 @@ const Chat = () => {
     }
   };
 
-  const handleGenerateVideo = async () => {
+  const handleGenerateVideo = async (overridePrompt) => {
     try {
-      if (!inputRef.current?.value.trim() && selectedFiles.length === 0) {
-        // toast.error('Please enter a prompt or select a file');
-        // Let it slide if it's voice input (handled elsewhere)
+      if (!inputRef.current?.value.trim() && !overridePrompt && selectedFiles.length === 0) {
         if (!voiceUsedRef.current) return;
       }
 
-      const prompt = inputRef.current?.value || "";
-      // const filesToSend = [...selectedFiles]; // Snapshot // This variable is not used
+      const prompt = overridePrompt || inputRef.current?.value || "";
 
-      // Voice Reader Mode Logic
+      // Voice Reader Mode Logic (Keep existing if needed, but let's standardise video gen)
       if (isVoiceMode) {
-        // 1. Add User Message to UI
+        // ... existing voice logic is fine as it already adds user message ...
         const userMsgId = Date.now().toString();
         const newUserMsg = {
           id: userMsgId,
-          role: 'user', // Ensure role user
-          content: prompt, // Use content
+          role: 'user',
+          content: prompt,
           timestamp: new Date(),
           attachments: filePreviews.map(fp => ({
             url: fp.url,
@@ -790,25 +836,18 @@ const Chat = () => {
         };
         setMessages(prev => [...prev, newUserMsg]);
 
-        // Clear Inputs
         setInputValue('');
         setSelectedFiles([]);
         setFilePreviews([]);
         if (inputRef.current) inputRef.current.style.height = 'auto';
 
-        // 2. Trigger Voice Reading Directly
-        // We can use speakResponse, but we need to trick it into thinking it's an AI response?
-        // Or just call speakResponse with the user content? 
-        // SpeakResponse reads content using a specific message ID for state tracking.
-
         setIsLoading(true);
 
-        // Show a "Reading..." AI bubble
         const aiMsgId = (Date.now() + 1).toString();
         const readingMsg = {
           id: aiMsgId,
-          role: 'assistant', // Ensure role assistant
-          content: "🎧 Reading content aloud...", // Use content
+          role: 'assistant',
+          content: "🎧 Reading content aloud...",
           timestamp: new Date()
         };
         setMessages(prev => [...prev, readingMsg]);
@@ -818,46 +857,80 @@ const Chat = () => {
           setIsLoading(false);
         }, 500);
 
-        return; // STOP HERE (Do not call AI API)
+        return;
       }
 
       setIsLoading(true);
-      // isSendingRef.current = true; // Mark as sending // This variable is not defined in the provided context
 
-      // Show a message that video generation is in progress
-      const tempId = Date.now().toString();
+      let activeSessionId = currentSessionId;
+      let isFirst = false;
+      if (activeSessionId === 'new') {
+        activeSessionId = await chatStorageService.createSession();
+        isFirst = true;
+      }
+
+      // 1. Add User Message to UI
+      const userMsgId = Date.now().toString();
+      const userMsg = {
+        id: userMsgId,
+        role: 'user',
+        content: prompt,
+        mode: MODES.VIDEO_GEN,
+        timestamp: Date.now()
+      };
+
+      // 2. Show a message that video generation is in progress
+      const tempId = (Date.now() + 1).toString();
       const newMessage = {
         id: tempId,
         role: 'assistant',
-        content: `🎬 Generating high-quality video...\n\nPrompt: "${prompt}"`, // Use content
-        timestamp: new Date(),
+        content: `🎬 Generating high-quality video...\n\nPrompt: "${prompt}"`,
+        timestamp: Date.now() + 10,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, userMsg, newMessage]);
       if (inputRef.current) inputRef.current.value = '';
 
+      // Save user message and progress message to storage
+      await chatStorageService.saveMessage(activeSessionId, userMsg, isFirst ? prompt.slice(0, 30) : undefined);
+      await chatStorageService.saveMessage(activeSessionId, newMessage);
+
+      if (isFirst) {
+        isNavigatingRef.current = true;
+        setCurrentSessionId(activeSessionId);
+        navigate(`/dashboard/chat/${activeSessionId}`, { replace: true });
+      }
+
       try {
-        // Use apiService
         const data = await apiService.generateVideo(prompt);
 
-        if (data.videoUrl) {
-          // Add the generated video to the message
+        if (data && data.videoUrl) {
           const videoMessage = {
-            id: tempId, // Keep same ID so we replace the correct one (or just update)
+            id: tempId,
             role: 'assistant',
-            content: `🎥 Video generated successfully!`, // Use content
+            content: `🎥 Video generated successfully!`,
             videoUrl: data.videoUrl,
             mode: MODES.VIDEO_GEN,
-            timestamp: new Date(),
+            timestamp: Date.now(),
           };
 
           setMessages(prev => prev.map(msg => msg.id === tempId ? videoMessage : msg));
+
+          // Save to chat history
+          await chatStorageService.saveMessage(activeSessionId, videoMessage);
 
           toast.success('Video generated successfully!');
         }
       } catch (error) {
         const errorMsg = error.response?.data?.message || 'Failed to generate video';
-        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: `❌ ${errorMsg}` } : msg)); // Use content
+        const errorModelMsg = {
+          id: tempId,
+          role: 'assistant',
+          content: `❌ ${errorMsg}`,
+          timestamp: Date.now()
+        };
+        setMessages(prev => prev.map(msg => msg.id === tempId ? errorModelMsg : msg));
+        await chatStorageService.saveMessage(activeSessionId, errorModelMsg);
         toast.error(errorMsg);
       }
     } catch (error) {
@@ -909,10 +982,12 @@ const Chat = () => {
       setMessages(prev => [...prev, userMsg, newMessage]);
       if (inputRef.current) inputRef.current.value = '';
 
-      // Save user message to storage
+      // Save user message and progress message to storage
       await chatStorageService.saveMessage(activeSessionId, userMsg, isFirst ? prompt.slice(0, 30) : undefined);
+      await chatStorageService.saveMessage(activeSessionId, newMessage);
 
       if (isFirst) {
+        isNavigatingRef.current = true;
         setCurrentSessionId(activeSessionId);
         navigate(`/dashboard/chat/${activeSessionId}`, { replace: true });
       }
@@ -1519,16 +1594,46 @@ const Chat = () => {
       if (location.state?.agentType) {
         const type = location.state.agentType;
         const agent = location.state.agent || { agentName: type, category: 'Internal' };
+
         setActiveAgent({
-          agentName: type,
+          agentName: agent.agentName || type,
           category: agent.category || 'Internal',
           instructions: agent.instructions || '',
+          slug: agent.slug || '',
           avatar: agent.avatar || (type === 'AISA' ? '/AGENTS_IMG/AISA.png' : null)
         });
+
         console.log(`[CHAT] Agent Type set from navigation: ${type}`);
+
+        // Reset all modes first
+        setIsImageGeneration(false);
+        setIsVideoGeneration(false);
+        setIsDeepSearch(false);
+        setIsAudioConvertMode(false);
+        setIsDocumentConvert(false);
+        setIsCodeWriter(false);
+
+        // Activate specific mode based on agent type
+        if (type === 'GENERATEIMAGE') setIsImageGeneration(true);
+        else if (type === 'GENERATEVIDEO' || type === 'FASTVIDEOGENERATOR') setIsVideoGeneration(true);
+        else if (type === 'DEEPSEARCH') setIsDeepSearch(true);
+        else if (type === 'CONVERTTOAUDIO') setIsAudioConvertMode(true);
+        else if (type === 'UNIVERSALCONVERTER') setIsDocumentConvert(true);
+        else if (type === 'CODEWRITER') setIsCodeWriter(true);
+        else if (type === 'IMAGEEDITING') {
+          // Image editing uses the activeAgent slug/category check, but explicit flag might be needed if added later
+        }
+
       } else if (!sessionId || sessionId === 'new') {
         // Reset to default if new chat and no state
         setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+        // Reset modes when returning to default AISA
+        setIsImageGeneration(false);
+        setIsVideoGeneration(false);
+        setIsDeepSearch(false);
+        setIsAudioConvertMode(false);
+        setIsDocumentConvert(false);
+        setIsCodeWriter(false);
       }
 
       // If we just navigated from 'new' to a real ID in handleSendMessage,
@@ -1549,11 +1654,20 @@ const Chat = () => {
           // Try to restore active agent from history if possible
           const lastModelMsg = [...history].reverse().find(m => m.role === 'model' && m.agentName);
           if (lastModelMsg) {
+            const restoredName = lastModelMsg.agentName;
             setActiveAgent({
-              agentName: lastModelMsg.agentName,
+              agentName: restoredName,
               category: lastModelMsg.agentCategory || 'General',
-              avatar: lastModelMsg.agentAvatar || (lastModelMsg.agentName === 'AISA' ? '/AGENTS_IMG/AISA.png' : null)
+              avatar: lastModelMsg.agentAvatar || (restoredName === 'AISA' ? '/AGENTS_IMG/AISA.png' : null)
             });
+
+            // Restore mode flags based on agent name
+            if (restoredName === 'Generate Image') setIsImageGeneration(true);
+            else if (restoredName === 'Generate Video' || restoredName === 'Fast Video Generator') setIsVideoGeneration(true);
+            else if (restoredName === 'Deep Search') setIsDeepSearch(true);
+            else if (restoredName === 'Convert to Audio') setIsAudioConvertMode(true);
+            else if (restoredName === 'Universal Converter') setIsDocumentConvert(true);
+            else if (restoredName === 'Code Writer') setIsCodeWriter(true);
           }
         }
         setMessages(history || []);
@@ -1700,10 +1814,15 @@ const Chat = () => {
       setIsListening(false);
     }
 
-    // Handle Image Generation (Mode Only - Let Gemini handle keyword intent for Multimode support)
+    if (isVideoGeneration) {
+      await handleGenerateVideo(contentToSend);
+      isSendingRef.current = false;
+      return;
+    }
+
     if (isImageGeneration) {
-      handleGenerateImage(contentToSend);
-      isSendingRef.current = false; // Reset to allow next message
+      await handleGenerateImage(contentToSend);
+      isSendingRef.current = false;
       return;
     }
 
@@ -1785,7 +1904,14 @@ const Chat = () => {
       if (isCodeWriter) setIsCodeWriter(false);
 
       // Detect mode for UI indicator
-      const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH : (documentConvertActive ? MODES.FILE_CONVERSION : (codeWriterActive ? MODES.CODING_HELP : detectMode(contentToSend, userMsg.attachments)));
+      const isImageEditActive = activeAgent.slug === 'tool-image-editing-customization';
+      const isMusicGenActive = activeAgent.slug === 'tool-lyria-for-music' || activeAgent.slug === 'lyria-for-music' || activeAgent.agentName?.toLowerCase().includes('lyria');
+      const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH :
+        (documentConvertActive ? MODES.FILE_CONVERSION :
+          (codeWriterActive ? MODES.CODING_HELP :
+            (isImageEditActive ? MODES.IMAGE_EDIT :
+              (isMusicGenActive ? MODES.AUDIO_GEN :
+                detectMode(contentToSend, userMsg.attachments)))));
       console.log(`[CHAT] Detected Mode: ${detectedMode} for message: "${contentToSend}"`);
       setCurrentMode(detectedMode);
 
@@ -1794,16 +1920,18 @@ const Chat = () => {
       console.log(`[CHAT] User message mode set to: ${userMsg.mode}`);
 
       // Determine loading intent for UI feedback
-      const lowerContent = (userMsg.content || "").toLowerCase();
-      if (
-        (lowerContent.includes('image') || lowerContent.includes('photo') || lowerContent.includes('pic') || lowerContent.includes('draw')) &&
-        (lowerContent.includes('generate') || lowerContent.includes('create') || lowerContent.includes('make') || lowerContent.includes('show'))
-      ) {
+      if (isImageGeneration) {
         setLoadingText("Generating Image... 🎨");
-      } else if (lowerContent.includes('video')) {
+      } else if (isVideoGeneration) {
         setLoadingText("Generating Video... 🎥");
+      } else if (isImageEditActive) {
+        setLoadingText("Editing Image... 🪄");
+      } else if (isMusicGenActive) {
+        setLoadingText("Generating Music with Lyria... 🎵");
       } else if (documentConvertActive) {
         setLoadingText("Converting Document... 🔄");
+      } else if (deepSearchActive) {
+        setLoadingText("Searching the Web... 🔍");
       } else {
         setLoadingText("Thinking...");
       }
@@ -2032,6 +2160,7 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
         let conversionData = null;
         let aiVideoUrl = null;
         let aiImageUrl = null;
+        let aiAudioUrl = null;
 
         if (typeof aiResponseData === 'string') {
           aiResponseText = aiResponseData;
@@ -2041,6 +2170,7 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
           // Extract media URLs if present
           aiVideoUrl = aiResponseData.videoUrl || null;
           aiImageUrl = aiResponseData.imageUrl || null;
+          aiAudioUrl = aiResponseData.audioUrl || null;
         } else {
           aiResponseText = "Sorry, I encountered an issue while generating a response. Please try again.";
         }
@@ -2077,6 +2207,7 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
             agentAvatar: activeAgent.avatar,
             ...(i === 0 && aiVideoUrl && { videoUrl: aiVideoUrl }),
             ...(i === 0 && aiImageUrl && { imageUrl: aiImageUrl }),
+            ...(i === 0 && aiAudioUrl && { audioUrl: aiAudioUrl }),
           };
 
           // Add the empty message structure to UI
@@ -2961,7 +3092,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     className="bg-white w-full h-full overflow-auto p-4 custom-scrollbar text-black text-sm"
                     dangerouslySetInnerHTML={{ __html: excelHTML || '<div class="flex items-center justify-center h-full"><div class="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>' }}
                   />
-                ) : viewingDoc.name.endsWith('.pdf') || viewingDoc.url.startsWith('data:application/pdf') ? (
+                ) : viewingDoc.name.endsWith('.pdf') || viewingDoc.url.startsWith('data:application/pdf') || viewingDoc.type === 'application/pdf' ? (
                   <iframe
                     src={viewingDoc.url}
                     className="w-full h-full border-0"
@@ -3538,7 +3669,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                       <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
                                         <div className="flex items-center gap-2">
                                           <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Asset</span>
+                                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
                                         </div>
                                       </div>
                                       <img
@@ -3568,7 +3699,15 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 },
                               }}
                             >
-                              {msg.content || msg.text || ""}
+                              {(() => {
+                                const rawContent = msg.content || msg.text || "";
+                                // Regex to detect JSON block with "image_url", handling optional markdown code blocks
+                                // Captures: Group 1 = URL
+                                return rawContent.replace(
+                                  /(?:```(?:json)?\s*)?(\{[\s\S]*?"image_url"\s*:\s*"([^"]+)"[\s\S]*?\})(?:\s*```)?/gi,
+                                  (match, jsonBlock, url) => `\n\n![Edited Image](${url})\n\n`
+                                );
+                              })()}
                             </ReactMarkdown>
 
                             {/* Dynamic Video Rendering */}
@@ -3577,24 +3716,67 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity pointer-events-none">
                                   <div className="flex items-center gap-2">
                                     <Video className="w-4 h-4 text-primary animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Video</span>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Video</span>
                                   </div>
                                 </div>
 
-                                <video
-                                  src={msg.videoUrl}
-                                  controls
-                                  autoPlay
-                                  loop
-                                  className="w-full max-w-full h-auto rounded-xl bg-black/5"
-                                />
+                                {msg.videoUrl && (msg.videoUrl.includes('pollinations.ai')) ? (
+                                  <div className="relative w-full aspect-video bg-[#050505] rounded-xl overflow-hidden group/media">
+                                    <img
+                                      key={msg.videoUrl}
+                                      src={msg.videoUrl}
+                                      style={{ opacity: 0 }}
+                                      crossOrigin="anonymous"
+                                      className="w-full h-full object-contain transition-opacity duration-700"
+                                      alt="AISA Visual Content"
+                                      loading="eager"
+                                      onLoad={(e) => {
+                                        e.target.style.opacity = 1;
+                                        const shimmer = e.target.parentElement.querySelector('.shimmer-overlay');
+                                        if (shimmer) shimmer.style.display = 'none';
+                                      }}
+                                      onError={(e) => {
+                                        console.log("Image failed, showing retry UI");
+                                        e.target.style.display = 'none';
+                                        const retryUI = e.target.parentElement.querySelector('.retry-overlay');
+                                        if (retryUI) retryUI.style.display = 'flex';
+                                      }}
+                                    />
+                                    <div className="retry-overlay absolute inset-0 hidden flex-col items-center justify-center bg-black/80 backdrop-blur-md transition-all">
+                                      <p className="text-white/60 text-[10px] font-bold uppercase mb-2">Failed to load content</p>
+                                      <button
+                                        onClick={(e) => {
+                                          const parent = e.currentTarget.parentElement.parentElement;
+                                          const img = parent.querySelector('img');
+                                          img.style.display = 'block';
+                                          img.style.opacity = 0;
+                                          img.src = img.src.split('?')[0] + '?retry=' + Date.now();
+                                          e.currentTarget.parentElement.style.display = 'none';
+                                        }}
+                                        className="px-3 py-1.5 bg-primary/20 hover:bg-primary/40 text-primary border border-primary/30 rounded-lg text-[10px] font-bold uppercase transition-all"
+                                      >
+                                        Retry Loading
+                                      </button>
+                                    </div>
+                                    {/* Loading Shimmer */}
+                                    <div className="shimmer-overlay absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+                                  </div>
+                                ) : (
+                                  <video
+                                    src={msg.videoUrl}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    className="w-full max-w-full h-auto min-h-[200px] object-contain rounded-xl bg-black/5"
+                                  />
+                                )}
 
                                 <div className="absolute bottom-3 right-14 pointer-events-auto">
                                   {/* Additional controls if needed */}
                                 </div>
 
                                 <button
-                                  onClick={() => handleDownload(msg.videoUrl, 'aisa-generated-video.mp4')}
+                                  onClick={() => handleDownload(msg.videoUrl, msg.videoUrl.includes('pollinations.ai') ? 'aisa-generated-asset.jpg' : 'aisa-generated-video.mp4')}
                                   className="absolute bottom-3 right-3 p-2.5 bg-primary text-white rounded-xl opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-all hover:bg-primary/90 shadow-lg border border-white/20 scale-100 sm:scale-90 sm:group-hover/generated:scale-100 z-20"
                                   title="Download Video"
                                 >
@@ -3615,7 +3797,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent z-10 flex justify-between items-center opacity-100 sm:opacity-0 sm:group-hover/generated:opacity-100 transition-opacity">
                                   <div className="flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{activeAgent.agentName || 'AISA'} Generated Asset</span>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">AISA Generated Asset</span>
                                   </div>
                                 </div>
                                 <img
@@ -3647,6 +3829,37 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     <span className="text-[10px] font-bold uppercase">Download</span>
                                   </div>
                                 </button>
+                              </div>
+                            )}
+
+                            {/* Dynamic Audio Rendering */}
+                            {msg.audioUrl && (
+                              <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20 mt-4 shadow-sm backdrop-blur-sm w-full max-w-sm">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className="p-2 bg-primary/20 rounded-xl">
+                                    <Music className="w-5 h-5 text-primary animate-bounce-slow" />
+                                  </div>
+                                  <div>
+                                    <span className="text-xs font-bold text-maintext uppercase tracking-widest block leading-none">AISA Generated Music</span>
+                                    <span className="text-[10px] text-subtext font-medium">High-Fidelity Audio • AI Hall™</span>
+                                  </div>
+                                </div>
+                                <audio
+                                  controls
+                                  className="w-full h-10 accent-primary rounded-lg"
+                                  src={msg.audioUrl}
+                                >
+                                  Your browser does not support the audio element.
+                                </audio>
+                                <div className="flex justify-end mt-2">
+                                  <button
+                                    onClick={() => handleDownload(msg.audioUrl, 'aisa-generated-music.mp3')}
+                                    className="flex items-center gap-1.5 text-[10px] font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-lg transition-all uppercase tracking-tighter"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Download MP3
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -3697,7 +3910,61 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                           <div className="flex flex-col sm:flex-row gap-2">
                             <button
                               onClick={() => {
-                                const downloadToast = toast.loading("Starting download...");
+                                try {
+                                  // For conversion files, we can use the stored file property
+                                  const byteCharacters = atob(msg.conversion.file);
+                                  const byteNumbers = new Array(byteCharacters.length);
+                                  for (let i = 0; i < byteCharacters.length; i++) {
+                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                  }
+                                  const byteArray = new Uint8Array(byteNumbers);
+                                  const blob = new Blob([byteArray], { type: msg.conversion.mimeType });
+                                  const url = URL.createObjectURL(blob);
+                                  setViewingDoc({
+                                    url: url,
+                                    name: msg.conversion.fileName,
+                                    type: msg.conversion.mimeType
+                                  });
+                                } catch (err) {
+                                  toast.error("Failed to open document preview");
+                                }
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/20 text-primary rounded-xl transition-all hover:bg-primary/20 shadow-sm font-bold text-sm active:scale-95"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Open & View
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const downloadToast = toast.loading("Starting download...", { duration: 2000 });
+
+                                // High-visibility security tip for Chrome blocks on local IP
+                                setTimeout(() => {
+                                  toast((t) => (
+                                    <div className="flex flex-col gap-1">
+                                      <p className="font-bold text-xs text-red-600 flex items-center gap-1">
+                                        <Monitor className="w-3 h-3" /> SECURITY TIP
+                                      </p>
+                                      <p className="text-[11px] leading-tight">
+                                        Chrome may block this because you're using a local IP.
+                                        Click <b>"Download insecure file"</b> in the top-right tray to save it.
+                                      </p>
+                                    </div>
+                                  ), {
+                                    duration: 8000,
+                                    position: 'top-center',
+                                    style: {
+                                      background: '#fff',
+                                      color: '#000',
+                                      border: '2px solid #ef4444',
+                                      padding: '12px',
+                                      borderRadius: '12px',
+                                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                                    }
+                                  });
+                                }, 800);
+
                                 try {
                                   // Create download link
                                   const byteCharacters = atob(msg.conversion.file);
@@ -3711,17 +3978,21 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                   const a = document.createElement('a');
                                   a.href = url;
                                   a.download = msg.conversion.fileName;
+                                  a.style.display = 'none';
                                   document.body.appendChild(a);
                                   a.click();
+
                                   setTimeout(() => {
                                     document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
+                                    // Revoke after a delay to ensure the browser has started the "Save As" process
+                                    setTimeout(() => URL.revokeObjectURL(url), 10000);
                                     toast.dismiss(downloadToast);
-                                    toast.success("Download complete!");
+                                    toast.success("Download request sent!");
                                   }, 500);
                                 } catch (err) {
                                   toast.dismiss(downloadToast);
                                   toast.error("Download failed");
+                                  console.error("Manual Download Error:", err);
                                 }
                               }}
                               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl transition-all hover:bg-primary/90 shadow-sm font-bold text-sm active:scale-95"
@@ -3817,8 +4088,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         <div className="mt-4 pt-3 border-t border-border/40 w-full block">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
                             {(() => {
+                              // Filter out feedback prompts for system/error messages or "Thinking..." etc.
+                              const contentStr = typeof msg.content === 'string' ? msg.content : '';
+                              const isSystemMessage = contentStr && (contentStr.startsWith('System Message:') || contentStr.startsWith('System Error:') || contentStr.includes('dbDemoModeMessage'));
+                              if (isSystemMessage) return null;
+
                               // Detect if the AI response contains Hindi (Devanagari script)
-                              const isHindiContent = /[\u0900-\u097F]/.test(msg.content);
+                              const isHindiContent = /[\u0900-\u097F]/.test(contentStr);
                               const prompts = isHindiContent ? FEEDBACK_PROMPTS.hi : FEEDBACK_PROMPTS.en;
                               const promptIndex = (msg.id.toString().charCodeAt(msg.id.toString().length - 1) || 0) % prompts.length;
                               return (
@@ -4316,7 +4592,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                       setIsToolsMenuOpen(!isToolsMenuOpen);
                       console.log("Tools Menu Toggled:", !isToolsMenuOpen);
                     }}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${isToolsMenuOpen || isImageGeneration || isDeepSearch || isAudioConvertMode || isDocumentConvert ? 'bg-primary/20 text-primary scale-110 shadow-lg shadow-primary/30 ring-2 ring-primary/20' : 'bg-transparent text-subtext hover:text-primary hover:bg-secondary'}`}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${isToolsMenuOpen || isImageGeneration || isDeepSearch || isAudioConvertMode || isDocumentConvert || isCodeWriter || isVideoGeneration || (activeAgent.slug && activeAgent.slug.startsWith('tool-')) ? 'bg-primary/20 text-primary scale-110 shadow-lg shadow-primary/30 ring-2 ring-primary/20' : 'bg-transparent text-subtext hover:text-primary hover:bg-secondary'}`}
                     title="AI Magic Tools"
                   >
                     <Sparkles className="w-5 h-5" />
@@ -4326,7 +4602,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
               </div >
 
               {/* High-Visibility Tools Menu */}
-              < AnimatePresence >
+              <AnimatePresence>
                 {isToolsMenuOpen && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -4336,170 +4612,555 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     ref={toolsMenuRef}
                     className="absolute bottom-full left-0 mb-4 z-50 pointer-events-none"
                   >
-                    <div className="w-72 sm:w-80 px-1 pointer-events-auto">
-                      {/* Features Vertical Panel */}
-                      <div className="bg-surface/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-border shadow-2xl p-2 sm:p-4 mb-2 sm:mb-4 ring-1 ring-black/5">
-                        <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                          {[
-                            {
-                              id: 'image',
-                              title: 'Generate Image',
-                              desc: 'Turn text into stunning AI visuals.',
-                              icon: ImageIcon,
-                              color: 'text-fuchsia-500 dark:text-fuchsia-400',
-                              bgColor: 'bg-fuchsia-500/10',
-                              active: isImageGeneration,
-                              onClick: () => {
-                                setIsImageGeneration(!isImageGeneration);
-                                setIsDeepSearch(false);
-                                setIsAudioConvertMode(false);
-                                setIsDocumentConvert(false);
-                                setIsCodeWriter(false);
-                                setIsToolsMenuOpen(false);
-                              }
-                            },
-                            {
-                              id: 'search',
-                              title: 'Deep Search',
-                              desc: 'Advanced research & data analysis.',
-                              icon: Search,
-                              color: 'text-blue-500 dark:text-blue-400',
-                              bgColor: 'bg-blue-500/10',
-                              active: isDeepSearch,
-                              onClick: () => {
-                                setIsDeepSearch(!isDeepSearch);
-                                setIsImageGeneration(false);
-                                setIsAudioConvertMode(false);
-                                setIsDocumentConvert(false);
-                                setIsCodeWriter(false);
-                                setIsToolsMenuOpen(false);
-                              }
-                            },
-                            {
-                              id: 'audio',
-                              title: 'Convert to Audio',
-                              desc: 'Transform docs into natural speech.',
-                              icon: Headphones,
-                              color: 'text-violet-500 dark:text-violet-400',
-                              bgColor: 'bg-violet-500/10',
-                              active: isAudioConvertMode,
-                              onClick: () => {
-                                setIsAudioConvertMode(!isAudioConvertMode);
-                                setIsDeepSearch(false);
-                                setIsImageGeneration(false);
-                                setIsDocumentConvert(false);
-                                setIsCodeWriter(false);
-                                setIsToolsMenuOpen(false);
-                              }
-                            },
-                            {
-                              id: 'convert',
-                              title: 'Universal Document Converter',
-                              desc: 'Bidirectional conversion for PDF, DOCX, PPTX, XLSX, and Images.',
-                              icon: FileText,
-                              color: 'text-amber-500 dark:text-amber-400',
-                              bgColor: 'bg-amber-500/10',
-                              active: isDocumentConvert,
-                              onClick: () => {
-                                setIsDocumentConvert(!isDocumentConvert);
-                                setIsDeepSearch(false);
-                                setIsImageGeneration(false);
-                                setIsAudioConvertMode(false);
-                                setIsCodeWriter(false);
-                                setIsToolsMenuOpen(false);
-                              }
-                            },
-                            {
-                              id: 'code',
-                              title: 'Code Writer',
-                              desc: 'Expert coding & debugging.',
-                              icon: Code,
-                              color: 'text-emerald-500 dark:text-emerald-400',
-                              bgColor: 'bg-emerald-500/10',
-                              active: isCodeWriter,
-                              onClick: () => {
-                                setIsCodeWriter(!isCodeWriter);
-                                setIsDeepSearch(false);
-                                setIsImageGeneration(false);
-                                setIsAudioConvertMode(false);
-                                setIsDocumentConvert(false);
-                                setIsToolsMenuOpen(false);
-                              }
-                            }
-                          ].map((tool) => (
-                            <button
-                              key={tool.id}
-                              onClick={(e) => { e.stopPropagation(); tool.onClick(); }}
-                              className={`
-                              group flex items-center gap-3 sm:gap-4 w-full p-2 sm:p-3 rounded-xl transition-all duration-200 border text-left shrink-0
-                              ${tool.active
-                                  ? 'bg-primary/10 border-primary/30 shadow-sm'
-                                  : 'bg-surface border-border hover:bg-secondary hover:border-primary/20 hover:scale-[1.01]'
-                                }
-                            `}
-                            >
-                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${tool.active ? 'bg-primary text-white shadow-md' : `${tool.bgColor} ${tool.color}`}`}>
-                                <tool.icon size={20} strokeWidth={2.5} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className={`text-sm font-bold tracking-tight ${tool.active ? 'text-primary' : 'text-maintext'}`}>
-                                  {tool.title}
-                                </h4>
-                                <p className="text-xs text-subtext truncate opacity-90">
-                                  {tool.desc}
-                                </p>
-                              </div>
-                            </button>
+                    {(() => {
+                      const ownedToolsCount = [
+                        'tool-image-gen',
+                        'tool-video-gen',
+                        'tool-deep-search',
+                        'tool-audio-convert',
+                        'tool-universal-converter',
+                        'tool-code-writer',
+                        'tool-ai-personal-assistant',
+                        'tool-image-editing-customization',
+                        'tool-fast-video-generator',
+                        'tool-lyria-for-music',
+                        'tool-time-series-forecasting',
+                        'tool-llm-auditor',
+                        'tool-personalized-shopping',
+                        'tool-brand-search-optimization',
+                        'tool-fomc-research',
+                        'tool-image-scoring',
+                        'tool-data-science',
+                        'tool-rag-engine',
+                        'tool-financial-advisor',
+                        'tool-marketing-agency',
+                        'tool-customer-service',
+                        'tool-academic-research',
+                        'tool-bug-assistant',
+                        'tool-travel-concierge'
+                      ].filter(slug => userAgents.some(a => a.slug === slug)).length;
 
-                          ))}
+                      if (ownedToolsCount === 0) return null;
+
+                      return (
+                        <div className="w-72 sm:w-80 px-1 pointer-events-auto">
+                          {/* Features Vertical Panel */}
+                          <div className="bg-surface/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-border shadow-2xl p-2 sm:p-4 mb-2 sm:mb-4 ring-1 ring-black/5">
+                            <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                              {[
+                                {
+                                  id: 'image',
+                                  slug: 'tool-image-gen',
+                                  title: 'Generate Image',
+                                  desc: 'Turn text into stunning AI visuals.',
+                                  icon: ImageIcon,
+                                  color: 'text-fuchsia-500 dark:text-fuchsia-400',
+                                  bgColor: 'bg-fuchsia-500/10',
+                                  active: isImageGeneration,
+                                  onClick: () => {
+                                    const newState = !isImageGeneration;
+                                    setIsImageGeneration(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Generate Image', category: 'Creative', slug: 'tool-image-gen', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsDeepSearch(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'video',
+                                  slug: 'tool-video-gen',
+                                  title: 'Generate Video',
+                                  desc: 'Turn text into cinematic AI videos.',
+                                  icon: Video,
+                                  color: 'text-indigo-500 dark:text-indigo-400',
+                                  bgColor: 'bg-indigo-500/10',
+                                  active: isVideoGeneration,
+                                  onClick: () => {
+                                    const newState = !isVideoGeneration;
+                                    setIsVideoGeneration(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Generate Video', category: 'Creative', slug: 'tool-video-gen', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsImageGeneration(false);
+                                    setIsDeepSearch(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'search',
+                                  slug: 'tool-deep-search',
+                                  title: 'Deep Search',
+                                  desc: 'Advanced research & data analysis.',
+                                  icon: Search,
+                                  color: 'text-blue-500 dark:text-blue-400',
+                                  bgColor: 'bg-blue-500/10',
+                                  active: isDeepSearch,
+                                  onClick: () => {
+                                    const newState = !isDeepSearch;
+                                    setIsDeepSearch(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Deep Search', category: 'Research', slug: 'tool-deep-search', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsImageGeneration(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'audio',
+                                  slug: 'tool-audio-convert',
+                                  title: 'Convert to Audio',
+                                  desc: 'Transform docs into natural speech.',
+                                  icon: Headphones,
+                                  color: 'text-violet-500 dark:text-violet-400',
+                                  bgColor: 'bg-violet-500/10',
+                                  active: isAudioConvertMode,
+                                  onClick: () => {
+                                    const newState = !isAudioConvertMode;
+                                    setIsAudioConvertMode(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Convert to Audio', category: 'Creative', slug: 'tool-audio-convert', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsDeepSearch(false);
+                                    setIsImageGeneration(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'convert',
+                                  slug: 'tool-universal-converter',
+                                  title: 'Universal Document Converter',
+                                  desc: 'Bidirectional conversion for PDF, DOCX, PPTX, XLSX, and Images.',
+                                  icon: FileText,
+                                  color: 'text-amber-500 dark:text-amber-400',
+                                  bgColor: 'bg-amber-500/10',
+                                  active: isDocumentConvert,
+                                  onClick: () => {
+                                    const newState = !isDocumentConvert;
+                                    setIsDocumentConvert(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Universal Converter', category: 'Productivity', slug: 'tool-universal-converter', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsDeepSearch(false);
+                                    setIsImageGeneration(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsCodeWriter(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'code',
+                                  slug: 'tool-code-writer',
+                                  title: 'Code Writer',
+                                  desc: 'Expert coding & debugging.',
+                                  icon: Code,
+                                  color: 'text-emerald-500 dark:text-emerald-400',
+                                  bgColor: 'bg-emerald-500/10',
+                                  active: isCodeWriter,
+                                  onClick: () => {
+                                    const newState = !isCodeWriter;
+                                    setIsCodeWriter(newState);
+                                    if (newState) {
+                                      setActiveAgent({ agentName: 'Code Writer', category: 'Coding', slug: 'tool-code-writer', avatar: '/AGENTS_IMG/AISA.png' });
+                                    } else {
+                                      setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                                    }
+                                    setIsDeepSearch(false);
+                                    setIsImageGeneration(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'assistant',
+                                  slug: 'tool-ai-personal-assistant',
+                                  title: 'AI Personal Assistant',
+                                  desc: 'Your dedicated AI assistant for scheduling and tasks.',
+                                  icon: CalendarIcon,
+                                  color: 'text-rose-500 dark:text-rose-400',
+                                  bgColor: 'bg-rose-500/10',
+                                  active: activeAgent.slug === 'tool-ai-personal-assistant',
+                                  onClick: () => {
+                                    navigate('/dashboard/ai-personal-assistant');
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'image-edit',
+                                  slug: 'tool-image-editing-customization',
+                                  title: 'Image Editing',
+                                  desc: 'Edit and customize existing images.',
+                                  icon: Edit2,
+                                  color: 'text-purple-500 dark:text-purple-400',
+                                  bgColor: 'bg-purple-500/10',
+                                  active: activeAgent.slug === 'tool-image-editing-customization',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Image Editing', category: 'Creative', slug: 'tool-image-editing-customization', avatar: '/AGENTS_IMG/AIPHOTO.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'fast-video',
+                                  slug: 'tool-fast-video-generator',
+                                  title: 'Fast Video Gen',
+                                  desc: 'Rapidly generate AI videos from prompts.',
+                                  icon: Zap,
+                                  color: 'text-yellow-500 dark:text-yellow-400',
+                                  bgColor: 'bg-yellow-500/10',
+                                  active: activeAgent.slug === 'tool-fast-video-generator',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Fast Video Generator', category: 'Creative', slug: 'tool-fast-video-generator', avatar: '/AGENTS_IMG/AIVIDEO.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'music-lyria',
+                                  slug: 'tool-lyria-for-music',
+                                  title: 'Music Generation',
+                                  desc: 'High-fidelity AI music generation.',
+                                  icon: Music,
+                                  color: 'text-pink-500 dark:text-pink-400',
+                                  bgColor: 'bg-pink-500/10',
+                                  active: activeAgent.slug === 'tool-lyria-for-music',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Lyria (For Music)', category: 'Creative', slug: 'tool-lyria-for-music', avatar: '/AGENTS_IMG/AIMUSIC.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'time-series',
+                                  slug: 'tool-time-series-forecasting',
+                                  title: 'Predictive Analytics',
+                                  desc: 'Automated BQML forecasting.',
+                                  icon: TrendingUp,
+                                  color: 'text-blue-600 dark:text-blue-400',
+                                  bgColor: 'bg-blue-600/10',
+                                  active: activeAgent.slug === 'tool-time-series-forecasting',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Time Series Forecasting', category: 'Data & Intelligence', slug: 'tool-time-series-forecasting', avatar: '/AGENTS_IMG/AICRAFT.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'llm-auditor',
+                                  slug: 'tool-llm-auditor',
+                                  title: 'LLM Auditor',
+                                  desc: 'Verify AI response accuracy.',
+                                  icon: ShieldCheck,
+                                  color: 'text-slate-600 dark:text-slate-400',
+                                  bgColor: 'bg-slate-600/10',
+                                  active: activeAgent.slug === 'tool-llm-auditor',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'LLM Auditor', category: 'Research', slug: 'tool-llm-auditor', avatar: '/AGENTS_IMG/AILEGAL.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'shopping',
+                                  slug: 'tool-personalized-shopping',
+                                  title: 'Smart Shopping',
+                                  desc: 'Brand-tailored recommendations.',
+                                  icon: ShoppingBag,
+                                  color: 'text-rose-500 dark:text-rose-400',
+                                  bgColor: 'bg-rose-500/10',
+                                  active: activeAgent.slug === 'tool-personalized-shopping',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Personalized Shopping', category: 'Sales & Marketing', slug: 'tool-personalized-shopping', avatar: '/AGENTS_IMG/AIMARKET.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'brand-seo',
+                                  slug: 'tool-brand-search-optimization',
+                                  title: 'Brand SEO',
+                                  desc: 'Competitor & keyword analysis.',
+                                  icon: Globe,
+                                  color: 'text-orange-600 dark:text-orange-400',
+                                  bgColor: 'bg-orange-600/10',
+                                  active: activeAgent.slug === 'tool-brand-search-optimization',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Brand Search Optimization', category: 'Sales & Marketing', slug: 'tool-brand-search-optimization', avatar: '/AGENTS_IMG/AIBRAND.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'fomc',
+                                  slug: 'tool-fomc-research',
+                                  title: 'FOMC Research',
+                                  desc: 'Financial data analysis.',
+                                  icon: DollarSign,
+                                  color: 'text-emerald-700 dark:text-emerald-500',
+                                  bgColor: 'bg-emerald-700/10',
+                                  active: activeAgent.slug === 'tool-fomc-research',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'FOMC Research', category: 'Research', slug: 'tool-fomc-research', avatar: '/AGENTS_IMG/AICORE.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'img-scoring',
+                                  slug: 'tool-image-scoring',
+                                  title: 'Image Scoring',
+                                  desc: 'Policy-compliant evaluation.',
+                                  icon: Target,
+                                  color: 'text-blue-700 dark:text-blue-500',
+                                  bgColor: 'bg-blue-700/10',
+                                  active: activeAgent.slug === 'tool-image-scoring',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Image Scoring', category: 'Design & Creative', slug: 'tool-image-scoring', avatar: '/AGENTS_IMG/AISCAN.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'data-science',
+                                  slug: 'tool-data-science',
+                                  title: 'Data Science',
+                                  desc: 'Natural language data modeling.',
+                                  icon: Database,
+                                  color: 'text-cyan-600 dark:text-cyan-400',
+                                  bgColor: 'bg-cyan-600/10',
+                                  active: activeAgent.slug === 'tool-data-science',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Data Science Agent', category: 'Data & Intelligence', slug: 'tool-data-science', avatar: '/AGENTS_IMG/AILAB.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'rag-engine',
+                                  slug: 'tool-rag-engine',
+                                  title: 'RAG Engine',
+                                  desc: 'Context-aware grounded AI.',
+                                  icon: Brain,
+                                  color: 'text-teal-600 dark:text-teal-400',
+                                  bgColor: 'bg-teal-600/10',
+                                  active: activeAgent.slug === 'tool-rag-engine',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'RAG Engine', category: 'Data & Intelligence', slug: 'tool-rag-engine', avatar: '/AGENTS_IMG/AIMIND.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'finance-advisor',
+                                  slug: 'tool-financial-advisor',
+                                  title: 'Finance Advisor',
+                                  desc: 'Investment & finance AI.',
+                                  icon: Briefcase,
+                                  color: 'text-green-700 dark:text-green-500',
+                                  bgColor: 'bg-green-700/10',
+                                  active: activeAgent.slug === 'tool-financial-advisor',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Financial Advisor', category: 'HR & Finance', slug: 'tool-financial-advisor', avatar: '/AGENTS_IMG/AIPAY.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'marketing-agency',
+                                  slug: 'tool-marketing-agency',
+                                  title: 'Marketing AI',
+                                  desc: 'Full-stack marketing automation.',
+                                  icon: Megaphone,
+                                  color: 'text-purple-700 dark:text-purple-500',
+                                  bgColor: 'bg-purple-700/10',
+                                  active: activeAgent.slug === 'tool-marketing-agency',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Marketing Agency', category: 'Sales & Marketing', slug: 'tool-marketing-agency', avatar: '/AGENTS_IMG/AIMARKET.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'cust-service',
+                                  slug: 'tool-customer-service',
+                                  title: 'Customer Service',
+                                  desc: 'Video & image-based support.',
+                                  icon: Headset,
+                                  color: 'text-sky-600 dark:text-sky-400',
+                                  bgColor: 'bg-sky-600/10',
+                                  active: activeAgent.slug === 'tool-customer-service',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Customer Service AI', category: 'Business OS', slug: 'tool-customer-service', avatar: '/AGENTS_IMG/AICARE.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'academic',
+                                  slug: 'tool-academic-research',
+                                  title: 'Academic Assistant',
+                                  desc: 'Scholarly publication analysis.',
+                                  icon: GraduationCap,
+                                  color: 'text-rose-700 dark:text-rose-500',
+                                  bgColor: 'bg-rose-700/10',
+                                  active: activeAgent.slug === 'tool-academic-research',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Academic Research Assistant', category: 'Research', slug: 'tool-academic-research', avatar: '/AGENTS_IMG/AIDOC.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'bug-assistant',
+                                  slug: 'tool-bug-assistant',
+                                  title: 'Bug Assistant',
+                                  desc: 'Software bug resolution.',
+                                  icon: Bug,
+                                  color: 'text-zinc-700 dark:text-zinc-500',
+                                  bgColor: 'bg-zinc-700/10',
+                                  active: activeAgent.slug === 'tool-bug-assistant',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Bug Assistant', category: 'Coding', slug: 'tool-bug-assistant', avatar: '/AGENTS_IMG/AISCRIPT.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'travel',
+                                  slug: 'tool-travel-concierge',
+                                  title: 'Travel Concierge',
+                                  desc: 'Real-time itinerary planning.',
+                                  icon: MapPin,
+                                  color: 'text-orange-600 dark:text-orange-400',
+                                  bgColor: 'bg-orange-600/10',
+                                  active: activeAgent.slug === 'tool-travel-concierge',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Travel Concierge', category: 'Lifestyle', slug: 'tool-travel-concierge', avatar: '/AGENTS_IMG/AITRANS.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                }
+                              ].filter(tool => userAgents.some(a => a.slug === tool.slug)).map((tool) => (
+                                <button
+                                  key={tool.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    tool.onClick();
+                                  }}
+                                  className={`
+                                  group flex items-center gap-3 sm:gap-4 w-full p-2 sm:p-3 rounded-xl transition-all duration-200 border text-left shrink-0
+                                  ${tool.active
+                                      ? 'bg-primary/10 border-primary/30 shadow-sm'
+                                      : 'bg-surface border-border hover:bg-secondary hover:border-primary/20 hover:scale-[1.01]'
+                                    }
+                                `}
+                                >
+                                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${tool.active ? 'bg-primary text-white shadow-md' : `${tool.bgColor} ${tool.color}`}`}>
+                                    <tool.icon size={20} strokeWidth={2.5} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <h4 className={`text-sm font-bold tracking-tight ${tool.active ? 'text-primary' : 'text-maintext'}`}>
+                                        {tool.title}
+                                      </h4>
+                                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter bg-emerald-500/10 px-1.5 py-0.5 rounded-full">Active</span>
+                                    </div>
+                                    <p className="text-xs text-subtext truncate opacity-90">
+                                      {tool.desc}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </motion.div>
                 )}
-              </AnimatePresence >
+              </AnimatePresence>
 
               {/* Input Area */}
               < div className="relative flex-1 min-w-0 py-1 px-1" >
                 <AnimatePresence>
-                  {(isDeepSearch || isImageGeneration || isVoiceMode || isAudioConvertMode || isDocumentConvert || isCodeWriter) && (
-                    <div className="absolute bottom-full left-0 mb-3 flex gap-2 overflow-x-auto no-scrollbar pointer-events-auto w-full max-w-full">
-                      {isDeepSearch && (
-                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold border border-primary/20 backdrop-blur-md whitespace-nowrap shrink-0">
-                          <Search size={12} strokeWidth={3} /> <span className="hidden sm:inline">Deep Search</span>
-                          <button onClick={() => setIsDeepSearch(false)} className="ml-1 hover:text-primary/80"><X size={12} /></button>
+                  {(isDeepSearch || isImageGeneration || isVoiceMode || isAudioConvertMode || isDocumentConvert || isCodeWriter || isVideoGeneration || (activeAgent.slug && activeAgent.slug.startsWith('tool-'))) && (
+                    <div className="absolute bottom-full left-0 mb-5 flex gap-2 overflow-x-auto no-scrollbar pointer-events-auto w-full max-w-full pb-2">
+                      {/* Agent Tool Pill (Primary) */}
+                      {activeAgent.slug && activeAgent.slug.startsWith('tool-') && (
+                        <motion.div initial={{ opacity: 0, y: 5, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-xl text-xs font-bold border border-primary/30 backdrop-blur-xl whitespace-nowrap shrink-0 shadow-lg shadow-primary/10 group transition-all hover:scale-105">
+                          <div className="p-1 bg-primary/20 rounded-lg">
+                            {React.createElement(getToolIcon(activeAgent.slug), { size: 14, strokeWidth: 3, className: "shrink-0" })}
+                          </div>
+                          <span className="hidden sm:inline uppercase tracking-widest">{activeAgent.agentName}</span>
+                          <button
+                            onClick={() => {
+                              setActiveAgent({ agentName: 'AISA', category: 'General', avatar: '/AGENTS_IMG/AISA.png' });
+                              setIsImageGeneration(false);
+                              setIsVideoGeneration(false);
+                              setIsDeepSearch(false);
+                              setIsAudioConvertMode(false);
+                              setIsDocumentConvert(false);
+                              setIsCodeWriter(false);
+                            }}
+                            className="ml-1.5 p-0.5 hover:bg-primary/20 rounded-full transition-colors"
+                          >
+                            <X size={12} />
+                          </button>
                         </motion.div>
                       )}
-                      {isImageGeneration && (
-                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-pink-500/10 text-pink-600 rounded-full text-xs font-bold border border-pink-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
-                          <ImageIcon size={12} strokeWidth={3} /> <span className="hidden sm:inline">Image Gen</span>
-                          <button onClick={() => setIsImageGeneration(false)} className="ml-1 hover:text-pink-800"><X size={12} /></button>
-                        </motion.div>
-                      )}
+
                       {isVoiceMode && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-blue-500/10 text-blue-600 rounded-full text-xs font-bold border border-blue-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
                           <Volume2 size={12} strokeWidth={3} /> <span className="hidden sm:inline">Voice Mode</span>
                           <button onClick={() => setIsVoiceMode(false)} className="ml-1 hover:text-blue-800"><X size={12} /></button>
                         </motion.div>
                       )}
-                      {isAudioConvertMode && (
+                      {isAudioConvertMode && activeAgent.slug !== 'tool-audio-convert' && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-indigo-500/10 text-indigo-600 rounded-full text-xs font-bold border border-indigo-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
                           <Headphones size={12} strokeWidth={3} /> <span className="hidden sm:inline">Audio Convert</span>
                           <button onClick={() => setIsAudioConvertMode(false)} className="ml-1 hover:text-indigo-800"><X size={12} /></button>
                         </motion.div>
                       )}
-                      {isDocumentConvert && (
+                      {isDocumentConvert && activeAgent.slug !== 'tool-universal-converter' && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-bold border border-emerald-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
                           <FileText size={12} strokeWidth={3} /> <span className="hidden sm:inline">Universal Converter</span>
                           <button onClick={() => setIsDocumentConvert(false)} className="ml-1 hover:text-emerald-800"><X size={12} /></button>
                         </motion.div>
                       )}
-                      {isCodeWriter && (
+                      {isCodeWriter && activeAgent.slug !== 'tool-code-writer' && (
                         <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 bg-orange-500/10 text-orange-600 rounded-full text-xs font-bold border border-orange-500/20 backdrop-blur-md whitespace-nowrap shrink-0">
                           <Code size={12} strokeWidth={3} /> <span className="hidden sm:inline">Code Writer</span>
                           <button onClick={() => setIsCodeWriter(false)} className="ml-1 hover:text-orange-800"><X size={12} /></button>
                         </motion.div>
                       )}
+
                     </div>
                   )}
                 </AnimatePresence>

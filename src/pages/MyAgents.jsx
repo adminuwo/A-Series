@@ -159,12 +159,31 @@ const MyAgents = () => {
                                             const workspaceAgents = ['AISALES', 'AIWRITE', 'AIBIZ', 'AIHIRE', 'AIDESK'];
 
                                             // Agents that use the generic Chat interface
-                                            const chatAgents = ['AISA'];
+                                            const chatAgents = [
+                                                'AISA',
+                                                'GENERATEIMAGE',
+                                                'GENERATEVIDEO',
+                                                'DEEPSEARCH',
+                                                'CONVERTTOAUDIO',
+                                                'UNIVERSALCONVERTER',
+                                                'CODEWRITER',
+                                                'IMAGEEDITING',
+                                                'FASTVIDEOGENERATOR',
+                                                'MUSICGENERATION',
+                                                'LYRIAFORMUSIC'
+                                            ];
+
+                                            // Internal route agents
+                                            const internalRouteAgents = {
+                                                'AIPERSONALASSISTANT': '/dashboard/ai-personal-assistant',
+                                            };
 
                                             if (workspaceAgents.includes(name)) {
                                                 navigate(`${AppRoute.WORKSPACE}/${name}`);
                                             } else if (chatAgents.includes(name)) {
                                                 navigate(AppRoute.CHAT, { state: { agentType: name, agent: agent } });
+                                            } else if (internalRouteAgents[name]) {
+                                                navigate(internalRouteAgents[name]);
                                             } else {
                                                 const targetUrl = (!agent?.url || agent.url.trim() === "") ? AppRoute.agentSoon : agent.url;
                                                 setSelectedAgent({ ...agent, url: targetUrl });
