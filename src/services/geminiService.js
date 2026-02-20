@@ -14,8 +14,8 @@ export const generateChatResponse = async (history, currentMessage, systemInstru
         }
 
         // Enhanced system instruction based on user language
-        const langInstruction = language ? `You are a helpful AI assistant. Please respond to the user in ${language}. ` : '';
-        const combinedSystemInstruction = (langInstruction + (systemInstruction || '')).trim();
+        const langInstruction = language ? `\n\n### LANGUAGE HINT:\n- Respond in ${language} if appropriate for the user's query.` : '';
+        const combinedSystemInstruction = ((systemInstruction || '') + langInstruction).trim();
 
         let images = [];
         let documents = [];
