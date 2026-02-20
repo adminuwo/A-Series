@@ -2794,7 +2794,7 @@ Do NOT say "I cannot create images". You CAN by using this link format.
 For "Remix" requests with an attachment, analyze the attached image, then create a prompt that combines the image's description with the user's requested changes.
 `;
 
-      const aiResponseText = await generateChatResponse(
+      const aiResponseData = await generateChatResponse(
         messagesUpToEdit,
         updatedMsg.content,
         SYSTEM_INSTRUCTION + getSystemPromptExtensions(),
@@ -2802,10 +2802,30 @@ For "Remix" requests with an attachment, analyze the attached image, then create
         currentLang
       );
 
+      let finalReply = '';
+      let conversionData = null;
+      let aiVideoUrl = null;
+      let aiImageUrl = null;
+      let aiAudioUrl = null;
+
+      if (typeof aiResponseData === 'string') {
+        finalReply = aiResponseData;
+      } else if (aiResponseData && typeof aiResponseData === 'object') {
+        finalReply = aiResponseData.reply || "No response generated.";
+        conversionData = aiResponseData.conversion || null;
+        aiVideoUrl = aiResponseData.videoUrl || null;
+        aiImageUrl = aiResponseData.imageUrl || null;
+        aiAudioUrl = aiResponseData.audioUrl || null;
+      }
+
       const modelMsg = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: aiResponseText,
+        content: finalReply,
+        conversion: conversionData,
+        videoUrl: aiVideoUrl,
+        imageUrl: aiImageUrl,
+        audioUrl: aiAudioUrl,
         timestamp: Date.now(),
       };
 
@@ -3700,7 +3720,7 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                               }}
                             >
                               {(() => {
-                                const rawContent = msg.content || msg.text || "";
+                                const rawContent = String(msg.content || msg.text || "");
                                 // Regex to detect JSON block with "image_url", handling optional markdown code blocks
                                 // Captures: Group 1 = URL
                                 return rawContent.replace(
@@ -4589,6 +4609,29 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                     ref={toolsBtnRef}
                     onClick={(e) => {
                       e.stopPropagation();
+
+                      const ownedToolsCount = [
+                        'tool-image-gen', 'tool-video-gen', 'tool-deep-search', 'tool-audio-convert',
+                        'tool-universal-converter', 'tool-code-writer', 'tool-ai-personal-assistant',
+                        'tool-image-editing-customization', 'tool-fast-video-generator', 'tool-lyria-for-music',
+                        'tool-time-series-forecasting', 'tool-llm-auditor', 'tool-personalized-shopping',
+                        'tool-brand-search-optimization', 'tool-fomc-research', 'tool-image-scoring',
+                        'tool-data-science', 'tool-rag-engine', 'tool-financial-advisor',
+                        'tool-marketing-agency', 'tool-customer-service', 'tool-academic-research',
+                        'tool-bug-assistant', 'tool-travel-concierge'
+                      ].filter(slug => userAgents.some(a => a.slug === slug)).length;
+
+                      if (ownedToolsCount === 0) {
+                        toast("You haven't activated any AI tools yet. Redirecting to Marketplace...", {
+                          icon: '🛍️',
+                          duration: 3000
+                        });
+                        setTimeout(() => {
+                          navigate('/dashboard/marketplace');
+                        }, 2000);
+                        return;
+                      }
+
                       setIsToolsMenuOpen(!isToolsMenuOpen);
                       console.log("Tools Menu Toggled:", !isToolsMenuOpen);
                     }}
