@@ -245,6 +245,13 @@ const getToolIcon = (slug) => {
     case 'tool-bug-assistant': return Bug;
     case 'tool-travel-concierge': return MapPin;
     case 'tool-ai-personal-assistant': return CalendarIcon;
+    case 'tool-ai-blur': return Eye;
+    case 'tool-ai-detector': return Target;
+    case 'tool-nvidia-nemotron-nano-12b': return Zap;
+    case 'tool-claude-sonnet-4-5': return Brain;
+    case 'tool-blip2': return ImageIcon;
+    case 'tool-path-foundation': return ShieldCheck;
+    case 'tool-derm-foundation': return MapPin;
     default: return ImageIcon;
   }
 };
@@ -1906,12 +1913,14 @@ const Chat = () => {
       // Detect mode for UI indicator
       const isImageEditActive = activeAgent.slug === 'tool-image-editing-customization';
       const isMusicGenActive = activeAgent.slug === 'tool-lyria-for-music' || activeAgent.slug === 'lyria-for-music' || activeAgent.agentName?.toLowerCase().includes('lyria');
+      const isAIDocActive = activeAgent.slug === 'tool-ai-document' || activeAgent.slug === 'ai-document';
       const detectedMode = deepSearchActive ? MODES.DEEP_SEARCH :
         (documentConvertActive ? MODES.FILE_CONVERSION :
           (codeWriterActive ? MODES.CODING_HELP :
             (isImageEditActive ? MODES.IMAGE_EDIT :
               (isMusicGenActive ? MODES.AUDIO_GEN :
-                detectMode(contentToSend, userMsg.attachments)))));
+                (isAIDocActive ? MODES.FILE_ANALYSIS :
+                  detectMode(contentToSend, userMsg.attachments))))));
       console.log(`[CHAT] Detected Mode: ${detectedMode} for message: "${contentToSend}"`);
       setCurrentMode(detectedMode);
 
@@ -2119,6 +2128,146 @@ ${codeWriterActive ? `### CODE WRITER MODE ENABLED (CRITICAL):
 - If there's a bug, explain WHY it occurred and HOW to fix it.
 - Use Markdown code blocks with appropriate language tags (e.g., \`\`\`python, \`\`\`javascript).
 - Provide step-by-step explanations for complex code segments.` : ''}
+
+${(activeAgent.slug === 'tool-ai-document' || activeAgent.slug === 'ai-document') ? `
+You are **AI Doc Assistant**, an intelligent document reading and text-extraction agent.
+
+Your job is to analyze any uploaded document (image, scan, or PDF) and accurately understand, extract, and organize the text inside it.
+
+---
+
+## CORE CAPABILITIES
+
+1. Multilingual OCR
+   You can detect and read printed text from up to 200+ languages including but not limited to:
+   Hindi, English, Urdu, Arabic, Chinese, Japanese, French, Spanish, German and other global languages.
+
+2. Handwriting Recognition
+   You can understand and extract handwritten text from 50+ writing styles including:
+   notes, forms, signatures, prescriptions, exam papers, and casual handwriting.
+
+3. Text Extraction
+   Convert document → structured readable text.
+
+4. Post-Processing
+   After extracting text you must be able to:
+
+* Clean formatting
+* Fix spacing issues
+* Detect paragraphs
+* Identify headings
+* Detect tables or lists
+* Preserve meaning
+
+---
+
+## OUTPUT RULES
+
+Always respond in this order:
+
+1. Detected Language
+2. Extracted Clean Text
+3. Structured Format (Headings / Bullet points / Tables if present)
+4. Important Information Summary
+5. Optional Translation (only if user asks)
+
+---
+
+## BEHAVIOR RULES
+
+* Never hallucinate missing words
+* If text is unclear, mark as [unclear]
+* Maintain original meaning
+* Keep numbers and dates accurate
+* Do not translate unless asked
+* Do not add extra explanations unless requested
+
+---
+
+## GOAL
+
+Your purpose is to act as a **smart scanner**:
+Image/PDF → Understand → Extract → Structure → Provide usable text
+` : ''}
+
+${activeAgent.slug === 'tool-blip2' ? `
+You are a Vision-Language AI assistant.
+Your job is to understand images and answer user questions about them accurately, clearly, and intelligently — like a human who can both see and reason.
+
+---
+
+## CORE BEHAVIOR
+
+1. First observe the image carefully.
+2. Identify all visible elements:
+
+   * People
+   * Objects
+   * Equipment
+   * Environment
+   * Actions
+   * Text inside the image
+3. Understand context, relationships, and intent — not just labels.
+4. Then read the user’s question and answer specifically according to the question.
+5. Never give generic answers. Always connect your answer to the image evidence.
+
+---
+
+## RESPONSE STYLE
+
+Always respond in simple, natural language.
+Do NOT mention AI, model, detection, or probability unless user asks.
+Do NOT hallucinate unseen details.
+If something is unclear, say: "यह स्पष्ट नहीं दिख रहा" or "image में साफ़ नहीं दिखता".
+
+---
+
+## REASONING RULES
+
+You must be able to handle complex queries such as:
+• What is happening in the image?
+• Is the situation safe or dangerous?
+• What rule is being violated?
+• What emotion is visible?
+• What might happen next?
+• Why is this occurring?
+
+When required:
+Explain step-by-step reasoning in a short human-like explanation.
+
+---
+
+## SAFETY & LOGIC
+
+If image shows risk:
+
+* Explain the risk
+* Suggest prevention
+
+If image shows a task or machine:
+
+* Explain purpose
+* Explain correct usage
+
+If question requires assumption:
+Answer carefully using words like:
+"संभावना है", "लगता है", "शायद"
+
+---
+
+## OUTPUT FORMAT
+
+Short Answer → Direct response
+Detailed Answer → Explanation + reasoning
+Advice → Only when useful
+
+---
+
+## GOAL
+
+Your goal is not just to describe the image,
+but to UNDERSTAND the scene and intelligently answer any visual question about it.
+` : ''}
 `;
         // Check for greeting to send the specific welcome message
         const lowerInput = (contentToSend || "").toLowerCase().trim();
@@ -4614,12 +4763,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         'tool-image-gen', 'tool-video-gen', 'tool-deep-search', 'tool-audio-convert',
                         'tool-universal-converter', 'tool-code-writer', 'tool-ai-personal-assistant',
                         'tool-image-editing-customization', 'tool-fast-video-generator', 'tool-lyria-for-music',
-                        'tool-time-series-forecasting', 'tool-llm-auditor', 'tool-personalized-shopping',
+                        'tool-ai-document', 'tool-ai-blur', 'tool-ai-detector', 'tool-time-series-forecasting', 'tool-llm-auditor', 'tool-personalized-shopping',
                         'tool-brand-search-optimization', 'tool-fomc-research', 'tool-image-scoring',
                         'tool-data-science', 'tool-rag-engine', 'tool-financial-advisor',
                         'tool-marketing-agency', 'tool-customer-service', 'tool-academic-research',
-                        'tool-bug-assistant', 'tool-travel-concierge'
-                      ].filter(slug => userAgents.some(a => a.slug === slug)).length;
+                        'tool-bug-assistant', 'tool-travel-concierge', 'tool-nvidia-nemotron-nano-12b',
+                        'tool-claude-sonnet-4-5', 'tool-blip2', 'tool-path-foundation', 'tool-derm-foundation'
+                      ].filter(slug => userAgents.some(a => a.slug === slug || `tool-${a.slug}` === slug)).length;
 
                       if (ownedToolsCount === 0) {
                         toast("You haven't activated any AI tools yet. Redirecting to Marketplace...", {
@@ -4667,6 +4817,9 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         'tool-image-editing-customization',
                         'tool-fast-video-generator',
                         'tool-lyria-for-music',
+                        'tool-ai-document',
+                        'tool-ai-blur',
+                        'tool-ai-detector',
                         'tool-time-series-forecasting',
                         'tool-llm-auditor',
                         'tool-personalized-shopping',
@@ -4680,8 +4833,13 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                         'tool-customer-service',
                         'tool-academic-research',
                         'tool-bug-assistant',
-                        'tool-travel-concierge'
-                      ].filter(slug => userAgents.some(a => a.slug === slug)).length;
+                        'tool-travel-concierge',
+                        'tool-nvidia-nemotron-nano-12b',
+                        'tool-claude-sonnet-4-5',
+                        'tool-blip2',
+                        'tool-path-foundation',
+                        'tool-derm-foundation'
+                      ].filter(slug => userAgents.some(a => a.slug === slug || `tool-${a.slug}` === slug)).length;
 
                       if (ownedToolsCount === 0) return null;
 
@@ -4788,6 +4946,69 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     setIsDocumentConvert(false);
                                     setIsCodeWriter(false);
                                     setIsVideoGeneration(false);
+                                    setIsVideoGeneration(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'ai-document',
+                                  slug: 'tool-ai-document',
+                                  title: 'AI Document Analysis',
+                                  desc: 'Extract text & insights from docs.',
+                                  icon: FileText,
+                                  color: 'text-emerald-500 dark:text-emerald-400',
+                                  bgColor: 'bg-emerald-500/10',
+                                  active: activeAgent.slug === 'tool-ai-document',
+                                  onClick: () => {
+                                    setActiveAgent({ agentName: 'AI Document', category: 'Business OS', slug: 'tool-ai-document', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsImageGeneration(false);
+                                    setIsVideoGeneration(false);
+                                    setIsDeepSearch(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsToolsMenuOpen(false);
+                                    // Trigger file upload if possible, or just focus input
+                                    if (uploadInputRef.current) uploadInputRef.current.click();
+                                  }
+                                },
+                                {
+                                  id: 'ai-blur',
+                                  slug: 'tool-ai-blur',
+                                  title: 'AI Blur (Privacy)',
+                                  desc: 'Auto-blur faces & objects in video.',
+                                  icon: Eye, // Using Eye icon for privacy/visibility
+                                  color: 'text-gray-500 dark:text-gray-400',
+                                  bgColor: 'bg-gray-500/10',
+                                  active: activeAgent.slug === 'tool-ai-blur' || activeAgent.slug === 'ai-blur',
+                                  onClick: () => {
+                                    setActiveAgent({ agentName: 'AI Blur', category: 'Design & Creative', slug: 'tool-ai-blur', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsImageGeneration(false);
+                                    setIsVideoGeneration(false);
+                                    setIsDeepSearch(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'ai-detector',
+                                  slug: 'tool-ai-detector',
+                                  title: 'AI Detector',
+                                  desc: 'Identify objects & people in video.',
+                                  icon: Target, // Using Target icon for detection
+                                  color: 'text-teal-500 dark:text-teal-400',
+                                  bgColor: 'bg-teal-500/10',
+                                  active: activeAgent.slug === 'tool-ai-detector' || activeAgent.slug === 'ai-detector',
+                                  onClick: () => {
+                                    setActiveAgent({ agentName: 'AI Detector', category: 'Data & Intelligence', slug: 'tool-ai-detector', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsImageGeneration(false);
+                                    setIsVideoGeneration(false);
+                                    setIsDeepSearch(false);
+                                    setIsAudioConvertMode(false);
+                                    setIsDocumentConvert(false);
+                                    setIsCodeWriter(false);
                                     setIsToolsMenuOpen(false);
                                   }
                                 },
@@ -5109,8 +5330,83 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                     setActiveAgent({ agentName: 'Travel Concierge', category: 'Lifestyle', slug: 'tool-travel-concierge', avatar: '/AGENTS_IMG/AITRANS.png' });
                                     setIsToolsMenuOpen(false);
                                   }
+                                },
+                                {
+                                  id: 'nvidia-nemotron',
+                                  slug: 'tool-nvidia-nemotron-nano-12b',
+                                  title: 'NVIDIA Nemotron',
+                                  desc: 'Efficient 12B model for speed and accuracy.',
+                                  icon: Zap,
+                                  color: 'text-green-600 dark:text-green-400',
+                                  bgColor: 'bg-green-600/10',
+                                  active: activeAgent.slug === 'tool-nvidia-nemotron-nano-12b',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'NVIDIA Nemotron', category: 'Data & Intelligence', slug: 'tool-nvidia-nemotron-nano-12b', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'claude-sonnet',
+                                  slug: 'tool-claude-sonnet-4-5',
+                                  title: 'Claude Sonnet 4.5',
+                                  desc: 'Leading model for research & coding.',
+                                  icon: Brain,
+                                  color: 'text-orange-600 dark:text-orange-400',
+                                  bgColor: 'bg-orange-600/10',
+                                  active: activeAgent.slug === 'tool-claude-sonnet-4-5',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Claude Sonnet 4.5', category: 'Data & Intelligence', slug: 'tool-claude-sonnet-4-5', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'blip2',
+                                  slug: 'tool-blip2',
+                                  title: 'AI Image Analysis',
+                                  desc: 'Advanced vision-language reasoning.',
+                                  icon: ImageIcon,
+                                  color: 'text-blue-500 dark:text-blue-400',
+                                  bgColor: 'bg-blue-500/10',
+                                  active: activeAgent.slug === 'tool-blip2',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'BLIP2 Vision', category: 'Data & Intelligence', slug: 'tool-blip2', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'path-foundation',
+                                  slug: 'tool-path-foundation',
+                                  title: 'Pathology Research',
+                                  desc: 'AI for pathology diagnostics research.',
+                                  icon: ShieldCheck,
+                                  color: 'text-red-500 dark:text-red-400',
+                                  bgColor: 'bg-red-500/10',
+                                  active: activeAgent.slug === 'tool-path-foundation',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Path Foundation', category: 'Medical AI', slug: 'tool-path-foundation', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
+                                },
+                                {
+                                  id: 'derm-foundation',
+                                  slug: 'tool-derm-foundation',
+                                  title: 'Dermatology AI',
+                                  desc: 'Skin condition identification AI.',
+                                  icon: MapPin,
+                                  color: 'text-yellow-600 dark:text-yellow-400',
+                                  bgColor: 'bg-yellow-600/10',
+                                  active: activeAgent.slug === 'tool-derm-foundation',
+                                  onClick: () => {
+                                    setIsImageGeneration(false); setIsDeepSearch(false); setIsAudioConvertMode(false); setIsDocumentConvert(false); setIsCodeWriter(false); setIsVideoGeneration(false);
+                                    setActiveAgent({ agentName: 'Derm Foundation', category: 'Medical AI', slug: 'tool-derm-foundation', avatar: '/AGENTS_IMG/default.png' });
+                                    setIsToolsMenuOpen(false);
+                                  }
                                 }
-                              ].filter(tool => userAgents.some(a => a.slug === tool.slug)).map((tool) => (
+                              ].filter(tool => userAgents.some(a => a.slug === tool.slug || `tool-${a.slug}` === tool.slug)).map((tool) => (
                                 <button
                                   key={tool.id}
                                   onClick={(e) => {
@@ -5141,6 +5437,25 @@ For "Remix" requests with an attachment, analyze the attached image, then create
                                   </div>
                                 </button>
                               ))}
+                            </div>
+
+                            {/* Browse More Button */}
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <button
+                                onClick={() => {
+                                  setIsToolsMenuOpen(false);
+                                  navigate('/dashboard/marketplace');
+                                }}
+                                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/20 transition-all group"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 bg-primary/20 rounded-lg text-primary">
+                                    <ShoppingBag size={14} />
+                                  </div>
+                                  <span className="text-xs font-bold text-primary uppercase tracking-wider">Explore More Tools</span>
+                                </div>
+                                <Plus size={14} className="text-primary group-hover:rotate-90 transition-transform" />
+                              </button>
                             </div>
                           </div>
                         </div>
